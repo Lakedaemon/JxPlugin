@@ -413,20 +413,17 @@ class JxGraphWindow(object):
     def setupButtons(self):
         self.showhide = QPushButton(_("Show/Hide"))
         self.hbox.addWidget(self.showhide)
-        self.showhide.connect(self.showhide, SIGNAL("clicked()"),
-                              self.onShowHide)
+        self.showhide.connect(self.showhide, SIGNAL("clicked()"),self.onShowHide)
         refresh = QPushButton(_("Refresh"))
         self.hbox.addWidget(refresh)
-        self.showhide.connect(refresh, SIGNAL("clicked()"),
-                              self.onRefresh)
+        self.showhide.connect(refresh, SIGNAL("clicked()"),self.onRefresh)
         buttonBox = QDialogButtonBox(self.diag)
         buttonBox.setOrientation(Qt.Horizontal)
         close = buttonBox.addButton(QDialogButtonBox.Close)
         close.setDefault(True)
         self.diag.connect(buttonBox, SIGNAL("rejected()"), self.diag.close)
         help = buttonBox.addButton(QDialogButtonBox.Help)
-        self.diag.connect(buttonBox, SIGNAL("helpRequested()"),
-                  self.onHelp)
+        self.diag.connect(buttonBox, SIGNAL("helpRequested()"), self.onHelp)
         self.hbox.addWidget(buttonBox)
 
     def showHideAll(self):
@@ -444,7 +441,7 @@ class JxGraphWindow(object):
         self.showHideAll()
 
     def onShowHide(self):
-        mw.help.showText('yeaaaaah')
+        mw.help.showText('JxDebug1')
         m = QMenu(self.parent)
         for graph in self.widgets:
             name = graph.name
@@ -665,6 +662,7 @@ from PyQt4 import QtWebKit
 
 from string import Template
 
+
 def onJxAdd():
 	JxHtml = Template(JxMenu).substitute(TangoZone=HtmlReport(MapZoneTango,QueryTango),KanjiZone=HtmlReport(MapJLPTKanji,QueryKanji),
 		TangoJLPT=HtmlReport(MapJLPTTango,QueryTango),KanjiJLPT=HtmlReport(MapJLPTKanji,QueryKanji),
@@ -794,200 +792,6 @@ def onMissingZoneTangoStats():
         "seen": onSeenZoneTangoStats,
         "stats": onJStats
         })
-	
-JxMenu = """
-<html>
-<head>
-<style>
-#menu {
-  margin:0; 
-  padding:0; 
-  height:32.5em; 
-  overflow:hidden; 
-  background:#f0f0f0;
-  }
-#menu li {
-  list-style-type:none; 
-  float:left; 
-  display:block; 
-  width:100%;
-  }
-#menu li a {
-  display:block; 
-  text-decoration:none; 
-  color:#00b; 
-  margin:0; 
-  width:100%;
-  }
-#menu li a span {
-  display:none; 
-  color:#000;
-  }
-#menu li a.one span {
-  display:block; 
-  height:15em; 
-  margin:0 10px;
-  }
-#menu li a:hover {
-  background:#f1f1f1;
-  }
-#menu li a:hover span {
-  display:block; 
-  height:15em; 
-  margin:0 10px; 
-  cursor:pointer;
-  }
-#menu .h2 {
-  margin:0 5px; 
-  padding:0; 
-  color:#808; 
-  font-variant:small-caps; 
-  font-size:1.5em; 
-  border:0;
-  }
-#menu .h3 {
-  margin:0 5px; 
-  padding:0; 
-  font-size:1.1em; 
-  color:#00b;
-  }
-#menu img {
-  margin:5px 5px 5px 0; 
-  border:1px solid #000; 
-  float:left;
-  }
-.curved {
-  width:21em;
-  }
-.curved .b1, .curved .b2, .curved .b3, .curved .b4  {
-  font-size:1px; 
-  display:block; 
-  background:#88c;
-}
-.curved .b1, .curved .b2, .curved .b3 {
-  height:1px;
-  }
-.curved .b2, .curved .b3, .curved .b4 {
-  background:#f0f0f0; 
-  border-left:1px solid #88c; 
-  border-right:1px solid #88c;
-  }
-.curved .b1 {
-  margin:0 4px; 
-  background:#88c;
-  }
-.curved .b2 {
-  margin:0 2px; 
-  border-width:0 2px;
-  }
-.curved .b3 {
-  margin:0 1px;
-  }
-.curved .b4 {
-  height:2px; 
-  margin:0;
-  }
-.curved .c1 {
-  margin:0 5px; 
-  background:#88c;
-  }
-.curved .c2 {
-  margin:0 3px; 
-  border-width:0 2px;
-  }
-.curved .c3 {
-  margin:0 2px;
-  }
-.curved .c4 {
-  height:2px; 
-  margin: 0 1px;
-  }
-.curved .boxcontent {
-  display:block; 
-  background:transparent; 
-  border-left:1px solid #88c; 
-  border-right:1px solid #88c; 
-  font-size:0.9em; 
-  text-align:justify;
-  }
-</style>
-</head>
-<body>
-<div class="curved">
- <b class="b1 c1"></b>
- <b class="b2 c2"></b>
- <b class="b3 c3"></b>
- <b class="b4 c4"></b>
-  <div class="boxcontent">
-   <ul id="menu">
-    <li>
-     <a class="m5 five" href="#nogo">
-      <b class="h2">Frequency</b><br />
-      <b class="h3">Tango</b>
-      <span>
-${TangoZone}
-      </span>
-     </a>
-    </li>
-    <li>
-     <a href="#nogo">
-      <b class="b1"></b>
-      <b class="b2"></b>
-      <b class="b3"></b>
-      <b class="b4"></b>
-      <b class="h3">Kanji</b>
-      <span>
-${KanjiZone}
-      </span>
-     </a>
-    </li>
-    <li>
-     <a href="#nogo">
-      <b class="b1"></b>
-      <b class="b2"></b>
-      <b class="b3"></b>
-      <b class="b4"></b>
-      <b class="h2">JLPT</b><br />
-      <b class="h3">Tango</b>
-      <span>
-${TangoJLPT}
-      </span>
-     </a>
-    </li>
-    <li>
-     <a href="#nogo">
-      <b class="b1"></b>
-      <b class="b2"></b>
-      <b class="b3"></b>
-      <b class="b4"></b>
-      <b class="h3">Kanji</b>
-      <span>
-${KanjiJLPT}
-      </span>
-     </a>
-    </li>
-    <li>
-     <a class="one" href="#nogo">
-      <b class="b1"></b>
-      <b class="b2"></b>
-      <b class="b3"></b>
-      <b class="b4"></b>
-      <b class="h2">Jouyou</b><br />
-      <b class="h3">Kanji</b>
-      <span>
-${KanjiJouyou}
-      </span>
-     </a>
-    </li>
-   </ul>
-  </div>
- <b class="b4 c4"></b>
- <b class="b3 c3"></b>
- <b class="b2 c2"></b>
- <b class="b1 c1"></b>
-</div></body></html>""".decode("utf-8") 
-
-
 
 ###############################################################################################################
 #
@@ -1348,17 +1152,138 @@ QueryTango = """select fields.value from facts,cards,fields,fieldModels, models 
 #
 ######################################################################
 
+JxMenu = """ 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+
+div#content {
+	word-wrap: break-word;
+}
+
+ul#navlist {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+        white-space: nowrap;
+}
+
+ul#navlist li {
+        float: left;
+        font-family: verdana, arial, sans-serif;
+        font-size: 9px;
+        font-weight: bold;
+        margin: 0;
+        padding: 5px 0 4px 0;
+        background-color: #eef4f1;
+        border-top: 1px solid #e0ede9;
+        border-bottom: 1px solid #e0ede9;
+}
+
+#navlist a, #navlist a:link {
+        margin: 0;
+        padding: 5px 9px 4px 9px;
+        color: #95bbae;
+        border-right: 1px dashed #d1e3db;
+        text-decoration: none;
+}
+
+ul#navlist li#active {
+        color: #95bbae;
+        background-color: #deebe5;
+}
+
+#navlist a:hover {
+        color: #74a893;
+        background-color: #d1e3db;
+}
+
+</style>
+</head>
+<body>
+<div id="navcontainer">
+<ul id="navlist">
+<li ${JLPT}><a href=py:JxStats("JLPT")>JLPT</a></li>
+<li ${Jouyou}><a href=py:JxStats("Jouyou")>Jouyou</a></li>
+<li ${Zone}><a href=py:JxStats("Zone")>Frequency</a></li>
+<li ${Tools}><a href=py:Tools>Tools</a></li>
+</ul>
+</div>
+<div id="content" style="clear:both;">${Content}</div>
+</body>
+</html>
+""".decode('utf-8')
+
+def onJxMenu():
+	JxStats('JLPT')
+
+JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
+"Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango}
+
+def JxStats(Type):
+	
+	JxHtml = """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
+	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Kanji')>Seen</a></center><br/>"""
+	JxHtml += HtmlReport(JxMap["Kanji2"+Type],QueryKanji)
+	
+	if Type!="Jouyou":
+		JxHtml +="""<br /><center><b style="font-size:1.4em;">TANGO</b></center>"""
+		JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Tango')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Tango')>Seen</a></center><br />"""
+		JxHtml += HtmlReport(JxMap["Tango2"+Type],QueryTango)
+	
+	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict[Type] = 'id="active"'
+	JxPage = Template(JxMenu).safe_substitute(Dict)
+	
+	JxWindow.setHtml(JxPage)
+	JxWindow.show()
+
+JxQuery={"Kanji":QueryKanji,"Tango":QueryTango}
+
+import string
+
+def JxMissing(Type,Set):
+	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">MISSING ${CAPSET}</b></center><center><a href=py:JxSeen("${Type}","${Set}")>Seen</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=string.upper(Set)) 
+	JxHtml += MissingHtml(JxMap[Set+"2"+Type],JxQuery[Set])
+	
+	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict[Type] = 'id="active"'
+	JxPage = Template(JxMenu).safe_substitute(Dict)
+	
+	JxWindow.setHtml(JxPage)
+
+def JxSeen(Type,Set):
+	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">SEEN ${CAPSET}</b></center><center><a href=py:JxMissing("${Type}","${Set}")>Missing</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=string.upper(Set)) 
+	JxHtml += SeenHtml(JxMap[Set+"2"+Type],JxQuery[Set])
+	
+	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict[Type] = 'id="active"'
+	JxPage = Template(JxMenu).safe_substitute(Dict)
+	
+	JxWindow.setHtml(JxPage)
+	
+def onClick(url):
+	String = unicode(url.toString())
+	if String.startswith("py:"):
+		String = String[3:]
+		eval(String)
 
 # I now have my own window =^.^=
 JxWindow = QWebView(mw)
 sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-sizePolicy.setHorizontalStretch(5)
-sizePolicy.setVerticalStretch(5)
+sizePolicy.setHorizontalStretch(0)
+sizePolicy.setVerticalStretch(0)
 sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
 JxWindow.setSizePolicy(sizePolicy)
 JxWindow.setMinimumSize(QtCore.QSize(310, 400))
-JxWindow.setMaximumSize(QtCore.QSize(800, 16777215))
+JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
+JxWindow.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
+mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 JxWindow.hide()
+
 
 def exit_JxPlugin():
 	JxWindow.hide()
@@ -1396,7 +1321,13 @@ def init_JxPlugin():
 	mw.mainWin.actionJxDuplicates.setStatusTip('Japanese Duplicates')
 	mw.mainWin.actionJxDuplicates.setEnabled(False)
 	mw.connect(mw.mainWin.actionJxDuplicates, QtCore.SIGNAL('triggered()'), onJxDuplicates)
-	
+
+	# creates menu entry
+	mw.mainWin.actionJxMenu = QtGui.QAction('JxMenu', mw)
+	mw.mainWin.actionJxMenu.setStatusTip('Menuol')
+	mw.mainWin.actionJxMenu.setEnabled(False)
+	mw.connect(mw.mainWin.actionJxMenu, QtCore.SIGNAL('triggered()'), onJxMenu)
+
 	# creates menu in the plugin sub menu
 	#mw.mainWin.pluginMenu = mw.mainWin.menubar.addMenu('&JPlugin')
 	#mw.mainWin.pluginMenu.addAction(mw.mainWin.actionJStats)
@@ -1410,9 +1341,10 @@ def init_JxPlugin():
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxStats)
 	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxDuplicates)
+	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxGraphs","JxStats","JxDuplicates",)
+	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxGraphs","JxStats","JxDuplicates","JxMenu",)
 	
 	# Ading features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
