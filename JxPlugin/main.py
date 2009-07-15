@@ -896,8 +896,8 @@ import itertools
 Word2Data = {}
 JLPTWordLists={1:0,2:0,3:0,4:0} #utility ?
 
-file = os.path.join(mw.config.configPath, "plugins\\JxPlugin\\Data", "JLPT.Word.List.csv")
-file_pickle = os.path.join(mw.config.configPath, "plugins\\JxPlugin\\Data", "Word2Data.pickle")
+file = os.path.join(mw.config.configPath, "plugins/JxPlugin/Data", "JLPT.Word.List.csv")
+file_pickle = os.path.join(mw.config.configPath, "plugins/JxPlugin/Data", "Word2Data.pickle")
 
 def read_JLPT(file):
 	"""Reads JLPT wordlists from file."""
@@ -944,7 +944,7 @@ else:
 ######################################################################
 Kanji2Frequency = {}
 
-file = os.path.join(mw.config.configPath, "plugins\\JxPlugin\\Data", "KanjiFrequencyWikipedia.csv")
+file = os.path.join(mw.config.configPath, "plugins/JxPlugin/Data", "KanjiFrequencyWikipedia.csv")
 
 def read_Frequency(file):
 	"""Reads Kanji frequency from file."""
@@ -986,7 +986,7 @@ for (key,value) in Kanji2Frequency.iteritems():
 ######################################################################
 {}
 
-file = os.path.join(mw.config.configPath, "plugins\\JxPlugin\\Data", "CorpusInternet.csv")
+file = os.path.join(mw.config.configPath, "plugins/JxPlugin/Data", "CorpusInternet.csv")
 
 def read_Frequency(file,Dict):
 	"""Reads Kanji frequency from file."""
