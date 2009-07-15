@@ -476,7 +476,7 @@ def JxGraphProxy(self, *args):
 
 from ui.utils import showText
 
-def onJxGraphs():
+def JxGraphs():
 	ui.dialogs.get("JxGraphs", mw, mw.deck)
 	
 	
@@ -499,53 +499,43 @@ def onJxGraphs():
 from anki.utils import canonifyTags, addTags
 
 
-
-def onJxDuplicates():
+def JxTagDuplicates():
 
 	Query = """select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
 		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
 		fieldModels.name = "Expression" and models.tags like "%Japanese%" order by fields.value"""
 
-	Html = "<table>".decode("utf-8")
 	Rows = mw.deck.s.all(Query)
-	MasterDuplicates=[]
-	MasterTags="".decode("utf_8")
-	Duplicates=[]
-	Duplication = False
-	(lastField,lastId,lastTime,lastTags) = [u"None",None,None,"".decode("utf-8")]
+	Seen={}
+	Duplicates = {}
 	for (Field,Id,Time,Tags) in Rows:
-		if lastField == Field and lastTime > Time:
-			Duplication = True
-			# first duplicate younger
-			Duplicates.append(lastId)
-			MasterTags =  canonifyTags(addTags(MasterTags,Tags)) 
-			(lastField,lastId,lastTime) = (Field,Id,Time)
-			Html += "<tr><td>%s</td><td>%s</td></tr>" % (Field,lastTags+ u" JxDuplicate")
-		elif lastField == Field:
-			Duplication = True
-			# second duplicate younger
-			Duplicates.append(Id)
-			MasterTags =  canonifyTags(addTags(MasterTags,Tags)) 
-			Html += "<tr><td>%s</td><td>%s</td></tr>" % (Field,Tags+ u" JxDuplicate")
-		else: 
-			if Duplication:
-				MasterDuplicates.append((lastId,canonifyTags(MasterTags)))
-			Duplication = False
-			MasterTags = Tags
-			(lastField,lastId,lastTime,lastTags) = (Field,Id,Time,Tags)
-	if Duplication:
-		MasterDuplicates.append((lastId,canonifyTags(MasterTags)))
-	Html += "</table><center> duplicates count :" + str(len(Duplicates)) +"</center>"
-	mw.help.showText(str(MasterDuplicates)+Html)
-	mw.deck.addTags(Duplicates,"JxDuplicate".decode("utf-8"))
-	temp=[]
-	for (Id,Tags) in MasterDuplicates:
-		 mw.deck.s.statement("update facts set tags = :tags, modified = :t where id =:id",id=Id, t=time.time(),tags=Tags)
-		 temp.append(Id)
-	#mw.deck.updateFactTags(temp)
-	mw.deck.addTags(temp,"JxMasterDuplicate".decode("utf-8"))
-	mw.deck.deleteTags(temp,"JxDuplicate".decode("utf-8"))
-			
+		Entry = Field.strip(u' ')
+		if Entry in Seen:
+			(lastId,lastTime,lastTags) = Seen[Entry]
+			if  lastTime > Time:		
+				# first duplicate younger
+				Duplicates[lastId] = Entry
+				Seen[Entry] = (Id,Time,canonifyTags(addTags(lastTags,Tags)))
+			else:
+				# second duplicate younger
+				Duplicates[Id] = Entry
+				Seen[Entry] = (lastId,lastTime,canonifyTags(addTags(lastTags,Tags)))		
+		else:
+			Seen[Entry] = (Id,Time,Tags)
+	MasterDuplicates = []
+	Html = u"""<style> li {font-size: x-large;}</style><h2>Duplicated Entries</h2><ul>"""
+	for Entry in Duplicates.values():
+		(Id,Time,Tags) = Seen[Entry]
+		MasterDuplicates.append(Id)
+		Html += u"""<li>%s</li>""" % Entry
+		mw.deck.s.statement("update facts set tags = :tags, modified = :t where id =:id",id=Id, t=time.time(),tags=canonifyTags(Tags))
+	Html += u"""</ul>"""	
+	mw.deck.addTags(MasterDuplicates,u"JxMasterDuplicate")
+	mw.deck.addTags(Duplicates.keys(),u"JxDuplicate")
+	mw.deck.deleteTags(MasterDuplicates,u"JxDuplicate")
+	mw.help.showText(Html)	
+	
+
 ######################################################################
 #
 #                      JxStats : Stats
@@ -1209,13 +1199,23 @@ ul#navlist li#active {
 <li ${JLPT}><a href=py:JxStats("JLPT")>JLPT</a></li>
 <li ${Jouyou}><a href=py:JxStats("Jouyou")>Jouyou</a></li>
 <li ${Zone}><a href=py:JxStats("Zone")>Frequency</a></li>
-<li ${Tools}><a href=py:Tools>Tools</a></li>
+<li><a href=py:JxGraphs()>Graphs</a></li>
+<li ${Tools}><a href=py:JxTools()>Tools</a></li>
 </ul>
 </div>
 <div id="content" style="clear:both;">${Content}</div>
 </body>
 </html>
 """.decode('utf-8')
+
+def JxTools():
+	JxHtml = """<br /><p>Adds a tag to redundant entries for the field "Expression" in the "Japanese" model of the current deck : <ul><li>the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>""" 
+	
+	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict["Tools"] = 'id="active"'
+	JxPage = Template(JxMenu).safe_substitute(Dict)
+	
+	JxWindow.setHtml(JxPage)
 
 def onJxMenu():
 	JxStats('JLPT')
@@ -1305,22 +1305,22 @@ def init_JxPlugin():
 		mw.mainWin.hboxlayout.addWidget(widg[a])
 	
 	# creates menu entry
-	mw.mainWin.actionJxGraphs = QtGui.QAction('JxGraphs', mw)
-	mw.mainWin.actionJxGraphs.setStatusTip('Japanese GRAPHS')
-	mw.mainWin.actionJxGraphs.setEnabled(False)
-	mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
+	#mw.mainWin.actionJxGraphs = QtGui.QAction('JxGraphs', mw)
+	#mw.mainWin.actionJxGraphs.setStatusTip('Japanese GRAPHS')
+	#mw.mainWin.actionJxGraphs.setEnabled(False)
+	#mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
 
 	# creates menu entry
-	mw.mainWin.actionJxStats = QtGui.QAction('JxStats', mw)
-	mw.mainWin.actionJxStats.setStatusTip('Japanese STATS')
-	mw.mainWin.actionJxStats.setEnabled(False)
-	mw.connect(mw.mainWin.actionJxStats, QtCore.SIGNAL('triggered()'), onJStats)
+	#mw.mainWin.actionJxStats = QtGui.QAction('JxStats', mw)
+	#mw.mainWin.actionJxStats.setStatusTip('Japanese STATS')
+	#mw.mainWin.actionJxStats.setEnabled(False)
+	#mw.connect(mw.mainWin.actionJxStats, QtCore.SIGNAL('triggered()'), onJStats)
 
 	# creates menu entry
-	mw.mainWin.actionJxDuplicates = QtGui.QAction('JxDuplicates', mw)
-	mw.mainWin.actionJxDuplicates.setStatusTip('Japanese Duplicates')
-	mw.mainWin.actionJxDuplicates.setEnabled(False)
-	mw.connect(mw.mainWin.actionJxDuplicates, QtCore.SIGNAL('triggered()'), onJxDuplicates)
+	#mw.mainWin.actionJxDuplicates = QtGui.QAction('JxDuplicates', mw)
+	#mw.mainWin.actionJxDuplicates.setStatusTip('Japanese Duplicates')
+	#mw.mainWin.actionJxDuplicates.setEnabled(False)
+	#mw.connect(mw.mainWin.actionJxDuplicates, QtCore.SIGNAL('triggered()'), onJxDuplicates)
 
 	# creates menu entry
 	mw.mainWin.actionJxMenu = QtGui.QAction('JxMenu', mw)
@@ -1338,13 +1338,13 @@ def init_JxPlugin():
 	# adds the plugin icon in the Anki Toolbar
 	
 	#mw.mainWin.toolBar.addSeparator()
-	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
-	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxStats)
+	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
+	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxStats)
 	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxDuplicates)
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxGraphs","JxStats","JxDuplicates","JxMenu",)
+	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu",)
 	
 	# Ading features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
