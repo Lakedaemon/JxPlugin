@@ -38,6 +38,13 @@ from anki.utils import parseTags, tidyHTML, genID, ids2str, hexifyID, canonifyTa
 import datetime
 
 
+######################################################################
+#
+#                                             Graphs
+#
+######################################################################
+
+
 #colours for graphs
 colorJLPT4 = "#0fb380"
 colorJLPT3 = "#5c2380"
@@ -491,7 +498,11 @@ def JxGraphs():
 	
 	
 	
-
+######################################################################
+#
+#                                             Tools
+#
+######################################################################
 
 
 
@@ -597,54 +608,6 @@ def HtmlReport(Map,Query):
 
 
 
-def onJStats():
-	"""Computes and displays all kind of Stats related to japanese"""
-	
-	JStatsHTML ="""<center><h1>KANJI</h1></center><h3></h3>"""
-	
-	JStatsHTML += HtmlReport(MapJLPTKanji,QueryKanji)
-	
-	JStatsHTML += """<br /><hr style="margin:0 20 0 20;"/>
-	<center>JLPT : <a href=py:missJLPTKanji>Missing</a>&nbsp;&nbsp;<a href=py:seenJLPTKanji>Seen</a>&nbsp;&nbsp;&nbsp;
-	Jouyou : <a href=py:missJouyouKanji>Missing</a>&nbsp;<a href=py:seenJouyouKanji>Seen</a></center>
-	<hr style="margin:0 20 0 20;"/><br />"""
-	
-	JStatsHTML += HtmlReport(MapJouyouKanji,QueryKanji)
-        	
-	JStatsHTML += """<br /><hr style="margin:0 20 0 20;"/>
-	<center>Jouyou : <a href=py:missJouyouKanji>Missing</a>&nbsp;&nbsp;<a href=py:seenJouyouKanji>Seen</a>&nbsp;&nbsp;&nbsp;
-	Frequency : <a href=py:missZoneKanji>Missing</a>&nbsp;<a href=py:seenZoneKanji>Seen</a></center>
-	<hr style="margin:0 20 0 20;"/><br />"""
-	
-	JStatsHTML += HtmlReport(MapZoneKanji,QueryKanji) 
-	
-	JStatsHTML +="""
-	<center><h1>TANGO</h1></center>
-	<h3></h3>
-	"""
-		
-	JStatsHTML += HtmlReport(MapJLPTTango,QueryTango)
-	
-	JStatsHTML += """<br /><hr style="margin:0 20 0 20;"/>
-	<center>JLPT : <a href=py:missJLPTTango>Missing</a>&nbsp;&nbsp;<a href=py:seenJLPTTango>Seen</a>&nbsp;&nbsp;&nbsp;
-	Frequency : <a href=py:missZoneTango>Missing</a>&nbsp;<a href=py:seenZoneTango>Seen</a></center>
-	<hr style="margin:0 20 0 20;"/><br />"""
-	
-	JStatsHTML += HtmlReport(MapZoneTango,QueryTango)
-
-	mw.help.showText(JStatsHTML, py={
-		"seenJLPTKanji": onSeenJLPTKanjiStats,
-		"missJLPTKanji": onMissingJLPTKanjiStats,
-		"seenJouyouKanji": onSeenJouyouKanjiStats,
-		"missJouyouKanji": onMissingJouyouKanjiStats,
-		"seenZoneKanji": onSeenZoneKanjiStats,
-		"missZoneKanji": onMissingZoneKanjiStats,
-		"seenJLPTTango": onSeenJLPTTangoStats,
-		"missJLPTTango": onMissingJLPTTangoStats,
-		"seenZoneTango": onSeenZoneTangoStats,
-		"missZoneTango": onMissingZoneTangoStats,
-		"try": onJxAdd
-		})
 
 
 from PyQt4.QtWebKit import QWebPage, QWebView
@@ -653,13 +616,6 @@ from PyQt4 import QtWebKit
 from string import Template
 
 
-def onJxAdd():
-	JxHtml = Template(JxMenu).substitute(TangoZone=HtmlReport(MapZoneTango,QueryTango),KanjiZone=HtmlReport(MapJLPTKanji,QueryKanji),
-		TangoJLPT=HtmlReport(MapJLPTTango,QueryTango),KanjiJLPT=HtmlReport(MapJLPTKanji,QueryKanji),
-		KanjiJouyou=HtmlReport(MapJouyouKanji,QueryKanji))
-	JxWindow.setHtml(JxHtml)
-	JxWindow.show()
-                            
 
 def SeenHtml(Map,Query):
 	Dict=Map["Dict"]
@@ -689,41 +645,6 @@ def SeenHtml(Map,Query):
 			HtmlBuffer += """<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map["Legend"][key],string)
 	return HtmlBuffer
 
-def onSeenJLPTKanjiStats():
-	JStatsHTML = SeenHtml(MapJLPTKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">SEEN KANJI</h1><center><a href=py:miss>Missing</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "miss": onMissingJLPTKanjiStats,
-        "stats": onJStats
-        })
-	
-def onSeenJouyouKanjiStats():
-	JStatsHTML = SeenHtml(MapJouyouKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">SEEN KANJI</h1><center><a href=py:miss>Missing</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "miss": onMissingJouyouKanjiStats,
-        "stats": onJStats
-        })
-
-def onSeenZoneKanjiStats():
-	JStatsHTML = SeenHtml(MapZoneKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">SEEN KANJI</h1><center><a href=py:miss>Missing</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "miss": onMissingZoneKanjiStats,
-        "stats": onJStats
-        })
-
-def onSeenJLPTTangoStats():
-	JStatsHTML = SeenHtml(MapJLPTTango,QueryTango)
-	mw.help.showText("""<h1  align="center">SEEN WORDS</h1><center><a href=py:miss>Missing</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "miss": onMissingJLPTTangoStats,
-        "stats": onJStats
-        })
-
-def onSeenZoneTangoStats():
-	JStatsHTML = SeenHtml(MapZoneTango,QueryTango)
-	mw.help.showText("""<h1  align="center">SEEN WORDS</h1><center><a href=py:miss>Missing</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "miss": onMissingZoneTangoStats,
-        "stats": onJStats
-        })
-
 def MissingHtml(Map,Query):
 	Dict=Map["Dict"]
 	Seen = {}
@@ -749,39 +670,18 @@ def MissingHtml(Map,Query):
 	return HtmlBuffer	
 
 
-def onMissingJLPTKanjiStats():
-	JStatsHTML = MissingHtml(MapJLPTKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">MISSING KANJI</h1><center><a href=py:seen>Seen</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "seen": onSeenJLPTKanjiStats,
-        "stats": onJStats
-        })
 
-def onMissingJouyouKanjiStats():
-	JStatsHTML = MissingHtml(MapJouyouKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">MISSING KANJI</h1><center><a href=py:seen>Seen</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "seen": onSeenJouyouKanjiStats,
-        "stats": onJStats
-        })
-	
-def onMissingZoneKanjiStats():
-	JStatsHTML = MissingHtml(MapZoneKanji,QueryKanji)
-	mw.help.showText("""<h1  align="center">MISSING KANJI</h1><center><a href=py:seen>Seen</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "seen": onSeenZoneKanjiStats,
-        "stats": onJStats
-        })
-def onMissingJLPTTangoStats():
-	JStatsHTML = MissingHtml(MapJLPTTango,QueryTango)
-	mw.help.showText("""<h1  align="center">MISSING WORDS</h1><center><a href=py:seen>Seen</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "seen": onSeenJLPTTangoStats,
-        "stats": onJStats
-        })
 
-def onMissingZoneTangoStats():
-	JStatsHTML = MissingHtml(MapZoneTango,QueryTango)
-	mw.help.showText("""<h1  align="center">MISSING WORDS</h1><center><a href=py:seen>Seen</a>&nbsp;<a href=py:stats>Stats</a></center><hr />""" + JStatsHTML, py={
-        "seen": onSeenZoneTangoStats,
-        "stats": onJStats
-        })
+
+
+
+
+
+
+
+
+
+
 
 ###############################################################################################################
 #
@@ -1305,24 +1205,6 @@ def init_JxPlugin():
 		mw.mainWin.hboxlayout.addWidget(widg[a])
 	
 	# creates menu entry
-	#mw.mainWin.actionJxGraphs = QtGui.QAction('JxGraphs', mw)
-	#mw.mainWin.actionJxGraphs.setStatusTip('Japanese GRAPHS')
-	#mw.mainWin.actionJxGraphs.setEnabled(False)
-	#mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
-
-	# creates menu entry
-	#mw.mainWin.actionJxStats = QtGui.QAction('JxStats', mw)
-	#mw.mainWin.actionJxStats.setStatusTip('Japanese STATS')
-	#mw.mainWin.actionJxStats.setEnabled(False)
-	#mw.connect(mw.mainWin.actionJxStats, QtCore.SIGNAL('triggered()'), onJStats)
-
-	# creates menu entry
-	#mw.mainWin.actionJxDuplicates = QtGui.QAction('JxDuplicates', mw)
-	#mw.mainWin.actionJxDuplicates.setStatusTip('Japanese Duplicates')
-	#mw.mainWin.actionJxDuplicates.setEnabled(False)
-	#mw.connect(mw.mainWin.actionJxDuplicates, QtCore.SIGNAL('triggered()'), onJxDuplicates)
-
-	# creates menu entry
 	mw.mainWin.actionJxMenu = QtGui.QAction('JxMenu', mw)
 	mw.mainWin.actionJxMenu.setStatusTip('Menuol')
 	mw.mainWin.actionJxMenu.setEnabled(False)
@@ -1337,10 +1219,6 @@ def init_JxPlugin():
 
 	# adds the plugin icon in the Anki Toolbar
 	
-	#mw.mainWin.toolBar.addSeparator()
-	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
-	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxStats)
-	#mw.mainWin.toolBar.addAction(mw.mainWin.actionJxDuplicates)
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
