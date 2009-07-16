@@ -52,7 +52,6 @@ from graphs import *
 
 from ankiqt.ui.utils import askUser, getOnlyText
 from ankiqt import *
-#import ankiqt.forms
 
 from ui.utils import showText
 
@@ -76,130 +75,14 @@ from tools import *
 from anki.utils import canonifyTags, addTags
 	
 
-######################################################################
-#
-#                      JxStats : Stats
-#
-######################################################################
 
-def ComputeCount(Dict,Query):  #### try to clean up, now that you are better at python
-	"""compute and Display an HTML report of the result of a Query against a Map"""
-	# First compute the cardinal of every equivalence class in Stuff2Val
-	Count = {"InQuery":0, "Inside":0, "L0":0}
-	Values = set(Dict.values())
-	for value in Values:
-		Count["T" + str(value)] = 0
-		Count["L" + str(value)] = 0		
-	for key, value in Dict.iteritems():
-		Count["T" + str(value)] += 1
-	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
-	Counted = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Stuffed=Stuff.strip(u" ")
-		if Stuffed.endswith((u"する",u"の",u"な",u"に")):
-			if Stuffed.endswith(u"する"):
-				Stuffed=Stuffed[0:-2]
-			else:
-				Stuffed=Stuffed[0:-1]
-		if Stuffed not in Counted:
-			Counted[Stuffed] = 0
-			if Stuffed in Dict:
-				a = "L" + str(Dict[Stuffed])
-			else:
-				a = "L0"
-			Count[a] += 1
-	Count["Inside"] = sum(Count["L" + str(value)] for value in Values)
-	Count["InQuery"] = Count["Inside"] + Count["L0"]
-	for value in Values:
-		Count["P" + str(value)] = round(Count["L" + str(value)] * 100.0 / max(Count["T" + str(value)],1),2)
-	Count["PInsideInMap"] = round(Count["Inside"] *100.0 / max(Count["InMap"],1),2)
-	Count["PInsideInQuery"] = round(Count["Inside"] *100.0 / max(Count["InQuery"],1),2)
-	return Count
-
-def HtmlReport(Map,Query):
-	Map.update(ComputeCount(Map["Dict"],Query))
-	JStatsHTML = """
-	<table width="100%%" align="center" style="margin:0 20 0 20;">
-	<tr><td align="left"><b>%(To)s</b></td><th colspan=2 align="center"><b>%(From)s</b></th><td align="right"><b>Percent</b></td></tr>
-	""" 
-	for key,value in Map["Legend"].iteritems():
-		JStatsHTML += """
-		<tr><td align="left"><b>%s</b></td><td align="right">%%(L%s)s</td><td align="left"> / %%(T%s)s</td><td align="right">%%(P%s).1f %%%%</td></tr>
-		""" % (value,key,key,key) 
-
-	JStatsHTML += """
-	<tr><td align="left"><b>Total</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InMap)s</td><td align="right">%(PInsideInMap).1f %%</td></tr>
-	<tr><td colspan=4><hr/></td/></tr>
-	<tr><td align="left"><b> %(To)s/All</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InQuery)s</td><td align="right">%(PInsideInQuery).1f %%</td></tr>
-	</table>
-	""" 
-        return JStatsHTML % Map
-
-
-
+from stats import *
 
 
 from PyQt4.QtWebKit import QWebPage, QWebView
 from PyQt4 import QtWebKit
 
 from string import Template
-
-
-
-def SeenHtml(Map,Query):
-	Dict=Map["Dict"]
-	Seen = {}
-	Color = {0:True}
-	Buffer = {0:""}
-	for value in Dict.values():
-		Buffer[value] = ""
-		Color[value] = True	
-	for Stuff in mw.deck.s.column0(Query):
-		if Stuff not in Seen:
-			try: 
-				value = Dict[Stuff]	  
-			except KeyError:
-				value = 0
-			Seen[Stuff] = a
-			Color[value] = not(Color[value])			
-			if Color[value]:
-				Buffer[value] += Stuff
-			else:
-				Buffer[value] += """<span style="color:blue">"""+ Stuff +"""</span>"""
-	HtmlBuffer = ""
-	for key, string in Buffer.iteritems():
-		if key == 0:
-			HtmlBuffer += """<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % string
-		else:
-			HtmlBuffer += """<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map["Legend"][key],string)
-	return HtmlBuffer
-
-def MissingHtml(Map,Query):
-	Dict=Map["Dict"]
-	Seen = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Seen[Stuff] = 0
-		
-	Color = {0:True}
-	Buffer = {0:""}
-	for value in Dict.values():
-		Buffer[value] = ""
-		Color[value] = True	
-	for Stuff,Note in Dict.iteritems():
-		if Stuff not in Seen:
-			Color[Note] = not(Color[Note])			
-			if Color[Note]:
-				Buffer[Note] += Stuff
-			else:
-				Buffer[Note] += """<span style="color:blue">"""+ Stuff +"""</span>"""
-	HtmlBuffer = ""
-	for key, string in Buffer.iteritems():
-		if key != 0:
-			HtmlBuffer += """<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map["Legend"][key],string)
-	return HtmlBuffer	
-
-
-
 
 
 
@@ -219,140 +102,8 @@ def MissingHtml(Map,Query):
 ###############################################################################################################
 import math
 import re
-Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
 
-def Tango2Dic(string):
-	String = string.strip(u" ")
-	if String.endswith(u"する") and len(String)>2:
-		return String[0:-2]
-	elif (String.endswith(u"な") or String.endswith(u"の") or String.endswith(u"に")) and len(String)>1: #python24 fix for OS X                  
-#	elif String.endswith((u"な",u"の",u"に")) and len(String)>1:    #python25
-		return String[0:-1]
-	else:
-		return String
-
-def JxDefaultAnswer(Buffer,String,Dict):
-	if re.search(u"\${.*?}",Buffer):
-		return String
-	else: 
-		return Buffer + String
-
-def append_JxPlugin(Answer,Card):
-    """Append additional information about kanji and words in answer."""
-    
-    Append = re.search(u"\${.*?}",Answer) == None
-
-    for key in [u"Expression",u"単語",u"言葉"]:
-	    try:
-		Tango = Tango2Dic(Card.fact[key])
-		break
-	    except KeyError:
-                Tango = None		    
-		
-    for key in [u"Kanji",u"漢字"]:
-	    try:
-		Kanji = Card.fact[key].strip()
-		break
-	    except KeyError:
-		Kanji = None	
-
-
-    JxAnswerDict = {}
-    for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
-	    JxAnswerDict[key] = u""
-
-    JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    JxAnswerDict[u"Css"] = """
-    <style> 
-    .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
-    .Kana { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.8em; }
-    .Romaji { font-family: Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.5em;}
-    .JLPT,.Jouyou,.Frequency { font-family: Arial,sans-serif; font-weight: normal; font-size:1.2em;}
-    .LDKanjiStroke  { font-family: KanjiStrokeOrders; font-size: 10em;}
-    td { padding: 2px 15px 2px 15px;}
-    </style>"""
-
-
-    if Append:
-	    AnswerBuffer = u"""${Css}"""		
-    
-    # Word2JLPT
-    try:
-        JxAnswerDict[u"T2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Word2Data[Tango]]
-	if Append:
-		AnswerBuffer += u""" <div class="JLPT">${T2JLPT}</div>"""
-    except KeyError:
-	    pass
-
-    # Word2Frequency
-    try:
-		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((math.log(Word2Frequency[Tango]+1,2)-math.log(MinWordFrequency+1,2))/(math.log(MaxWordFrequency+1,2)-math.log(MinWordFrequency+1,2))*100) 
-		if Append:
-			AnswerBuffer += """ <div class="Frequency">${T2Freq}</div>"""
-    except KeyError:
-		pass
-
-    if Kanji != None:
-		
-		# Stroke Order
-		if Append:
-			AnswerBuffer += u"""<div style="float:left;">${Stroke}</div>"""
-			
-		# Kanji2JLPT
-		try:
-			JxAnswerDict[u"K2JLPT"] =  """<span class="JLPT">%s</span>""" % Map[Kanji2JLPT[Kanji]]
-			if Append:
-				AnswerBuffer += u""" <div class="JLPT">${K2JLPT}</div>"""
-		except KeyError:
-			pass
-	
-		# Kanji2Jouyou	
-		try:
-			JxAnswerDict[u"K2Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji["Legend"][Kanji2JLPT[Kanji]]
-			if Append:
-				AnswerBuffer += u""" <div class="Jouyou">${K2Jouyou}</div>"""
-		except KeyError:
-			pass
-
-		# Word2Frequency
-		try:    
-			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((math.log(Kanji2Frequency[Kanji]+1,2)-math.log(MaxFrequency+1,2))*10+100)
-			if Append:
-				AnswerBuffer += """ <div class="Frequency">${K2Freq}</div>"""
-		except KeyError:
-			pass		
-				
-		# Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning
-		query = """select expression.value, reading.value, meaning.value from 
-		fields as expression, fields as reading, fields as meaning, 
-		fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
-		expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-		reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
-		meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-		expression.value like "%%%s%%" """ % Kanji
-
-		# HTML Buffer 
-		info = "" 
-		# Adds the words to the HTML Buffer 
-		for (u,v,w) in mw.deck.s.all(query):
-			info += """ <tr><td><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
-			""" % ("Kanji",u.strip(),"Romaji" ,w.strip(),"Kana",v.strip())
-
-		# if there Html Buffer isn't empty, adds it to the card info
-		if len(info):
-			JxAnswerDict[u"K2Words"] = """<table style="text-align:center;" align="center">%s</table>""" % info
-			if Append:
-				AnswerBuffer += """${K2Words}"""
-		else:
-			pass			
-
-    if Append:
-	    return Template(Answer+AnswerBuffer).safe_substitute(JxAnswerDict)
-    else:
-	    return Template(Answer).safe_substitute(JxAnswerDict)
-
-
-
+from answer import *
 
 
 
