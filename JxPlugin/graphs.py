@@ -28,7 +28,7 @@ from PyQt4.QtCore import *
 from PyQt4 import QtGui, QtCore
 from anki.utils import ids2str
 from loaddata import *
-from ui_graphs import *
+#from ui_graphs import *
 
 ######################################################################
 #
@@ -324,12 +324,8 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 		
 
 
-		
-def JxintervalGraph(self,*args): #shouldn't have self 
-    return JxGraphWindow(self,*args) # shouldn't have self
 
-def JxGraphProxy(self, *args):
-	return JxintervalGraph(self,*args) #shouldn't have self
+
 
 
 	
