@@ -151,9 +151,14 @@ def JxExport():
 		# check for existence after extension
 		if not ui.utils.askUser("This file exists. Are you sure you want to overwrite it?"):
 		       return
-	out = ""
-	for Entry in User:
-		out += Entry + "\t" +"ol" +"\n"
-	JxFile = open(JxPath, "wb")
-	JxFile.write(out.encode("utf-8"))
-	JxFile.close()
+	import string
+	Query = u"""select cards.id from facts,cards,fields,fieldModels, models where 
+		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+		fieldModels.name = "Expression" and models.tags like "%%Japanese%%" and fields.value in (%s) group by cards.id""" % string.join([unicode("'" + Stuff + "',") for Stuff in User])[0:-1]
+
+	Ids = mw.deck.s.column0(Query)
+	mw.help.showText(str(Ids))
+	from anki.exporting import TextFactExporter
+	JxExport = TextFactExporter(mw.deck)
+	JxExport.limitCardIds = Ids
+	JxExport.exportInto(JxPath)
