@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 from ankiqt import mw
 from anki.utils import canonifyTags, addTags
-
+import time
 
 def JxTagDuplicates():
 
