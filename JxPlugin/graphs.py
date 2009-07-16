@@ -4,8 +4,15 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://repose.cx/anki/
 # ---------------------------------------------------------------------------
-import time, datetime
+import sys,time, datetime
+from os import environ,path
 from PyQt4.QtGui import *
+
+# support frozen distribs
+if getattr(sys, "frozen", None):
+    environ['MATPLOTLIBDATA'] = path.join(
+        path.dirname(sys.argv[0]),
+        "matplotlibdata")
 try:
     from matplotlib.figure import Figure
 except UnicodeEncodeError:
