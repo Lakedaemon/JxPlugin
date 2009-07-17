@@ -44,7 +44,9 @@ colorJLPT2 = "#fa2320"
 colorJLPT1 = "#2f2380"
 colorJLPT0 = "#f6b380"
 
-colorGrade={1:"#80b3ff",2:"#90c3df",3:"#444DDD",4:"#222CCC",5:"#000BBB",6:"#222999",7:"#444777",8:"#666555"}
+colorGrade={1:"#CC9933",2:"#FF9933",3:"#FFCC33",4:"#FFFF33",5:"#CCCC99",6:"#CCFF99",7:"#CCFF33",8:"#CCCC33"}
+colorFreq={1:"#3333CC",2:"#3366CC",3:"#3399CC",4:"#33CCCC",5:"#33FFCC"}
+colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
 
 class JxDeckGraphs(object):
 
@@ -206,14 +208,14 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
                    JOL[2 * c].append(a)
 	           JOL[2 * c + 1].append(sum([OLK[a][k] for k in range(c,5)]))
         Arg =[JOL[k] for k in range(0,10)]
-        self.filledGraph(graph, days, [colorJLPT0,colorJLPT1,colorJLPT2,colorJLPT3,colorJLPT4], *Arg)
+        self.filledGraph(graph, days, [colorJLPT[k] for k in range(0,5)], *Arg)
 	
 	cheat = fig.add_subplot(111)
-        b0 = cheat.bar(-1, 0, color = colorJLPT4)
-        b1 = cheat.bar(-2, 0, color = colorJLPT3)
-        b2 = cheat.bar(-3, 0, color = colorJLPT2)
-        b3 = cheat.bar(-4, 0, color = colorJLPT1)
-        b4 = cheat.bar(-5, 0, color = colorJLPT0)
+        b0 = cheat.bar(-1, 0, color = colorJLPT[4])
+        b1 = cheat.bar(-2, 0, color = colorJLPT[3])
+        b2 = cheat.bar(-3, 0, color = colorJLPT[2])
+        b3 = cheat.bar(-4, 0, color = colorJLPT[1])
+        b4 = cheat.bar(-5, 0, color = colorJLPT[0])
 	
         cheat.legend([b0, b1, b2, b3, b4], [
             _("JLPT4"),
@@ -290,14 +292,14 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
                    JOL[2 * c].append(a)
                    JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
         Arg =[JOL[k] for k in range(0,10)]
-        self.filledGraph(graph, days, [colorGrade[5-k] for k in range(0,5)], *Arg)
+        self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
 	
         cheat = fig.add_subplot(111)
-        b0 = cheat.bar(-1, 0, color = colorGrade[1])
-        b1 = cheat.bar(-2, 0, color = colorGrade[2])
-        b2 = cheat.bar(-3, 0, color = colorGrade[3])
-        b3 = cheat.bar(-4, 0, color = colorGrade[4])
-        b4 = cheat.bar(-5, 0, color = colorGrade[5])
+        b0 = cheat.bar(-1, 0, color = colorFreq[1])
+        b1 = cheat.bar(-2, 0, color = colorFreq[2])
+        b2 = cheat.bar(-3, 0, color = colorFreq[3])
+        b3 = cheat.bar(-4, 0, color = colorFreq[4])
+        b4 = cheat.bar(-5, 0, color = colorFreq[5])
         cheat.legend([b0, b1, b2, b3, b4], [
             _("Highest"),
             _("High"),
@@ -327,14 +329,14 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
                    JOL[2 * c].append(a)
 	           JOL[2 * c + 1].append(sum([OLK[a][k] for k in range(c,5)]))
         Arg =[JOL[k] for k in range(0,10)]
-        self.filledGraph(graph, days, [colorJLPT0,colorJLPT1,colorJLPT2,colorJLPT3,colorJLPT4], *Arg)
+        self.filledGraph(graph, days, [colorJLPT[k] for k in range(0,5)], *Arg)
 	
 	cheat = fig.add_subplot(111)
-        b0 = cheat.bar(-1, 0, color = colorJLPT4)
-        b1 = cheat.bar(-2, 0, color = colorJLPT3)
-        b2 = cheat.bar(-3, 0, color = colorJLPT2)
-        b3 = cheat.bar(-4, 0, color = colorJLPT1)
-        b4 = cheat.bar(-5, 0, color = colorJLPT0)
+        b0 = cheat.bar(-1, 0, color = colorJLPT[4])
+        b1 = cheat.bar(-2, 0, color = colorJLPT[3])
+        b2 = cheat.bar(-3, 0, color = colorJLPT[2])
+        b3 = cheat.bar(-4, 0, color = colorJLPT[1])
+        b4 = cheat.bar(-5, 0, color = colorJLPT[0])
 	
         cheat.legend([b0, b1, b2, b3, b4], [
             _("JLPT 4"),
@@ -366,14 +368,14 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
                    JOL[2 * c].append(a)
                    JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
         Arg =[JOL[k] for k in range(0,10)]
-        self.filledGraph(graph, days, [colorGrade[5-k] for k in range(0,5)], *Arg)
+        self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
 	
         cheat = fig.add_subplot(111)
-        b0 = cheat.bar(-1, 0, color = colorGrade[1])
-        b1 = cheat.bar(-2, 0, color = colorGrade[2])
-        b2 = cheat.bar(-3, 0, color = colorGrade[3])
-        b3 = cheat.bar(-4, 0, color = colorGrade[4])
-        b4 = cheat.bar(-5, 0, color = colorGrade[5])
+        b0 = cheat.bar(-1, 0, color = colorFreq[1])
+        b1 = cheat.bar(-2, 0, color = colorFreq[2])
+        b2 = cheat.bar(-3, 0, color = colorFreq[3])
+        b3 = cheat.bar(-4, 0, color = colorFreq[4])
+        b4 = cheat.bar(-5, 0, color = colorFreq[5])
         cheat.legend([b0, b1, b2, b3, b4], [
             _("Highest"),
             _("High"),
