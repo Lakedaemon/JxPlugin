@@ -29,6 +29,7 @@ from PyQt4 import QtGui, QtCore
 from anki.utils import ids2str
 from loaddata import *
 #from ui_graphs import *
+from answer import Tango2Dic
 
 ######################################################################
 #
@@ -149,11 +150,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	    Accumulated = {}
 	    
             for (OLWord,OLtime,interval,nextinterval,ease) in JLPTReviews:
-		WordStripped=OLWord.strip(u" ")
-		if WordStripped.endswith(u"する"):
-				WordStripped=WordStripped[0:-2]
-		elif (WordStripped.endswith(u"の") or WordStripped.endswith(u"な") or WordStripped.endswith(u"に")):
-				WordStripped=WordStripped[0:-1]
+		WordStripped=Tango2Dic(OLWord)
 		if WordStripped in Word2Data:
 		     a = Word2Data[WordStripped]
 		else:

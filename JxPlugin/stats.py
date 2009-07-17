@@ -7,6 +7,7 @@
 from os import path
 from ankiqt import mw
 from ankiqt.ui.utils import getSaveFile, askUser
+from answer import Tango2Dic
 
 ######################################################################
 #
@@ -26,12 +27,7 @@ def ComputeCount(Dict,Query):
 	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
 	Counted = {}
 	for Stuff in mw.deck.s.column0(Query):
-		Stuffed=Stuff.strip(u" ")
-		if Stuffed.endswith((u"する",u"の",u"な",u"に")):
-			if Stuffed.endswith(u"する"):
-				Stuffed=Stuffed[0:-2]
-			else:
-				Stuffed=Stuffed[0:-1]
+		Stuffed=Tango2Dic(Stuff)
 		if Stuffed not in Counted:
 			Counted[Stuffed] = 0
 			if Stuffed in Dict:
