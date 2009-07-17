@@ -33,6 +33,7 @@ class JxGraphWindow(object):
     nameMap = {
         'JLPT4Kanji': _("Kanji"),
         'Jouyou': _("Graded"),
+	 'Freq4Kanji': _("KFreq"),
         'JLPT4Tango': _("Tango"),
         }
 
@@ -81,7 +82,12 @@ class JxGraphWindow(object):
 		graded.addWidget(QLabel(_("<h1>Jouyou Kanji Progress ('Kanji ?' card model)</h1>")))
 		self.vbox.addWidget(graded)
 		self.widgets.append(graded)
-      
+
+		KFreq = AdjustableFigure(self.parent, 'KFreq', Jxdg.graphTime2Frequency4Kanji, self.range) 
+		KFreq.addWidget(QLabel(_("<h1>Kanji Accumulated Frequency ('Kanji ?' card model)</h1>")))
+		self.vbox.addWidget(KFreq)
+		self.widgets.append(KFreq)
+		
       		# Time -> JLPT for Words graph
 		WJLPT = AdjustableFigure(self.parent, 'JLPT4Tango', Jxdg.graphTime2JLPT4Tango, self.range) 
 		WJLPT.addWidget(QLabel(_("<h1>JLPT Word Progress ('Recognition' card model)</h1>")))

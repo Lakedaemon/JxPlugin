@@ -5,6 +5,7 @@
 # This file is a plugin for the "anki" flashcard application http://repose.cx/anki/
 # ---------------------------------------------------------------------------
 import re
+from math import log
 from string import Template
 from loaddata import *
 
@@ -80,7 +81,7 @@ def append_JxPlugin(Answer,Card):
 
     # Word2Frequency
     try:
-		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((math.log(Word2Frequency[Tango]+1,2)-math.log(MinWordFrequency+1,2))/(math.log(MaxWordFrequency+1,2)-math.log(MinWordFrequency+1,2))*100) 
+		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Word2Frequency[Tango]+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100) 
 		if Append:
 			AnswerBuffer += """ <div class="Frequency">${T2Freq}</div>"""
     except KeyError:
@@ -110,7 +111,7 @@ def append_JxPlugin(Answer,Card):
 
 		# Word2Frequency
 		try:    
-			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((math.log(Kanji2Frequency[Kanji]+1,2)-math.log(MaxFrequency+1,2))*10+100)
+			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Kanji2Frequency[Kanji]+1,2)-log(MaxFrequency+1,2))*10+100)
 			if Append:
 				AnswerBuffer += """ <div class="Frequency">${K2Freq}</div>"""
 		except KeyError:
