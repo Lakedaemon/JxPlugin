@@ -208,10 +208,5 @@ MapJLPTKanji = {"From":"Kanji","To":"JLPT","Legend":{1:"Lvl 1",2:"Lvl 2",3:"Lvl 
 MapZoneKanji = {"From":"Kanji","To":"Frequency","Legend":{1:"Highest",2:"High",3:"Fair",4:"Low",5:"Lowest"},"Dict":Kanji2Zone}
 MapJouyouKanji = {"From":"Kanji","To":"Jouyou","Legend":{1:"Grade 1",2:"Grade 2",3:"Grade 3",4:"Grade 4",5:"Grade 5",6:"Grade 6","HS":"H.School"},"Dict":Kanji2Grade}
 
-QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 order by firstAnswered"""
-QueryTango = """select fields.value from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 order by firstAnswered"""
+
 

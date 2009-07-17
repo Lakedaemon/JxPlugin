@@ -84,6 +84,21 @@ ul#navlist li#active {
 </html>
 """.decode('utf-8')
 
+QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
+		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 order by firstAnswered"""
+QueryKanjib = """select fields.value,cards.id from facts,cards,fields,fieldModels, models where 
+		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 group by fields.value order by firstAnswered """
+		
+QueryTango = """select fields.value from facts,cards,fields,fieldModels, models where 
+		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 order by firstAnswered"""
+
+QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldModels, models where 
+		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 group by fields.value order by firstAnswered"""
+		
 def JxGraphs():
 	ui.dialogs.get("JxGraphs", mw, mw.deck)
 
@@ -105,7 +120,7 @@ JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJou
 def JxStats(Type):
 	
 	JxHtml = """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
-	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Kanji')>Seen</a></center><br/>"""
+	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
 	JxHtml += HtmlReport(JxMap["Kanji2"+Type],QueryKanji)
 	
 	if Type!="Jouyou":
@@ -120,7 +135,7 @@ def JxStats(Type):
 	JxWindow.setHtml(JxPage)
 	JxWindow.show()
 
-JxQuery={"Kanji":QueryKanji,"Tango":QueryTango}
+JxQuery={"Kanji":QueryKanji,"Tango":QueryTango,"Kanjib":QueryKanjib,"Tangob":QueryTangob}
 
 
 def JxMissing(Type,Set):
@@ -135,7 +150,7 @@ def JxMissing(Type,Set):
 
 def JxSeen(Type,Set):
 	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">SEEN ${CAPSET}</b></center><center><a href=py:JxMissing("${Type}","${Set}")>Missing</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=upper(Set)) 
-	JxHtml += SeenHtml(JxMap[Set+"2"+Type],JxQuery[Set])
+	JxHtml += SeenHtml(JxMap[Set+"2"+Type],JxQuery[Set+"b"])
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict[Type] = 'id="active"'

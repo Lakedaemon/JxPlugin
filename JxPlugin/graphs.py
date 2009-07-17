@@ -38,12 +38,6 @@ from loaddata import *
 
 
 #colours for graphs
-colorJLPT4 = "#0fb380"
-colorJLPT3 = "#5c2380"
-colorJLPT2 = "#fa2320"
-colorJLPT1 = "#2f2380"
-colorJLPT0 = "#f6b380"
-
 colorGrade={1:"#CC9933",2:"#FF9933",3:"#FFCC33",4:"#FFFF33",5:"#CCCC99",6:"#CCFF99",7:"#CCFF33",8:"#CCCC33"}
 colorFreq={1:"#3333CC",2:"#3366CC",3:"#3399CC",4:"#33CCCC",5:"#33FFCC"}
 colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}

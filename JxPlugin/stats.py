@@ -14,9 +14,8 @@ from ankiqt.ui.utils import getSaveFile, askUser
 #
 ######################################################################
 
-def ComputeCount(Dict,Query):  #### try to clean up, now that you are better at python
+def ComputeCount(Dict,Query): 
 	"""compute and Display an HTML report of the result of a Query against a Map"""
-	# First compute the cardinal of every equivalence class in Stuff2Val
 	Count = {"InQuery":0, "Inside":0, "L0":0}
 	Values = set(Dict.values())
 	for value in Values:
@@ -75,7 +74,7 @@ def SeenHtml(Map,Query):
 	for value in Dict.values():
 		Buffer[value] = u""
 		Color[value] = True	
-	for Stuff in mw.deck.s.column0(Query):
+	for (Stuff,Id) in mw.deck.s.all(Query):
 		if Stuff not in Seen:
 			try: 
 				value = Dict[Stuff]	  
@@ -84,9 +83,9 @@ def SeenHtml(Map,Query):
 			Seen[Stuff] = 0
 			Color[value] = not(Color[value])			
 			if Color[value]:
-				Buffer[value] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}#Stuff
+				Buffer[value] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 			else:
-				Buffer[value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}#"""<span style="color:blue">"""+ Stuff +"""</span>"""
+				Buffer[value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 	HtmlBuffer = ""
 	for key, string in Buffer.iteritems():
 		if key == 0:
@@ -110,9 +109,9 @@ def MissingHtml(Map,Query):
 		if Stuff not in Seen:
 			Color[Note] = not(Color[Note])			
 			if Color[Note]:
-				Buffer[Note] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
+				Buffer[Note] += u"""<a style="text-decoration:none;color:black;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
 			else:
-				Buffer[Note] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
+				Buffer[Note] += u"""<a style="text-decoration:none;color:blue;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
 	HtmlBuffer = u""
 	for key, string in Buffer.iteritems():
 		if key != 0:
@@ -121,27 +120,64 @@ def MissingHtml(Map,Query):
 	
 User = []
 
-def JxAddo(Stuff):
-	User.append(Stuff)
+def JxDoNothing(Stuff):
+	pass
+
+def JxAddo(Stuff,Id):
+	if (Stuff,Id) not in User:
+	    User.append((Stuff,Id))
 	JxShow()
 
 def JxClear():
 	User[0:] = []
 	JxShow()
+
+def JxRemove(Stuff,Id):
+	User.remove((Stuff,Id))
+	JxShow()
 	
 def JxShow():
 	JxHtml = u"""<style> li {font-size:x-large;}</style>
-	<center><a href=py:Clear>Clear</a>&nbsp;&nbsp;<a href=py:Export>Export</a></center>
-	<ul>"""	
-	for Entry in User:
-		JxHtml += u"""<li>%s</li>""" % Entry  
-	JxHtml += u"""</ul>"""
-	py = {u"Export":JxExport,u"Clear":JxClear}
+	<center><a href=py:Clear>Clear</a>&nbsp;&nbsp;<a href=py:Export2csv>Export (.csv)</a>&nbsp;&nbsp;<a href=py:Export2Anki>Export (.anki)</a></center>
+	<ol>"""	
+	for (Entry,Id) in User:
+		JxHtml += u"""<li style="display:inline;"><a style="color:black;text-decoration:none;"  href=Jx:JxRemove(u'%(Entry)s',u'%(Id)s')>%(Entry)s</a></li>""" % {"Entry":Entry,"Id":Id}
+	JxHtml += u"""</ol>"""
+	py = {u"Export2csv":JxExport2csv,u"Export2Anki":JxExport2Anki,u"Clear":JxClear}
 	mw.help.showText(JxHtml,py)
 
 
+# "hack" to overload mw.help.anchorClicked
+def JxAnchorClicked(url):
+        # prevent the link being handled
+        mw.help.widget.setSource(QUrl(""))
+        addr = unicode(url.toString())
+        if addr.startswith("hide:"):
+            if len(addr) > 5:
+                # hide for good
+                mw.help.config[addr] = True
+            mw.help.hide()
+            if "hide" in mw.help.handlers:
+                mw.help.handlers["hide"]()
+        elif addr.startswith("py:"):
+            key = addr[3:]
+            if key in mw.help.handlers:
+                mw.help.handlers[key]()
+	elif addr.startswith("Jx:"):
+            key = addr[3:]
+            eval(key)
+        else:
+            # open in browser
+            QDesktopServices.openUrl(QUrl(url))
+        if mw.help.focus:
+            mw.help.focus.setFocus()
+	    
+from PyQt4.QtCore import SIGNAL, QUrl
+mw.help.widget.connect(mw.help.widget, SIGNAL("anchorClicked(QUrl)"),
+                            JxAnchorClicked)    
 
-def JxExport():
+
+def JxExport2csv():
 	JxPath = unicode(getSaveFile(mw,  _("Choose file to export to"), "","Tab separated text file (.csv)", ".csv"))
 	if not JxPath:
 		return
@@ -152,13 +188,41 @@ def JxExport():
 		if not ui.utils.askUser("This file exists. Are you sure you want to overwrite it?"):
 		       return
 	import string
-	Query = u"""select cards.id from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Expression" and models.tags like "%%Japanese%%" and fields.value in (%s) group by cards.id""" % string.join([unicode("'" + Stuff + "',") for Stuff in User])[0:-1]
+#	Query = u"""select cards.id from facts,cards,fields,fieldModels, models where 
+#		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+#		fieldModels.name = "Expression" and models.tags like "%%Japanese%%" and fields.value in (%s) group by cards.id""" % string.join([unicode("'" + Stuff + "',") for Stuff in User])[0:-1]
 
-	Ids = mw.deck.s.column0(Query)
-	mw.help.showText(str(Ids))
+#	Ids = mw.deck.s.column0(Query)
+	Ids=[]
+	for (Stuff,Id) in User:
+	     Ids.append(Id)
 	from anki.exporting import TextFactExporter
 	JxExport = TextFactExporter(mw.deck)
 	JxExport.limitCardIds = Ids
 	JxExport.exportInto(JxPath)
+	mw.help.showText("Successfully exported " + str(len(Ids)) + " facts")
+	
+def JxExport2Anki():
+	JxPath = unicode(getSaveFile(mw,  _("Choose file to export to"), "","Anki Deck (*.anki)", ".anki"))
+	if not JxPath:
+		return
+	if not JxPath.lower().endswith(".anki"):
+		JxPath += ".anki"
+	if path.exists(JxPath):
+		# check for existence after extension
+		if not ui.utils.askUser("This file exists. Are you sure you want to overwrite it?"):
+		       return
+	import string
+#	Query = u"""select cards.id from facts,cards,fields,fieldModels, models where 
+#		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+#		fieldModels.name = "Expression" and models.tags like "%%Japanese%%" and fields.value in (%s) group by cards.id""" % string.join([unicode("'" + Stuff + "',") for Stuff in User])[0:-1]
+
+#	Ids = mw.deck.s.column0(Query)
+	Ids=[]
+	for (Stuff,Id) in User:
+	     Ids.append(Id)
+	from anki.exporting import AnkiExporter
+	JxExport = AnkiExporter(mw.deck)
+	JxExport.limitCardIds = Ids
+	JxExport.exportInto(JxPath)
+	
