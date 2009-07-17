@@ -51,7 +51,7 @@ ul#navlist li {
 
 #navlist a, #navlist a:link {
         margin: 0;
-        padding: 5px 9px 4px 9px;
+        padding: 5px 8px 4px 7px;
         color: #95bbae;
         border-right: 1px dashed #d1e3db;
         text-decoration: none;
@@ -77,6 +77,7 @@ ul#navlist li#active {
 <li ${Zone}><a href=py:JxStats("Zone")>Frequency</a></li>
 <li><a href=py:JxGraphs()>Graphs</a></li>
 <li ${Tools}><a href=py:JxTools()>Tools</a></li>
+<li><a href=py:JxWindow.hide()>X</a></li>
 </ul>
 </div>
 <div id="content" style="clear:both;">${Content}</div>
