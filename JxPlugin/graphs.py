@@ -115,7 +115,7 @@ cardModels.name = "Kanji ?" and fieldModels.name = "Kanji" and facts.modelId in 
                  if ease == 1 and interval > 21:
 	             OLKnownTemp[a] = OLKnownTemp[a] - 1  
 		     GradeKnownTemp[b] = GradeKnownTemp[b] - 1  
-		     AccumulatedTemp[b] += Change
+		     AccumulatedTemp[b] -= Change
                  elif interval <= 21 and nextinterval>21:
 		     OLKnownTemp[a] = OLKnownTemp[a] + 1
 		     GradeKnownTemp[b] = GradeKnownTemp[b] + 1
@@ -149,27 +149,40 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
             # parse the info to build an "day -> Word known count" array
 	    OLKnownTemp={0:0,1:0,2:0,3:0,4:0}
 	    OLKnown={}
+	    AccumulatedTemp = {1:0,2:0,3:0,4:0,5:0}
+	    Accumulated = {}
+	    
             for (OLWord,OLtime,interval,nextinterval,ease) in JLPTReviews:
-		 WordStripped=OLWord.strip(u" ")
-		 if WordStripped.endswith((u"する",u"の",u"な",u"に")):
-			if WordStripped.endswith(u"する"):
+		WordStripped=OLWord.strip(u" ")
+		if WordStripped.endswith(u"する"):
 				WordStripped=WordStripped[0:-2]
-			else:
+		elif (WordStripped.endswith(u"の") or WordStripped.endswith(u"な") or WordStripped.endswith(u"に")):
 				WordStripped=WordStripped[0:-1]
-                 if WordStripped in Word2Data:
+		if WordStripped in Word2Data:
 		     a = Word2Data[WordStripped]
-	         else:
+		else:
 	             a = 0 
-	         if ease == 1 and interval > 21:
-	             OLKnownTemp[a] = OLKnownTemp[a] - 1  
-		 elif interval <= 21 and nextinterval>21:
+		if OLWord in Word2Frequency:
+		     b = Word2Zone[OLWord]                   
+		     Change = Word2Frequency[OLWord]
+		else:
+	             Change = 0	
+	             b = 5			     
+		if ease == 1 and interval > 21:
+	             OLKnownTemp[a] = OLKnownTemp[a] - 1 
+		     AccumulatedTemp[b] -= Change		     
+		elif interval <= 21 and nextinterval>21:
 		     OLKnownTemp[a] = OLKnownTemp[a] + 1
-		 OLDay = int((OLtime-t) / 86400.0)+1
-		 OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
+		     AccumulatedTemp[b] += Change		     
+		OLDay = int((OLtime-t) / 86400.0)+1
+		OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
+		Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
 		 
             OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
+            Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}	    
             self.stats['Time2JLPT4Words'] = OLKnown 
-
+            self.stats['TAccumulated'] = Accumulated
+	    
     ######################################################################
     #
     #                               Graphs
@@ -333,6 +346,45 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         graph.set_xlim(xmin = -days, xmax = 0)
         graph.set_ylim(ymax= max (a for a in JOL[1]) + 30)
         return fig
+
+    def graphTime2Frequency4Words(self, days=30):
+        self.calcStats()
+        fig = Figure(figsize=(self.width, self.height), dpi=self.dpi)
+        graph = fig.add_subplot(111)
+
+        JOL = {}
+        for c in range(0,10): 
+	      JOL[c] = []
+        
+        OLK = self.stats['TAccumulated']
+        # have to sort the dictionnary
+        keys = OLK.keys()
+        keys.sort()
+	
+	for a in keys:
+		for c in range(0,5):	
+                   JOL[2 * c].append(a)
+                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
+        Arg =[JOL[k] for k in range(0,10)]
+        self.filledGraph(graph, days, [colorGrade[5-k] for k in range(0,5)], *Arg)
+	
+        cheat = fig.add_subplot(111)
+        b0 = cheat.bar(-1, 0, color = colorGrade[1])
+        b1 = cheat.bar(-2, 0, color = colorGrade[2])
+        b2 = cheat.bar(-3, 0, color = colorGrade[3])
+        b3 = cheat.bar(-4, 0, color = colorGrade[4])
+        b4 = cheat.bar(-5, 0, color = colorGrade[5])
+        cheat.legend([b0, b1, b2, b3, b4], [
+            _("Highest"),
+            _("High"),
+            _("Fair"),
+	    _("Low"), 
+	    _("Lowest")], loc='upper left')
+	
+        graph.set_xlim(xmin = -days, xmax = 0)
+        graph.set_ylim(ymax= 105)
+        return fig
+
 
     def filledGraph(self, graph, days, colours=["b"], *args):
         if isinstance(colours, str):
