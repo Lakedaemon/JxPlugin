@@ -24,6 +24,21 @@ JxMenu = """
 <head>
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
+<link rel="stylesheet" type="text/css" href="demo.css" /> 
+<script type="text/javascript" src="jquery.js"></script> 
+<script type="text/javascript" src="ui.core.js"></script> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script> 
+<script type="text/javascript"> 
+        $(document).ready(function() {
+            $("#s1").dropdownchecklist();
+            $("#s2").dropdownchecklist();
+            $("#s3").dropdownchecklist({ width: 100 });
+            $("#s4").dropdownchecklist({ maxDropHeight: 120 });
+            $("#s5").dropdownchecklist({ firstItemChecksAll: true, maxDropHeight: 100 });
+			$("#s6").dropdownchecklist();
+        });
+</script> 
 <style type="text/css">
 
 div#content {
@@ -103,17 +118,26 @@ def JxGraphs():
 	ui.dialogs.get("JxGraphs", mw, mw.deck)
 
 def JxTools():
-	JxHtml = """<br /><p>Adds a tag to redundant entries for the field "Expression" in the "Japanese" model of the current deck : <ul><li>the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>""" 
+	JxHtml = """<br /><p>Adds a tag to redundant entries among entries that share the following fields AND models sssss jjjjjj dddddddddd
+	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple"> 
+            <option>Low</option> 
+            <option>Medium</option> 
+            <option>High</option> 
+        </select></span>
+	<ul><li>the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>
+	<h1>Python Web Plugin Test</h1><div style="text-align:center;">
+	<object type="x-pyqt/widget" width="100" height="20"></object></div>
+	<p>This is a Web plugin written in Python.</p><p><code> 
+            $("#s1").dropdownchecklist();
+        </code>  </p><p>     </p>  """ 
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
+	from loaddata import JxResources
+	JxWindow.setHtml(JxPage,QUrl.fromLocalFile(JxResources+os.sep))
+
 	
-	JxWindow.setHtml(JxPage)
-
-def onJxMenu():
-	JxStats('JLPT')
-
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango}
 
@@ -176,6 +200,84 @@ JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 JxWindow.hide()
+
+
+
+import sys
+from PyQt4.QtCore import QSize, Qt
+from PyQt4.QtGui import *
+from PyQt4.QtWebKit import *
+class WebWidget(QWidget):
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setBrush(Qt.white)
+        painter.setPen(Qt.black)
+        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+        painter.setBrush(Qt.red)
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(self.width()/4, self.height()/4,
+                         self.width()/2, self.height()/2)
+        painter.end()
+    
+    def sizeHint(self):
+        return QSize(100, 100)
+	
+def onJxMenu():
+	JxStats('JLPT')
+
+class WebPluginFactory(QWebPluginFactory):
+
+    def __init__(self, parent = None):
+        QWebPluginFactory.__init__(self, parent)
+    
+    def create(self, mimeType, url, names, values):
+        if mimeType == "x-pyqt/widget":
+            return JxField()
+    
+    def plugins(self):
+        plugin = QWebPluginFactory.Plugin()
+        plugin.name = "PyQt Widget"
+        plugin.description = "An example Web plugin written with PyQt."
+        mimeType = QWebPluginFactory.MimeType()
+        mimeType.name = "x-pyqt/widget"
+        mimeType.description = "PyQt widget"
+        mimeType.fileExtensions = []
+        plugin.mimeTypes = [mimeType]
+        print "plugins"
+        return [plugin]
+	
+class JxFieldb(QComboBox):
+    def __init__(self, parent = None):
+        QComboBox.__init__(self, parent)
+        Rows = mw.deck.s.all(u"""select name, id from models""")
+        self.SizeAdjustPolicy(QComboBox.AdjustToContents)
+        for (Name, Id) in Rows:
+		self.addItem(Name)
+        self.show()
+	
+class JxField(QMenuBar):	
+    def __init__(self, parent = None):
+	QMenuBar.__init__(self, parent)
+	Menu = QMenu("Fields",self)
+
+	Rows = mw.deck.s.all(u"""select name, id from models""")
+	for (Name, Id) in Rows:
+              Menu.addAction(Name)
+	self.addMenu(Menu)
+	self.show()
+
+
+
+
+
+QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
+# with this you can enable QWidget inside a QWebView
+QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
+factory = WebPluginFactory()
+JxWindow.page().setPluginFactory(factory)	
+	
 
 
 def exit_JxPlugin():
