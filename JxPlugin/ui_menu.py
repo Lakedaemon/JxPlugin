@@ -30,13 +30,8 @@ JxMenu = """
 <script type="text/javascript" src="ui.core.js"></script> 
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script> 
 <script type="text/javascript"> 
-        $(document).ready(function() {
-            $("#s1").dropdownchecklist();
-            $("#s2").dropdownchecklist();
-            $("#s3").dropdownchecklist({ width: 100 });
-            $("#s4").dropdownchecklist({ maxDropHeight: 120 });
-            $("#s5").dropdownchecklist({ firstItemChecksAll: true, maxDropHeight: 100 });
-			$("#s6").dropdownchecklist();
+        $(document).ready(function(){
+	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
         });
 </script> 
 <style type="text/css">
@@ -117,25 +112,54 @@ QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldMode
 def JxGraphs():
 	ui.dialogs.get("JxGraphs", mw, mw.deck)
 
+
+
+JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")+os.sep)
+
 def JxTools():
-	JxHtml = """<br /><p>Adds a tag to redundant entries among entries that share the following fields AND models sssss jjjjjj dddddddddd
+	FieldsBuffer = u""
+	FieldsBuffer +=  u"""<optgroup label="Models">"""
+	FieldsBuffer +=  u"""<option selected="selected">All</option>"""
+
+	Rows = mw.deck.s.all(u"""select name, id from models order by name""")
+	mw.help.showText(str(Rows))
+	for (Name, Id) in Rows:
+		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":Id}
+	FieldsBuffer +=  u"""</optgroup>"""
+	FieldsBuffer +=  u"""<optgroup label="Fields">"""
+	Rows = mw.deck.s.all(u"""select name, id from fieldModels order by name""")
+	mw.help.showText(str(Rows))
+	for (Name, Id) in Rows:
+		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":Id}
+	FieldsBuffer +=  u"""</optgroup>"""
+	JxHtml = u"""<br /><p>Adds a tag to redundant entries among entries that share the following fields AND models 
 	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple"> 
-            <option>Low</option> 
-            <option>Medium</option> 
-            <option>High</option> 
-        </select></span>
+%s
+        </select></span>    <p> 
+        <select id="s6" multiple="multiple"> 
+			<optgroup label="Letters"> 
+				<option>A</option> 
+				<option>B</option> 
+				<option selected="selected">C</option> 
+			</optgroup> 
+            <optgroup label="Numbers"> 
+				<option>1</option> 
+				<option>2</option> 
+				<option selected="selected">3</option> 
+			</optgroup> 
+        </select> 
+    </p> 
 	<ul><li>the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>
 	<h1>Python Web Plugin Test</h1><div style="text-align:center;">
 	<object type="x-pyqt/widget" width="100" height="20"></object></div>
 	<p>This is a Web plugin written in Python.</p><p><code> 
             $("#s1").dropdownchecklist();
-        </code>  </p><p>     </p>  """ 
+        </code>  </p><p>     </p>  """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
-	from loaddata import JxResources
-	JxWindow.setHtml(JxPage,QUrl.fromLocalFile(JxResources+os.sep))
+	JxWindow.setHtml(JxPage,JxResourcesUrl)
 
 	
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
@@ -199,6 +223,7 @@ JxWindow.setMinimumSize(QtCore.QSize(310, 400))
 JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
+
 JxWindow.hide()
 
 
@@ -277,7 +302,7 @@ QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
 QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
 factory = WebPluginFactory()
 JxWindow.page().setPluginFactory(factory)	
-	
+
 
 
 def exit_JxPlugin():

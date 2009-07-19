@@ -173,7 +173,7 @@
 				var text = option.text();
 				var value = option.val();
 				var selected = option.attr("selected");
-				var item = self._createDropItem(index, value, text, selected, indent);
+				var item = self._createDropItem(index, value,text, selected, indent);
 				container.append(item);
             })
 		},
@@ -185,19 +185,19 @@
             var allCheckboxes = dropWrapper.find("input");
             if (options.firstItemChecksAll) {
                 // if firstItemChecksAll is true, check all checkboxes if the first one is checked
-                if (senderCheckbox.attr("index") == 0) {
+                if (senderCheckbox.attr("value") =="All") {//OL senderCheckbox.attr(index)=0 
                     allCheckboxes.attr("checked", senderCheckbox.attr("checked"));
                 } else {
                     // check the first checkbox if all the other checkboxes are checked
                     var allChecked;
                     allChecked = true;
                     allCheckboxes.each(function(index) {
-                        if (index > 0) {
+                        if ($(this).attr("value")!="All")  {//OL index > 0 
                             var checked = $(this).attr("checked");
                             if (!checked) allChecked = false;
                         }
                     });
-                    var firstCheckbox = allCheckboxes.filter(":first");
+                    var firstCheckbox = allCheckboxes.filter("[value=All]"); //OL
                     firstCheckbox.attr("checked", false);
                     if (allChecked) {
                         firstCheckbox.attr("checked", true);
@@ -217,9 +217,12 @@
         // Updates the text shown in the control depending on the checked (selected) items
         _updateControlText: function() {
             var self = this, sourceSelect = this.sourceSelect, options = this.options, controlWrapper = this.controlWrapper, dropWrapper = this.dropWrapper;
-            var firstSelect = sourceSelect.find("option:first");
+            var firsttSelect = sourceSelect.find("option");
+           var firstSelect = firsttSelect.filter(":first");            
             var allSelected = null != firstSelect && firstSelect.attr("selected");
+
             var selectOptions = sourceSelect.find("option");
+            
             var text = self._formatText(selectOptions, options.firstItemChecksAll, allSelected);
             var controlLabel = controlWrapper.find(".ui-dropdownchecklist-text");
             controlLabel.text(text);
@@ -227,15 +230,21 @@
         },
         // Formats the text that is shown in the control
         _formatText: function(selectOptions, firstItemChecksAll, allSelected) {
+                 allSelected = true;//OL
+                selectOptions.each(function() {//OL
+                    if (!$(this).attr("selected") && $(this).attr("value")!="All") {//OL
+                        allSelected=false;//OL
+                    }//OL
+                });//OL
             var text;
             if (firstItemChecksAll && allSelected) {
                 // just set the text from the first item
-                text = selectOptions.filter(":first").text();
+                text = selectOptions.filter("[value=All]").text();//Ol
             } else {
                 // concatenate the text from the checked items
                 text = "";
                 selectOptions.each(function() {
-                    if ($(this).attr("selected")) {
+                    if ($(this).attr("selected") && $(this).attr("value")!="All") {//OL
                         text += $(this).text() + ", ";
                     }
                 });

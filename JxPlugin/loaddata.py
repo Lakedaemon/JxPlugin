@@ -209,4 +209,3 @@ MapZoneKanji = {"From":"Kanji","To":"Frequency","Legend":{1:"Highest",2:"High",3
 MapJouyouKanji = {"From":"Kanji","To":"Jouyou","Legend":{1:"Grade 1",2:"Grade 2",3:"Grade 3",4:"Grade 4",5:"Grade 5",6:"Grade 6","HS":"H.School"},"Dict":Kanji2Grade}
 
 
-JxResources = os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")
