@@ -128,51 +128,52 @@ def JxTools():
 	FieldsBuffer +=  u"""<optgroup label="Fields">"""
 	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
 	for Name in Rows:
-		FieldsBuffer +=  u"""<option selected="selected">%(Name)s</option> """ % {"Name":Name}
+		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br /><p>Adds a tag to redundant entries among those that share the following fields and models checked :  
-	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple"> 
-%s
-        </select></span>
-	<a href=py:JxGetInfo()>Get Info</a></center>
-	<ul><li id="gah">the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>
-	<h1>Python Web Plugin Test</h1><div style="text-align:center;">
-	<object type="x-pyqt/widget" width="100" height="20"></object></div>
-	<p id="myHeader">This is a Web plugin written in Python.</p><p><code> 
-            $("#s1").dropdownchecklist();
-        </code>  </p><p>     </p>  """ % FieldsBuffer
+	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> 
+	<center><span style="vertical-align:middle;">
+	<select style="display:inline;" id="s1" multiple="multiple">%s</select>
+	</span> &nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a></center>
+	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul></p>
+	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
 
+	
 JxJavaScript = u"""
 	function getInfo(){
-		return document.getElementById("%s").innerHTML;
+	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
 	}
 	getInfo();
 	"""
+# To Do : Implement Tags too	
 def JxGetInfo():
+	Models = []
 	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
-	Buffer=u""
 	for Name in Rows:
-		Buffer += JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % (u"Model." + Name)).toString()
+		Value = JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % {"Id":u"Model." + Name}).toString()
+		if Value != u"":
+			Models.append(Value)
+	Fields = []
+	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
+	for Name in Rows:
+		Value = JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % {"Id":u"Field." + Name}).toString()
+		if Value != u"":
+			Fields.append(Value)	
+	
+	return """select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
+		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
+		fieldModels.name in (%(Fields)s) and models.name in  (%(Models)s) group by facts.id order by fields.value """ % ({"Fields":JxList2SQL(Fields),"Models":JxList2SQL(Models)})
+	#mw.help.showText(str(Models)+str(Fields)+Query)		#Debug
 
-		"""
 
-function getFields(){
-		//return "Embedded UFCG";
-		var x=document.getElementById("Model.Kanji");
-		alert(x.innerHTML);
-		return x.innerHTML;
-		}
-		getFields();"""
-		
-		
-		
 
-	mw.help.showText(Buffer)
+
+	
+	
 	
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango}
@@ -264,56 +265,61 @@ class WebWidget(QWidget):
 def onJxMenu():
 	JxStats('JLPT')
 
-class WebPluginFactory(QWebPluginFactory):
-
-    def __init__(self, parent = None):
-        QWebPluginFactory.__init__(self, parent)
-    
-    def create(self, mimeType, url, names, values):
-        if mimeType == "x-pyqt/widget":
-            return JxField()
-    
-    def plugins(self):
-        plugin = QWebPluginFactory.Plugin()
-        plugin.name = "PyQt Widget"
-        plugin.description = "An example Web plugin written with PyQt."
-        mimeType = QWebPluginFactory.MimeType()
-        mimeType.name = "x-pyqt/widget"
-        mimeType.description = "PyQt widget"
-        mimeType.fileExtensions = []
-        plugin.mimeTypes = [mimeType]
-        print "plugins"
-        return [plugin]
-	
-class JxFieldb(QComboBox):
-    def __init__(self, parent = None):
-        QComboBox.__init__(self, parent)
-        Rows = mw.deck.s.all(u"""select name, id from models""")
-        self.SizeAdjustPolicy(QComboBox.AdjustToContents)
-        for (Name, Id) in Rows:
-		self.addItem(Name)
-        self.show()
-	
-class JxField(QMenuBar):	
-    def __init__(self, parent = None):
-	QMenuBar.__init__(self, parent)
-	Menu = QMenu("Fields",self)
-
-	Rows = mw.deck.s.all(u"""select name, id from models""")
-	for (Name, Id) in Rows:
-              Menu.addAction(Name)
-	self.addMenu(Menu)
-	self.show()
 
 
 
 
 
+# needed to run javascript inside JxWindow
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
+
+
+# QWidget inside QWebView experiment
+#class WebPluginFactory(QWebPluginFactory):
+#
+#    def __init__(self, parent = None):
+#        QWebPluginFactory.__init__(self, parent)
+#    
+#    def create(self, mimeType, url, names, values):
+#        if mimeType == "x-pyqt/widget":
+#            return JxField()
+    
+#    def plugins(self):
+#        plugin = QWebPluginFactory.Plugin()
+#        plugin.name = "PyQt Widget"
+#        plugin.description = "An example Web plugin written with PyQt."
+#        mimeType = QWebPluginFactory.MimeType()
+#        mimeType.name = "x-pyqt/widget"
+#        mimeType.description = "PyQt widget"
+#        mimeType.fileExtensions = []
+#        plugin.mimeTypes = [mimeType]
+#        print "plugins"
+#        return [plugin]
+	
+#class JxFieldb(QComboBox):
+#    def __init__(self, parent = None):
+#        QComboBox.__init__(self, parent)
+#        Rows = mw.deck.s.all(u"""select name, id from models""")
+#        self.SizeAdjustPolicy(QComboBox.AdjustToContents)
+#        for (Name, Id) in Rows:
+#		self.addItem(Name)
+#        self.show()
+	
+#class JxField(QMenuBar):	
+#    def __init__(self, parent = None):
+#	QMenuBar.__init__(self, parent)
+#	Menu = QMenu("Fields",self)
+#
+#	Rows = mw.deck.s.all(u"""select name, id from models""")
+#	for (Name, Id) in Rows:
+#              Menu.addAction(Name)
+#	self.addMenu(Menu)
+#	self.show()
+
 # with this you can enable QWidget inside a QWebView
-QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
-factory = WebPluginFactory()
-JxWindow.page().setPluginFactory(factory)	
+#QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
+#factory = WebPluginFactory()
+#JxWindow.page().setPluginFactory(factory)	
 
 
 

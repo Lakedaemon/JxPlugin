@@ -6,13 +6,21 @@
 # ---------------------------------------------------------------------------
 from ankiqt import mw
 from anki.utils import canonifyTags, addTags
-import time
+import time 
+import string
 
-def JxTagDuplicates():
+	
+def JxList2SQL(List):
+	if List==[]:
+		return u''
+	else:
+		return string.join([unicode("'" + Stuff + "',") for Stuff in List])[0:-1]
 
-	Query = """select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
-		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
-		fieldModels.name = "Expression" and models.tags like "%Japanese%" group by facts.id order by fields.value """
+def JxTagDuplicates(Query):
+
+#	Query = """select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
+#		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
+#		fieldModels.name = "Expression" and models.tags like "%Japanese%" group by facts.id order by fields.value """
 
 	Rows = mw.deck.s.all(Query)
 	Seen={}
