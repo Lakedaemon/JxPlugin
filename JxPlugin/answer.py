@@ -40,6 +40,7 @@ def append_JxPlugin(Answer,Card):
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
+		Expression = Card.fact[key].strip()
 		break
 	    except KeyError:
                 Tango = None		    
@@ -57,6 +58,7 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[key] = u""
 
     JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
+    if Kanji==None: JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
     JxAnswerDict[u"Css"] = """
     <style> 
     .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
