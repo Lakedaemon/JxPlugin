@@ -15,6 +15,7 @@ from loaddata import *
 #
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
+KanjiRange=[c for c in range(ord(u'亜'),ord(u'黑'))] + [c for c in range(ord(u'纊'),ord(u'黑'))]
 
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -40,7 +41,7 @@ def append_JxPlugin(Answer,Card):
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
-		Expression = Card.fact[key].strip()
+		Expression = ''.join([c for c in Card.fact[key].strip() if ord(c) in KanjiRange])
 		break
 	    except KeyError:
                 Tango = None		    
