@@ -59,7 +59,10 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[key] = u""
 
     JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    if Kanji==None: JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
+    if Kanji==None: 
+	    JxAnswerDict[u"WStroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
+    else:
+           JxAnswerDict[u"WStroke"] = u"" 	    
     JxAnswerDict[u"Css"] = """
     <style> 
     .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
