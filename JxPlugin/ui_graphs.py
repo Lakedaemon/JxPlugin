@@ -94,7 +94,7 @@ class JxGraphWindow(object):
 		self.vbox.addWidget(WJLPT)
 		self.widgets.append(WJLPT)
 
-		TFreq = AdjustableFigure(self.parent, 'TFreq', Jxdg.graphTime2Frequency4Kanji, self.range) 
+		TFreq = AdjustableFigure(self.parent, 'TFreq', Jxdg.graphTime2Frequency4Words, self.range) 
 		TFreq.addWidget(QLabel(_("<h1>Tango Accumulated Frequency (('Recognition' card model)</h1>")))
 		self.vbox.addWidget(TFreq)
 		self.widgets.append(TFreq)
