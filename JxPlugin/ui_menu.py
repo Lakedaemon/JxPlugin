@@ -119,40 +119,26 @@ JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins"
 def JxTools():
 	FieldsBuffer = u""
 	FieldsBuffer +=  u"""<optgroup label="Models">"""
-	FieldsBuffer +=  u"""<option selected="selected">All</option>"""
+	FieldsBuffer +=  u"""<option id="Model" selected="selected">All</option>"""
 
-	Rows = mw.deck.s.all(u"""select name, id from models order by name""")
-	mw.help.showText(str(Rows))
-	for (Name, Id) in Rows:
-		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":Id}
+	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
+	for Name in Rows:
+		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Model."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
 	FieldsBuffer +=  u"""<optgroup label="Fields">"""
-	Rows = mw.deck.s.all(u"""select name, id from fieldModels order by name""")
-	mw.help.showText(str(Rows))
-	for (Name, Id) in Rows:
-		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":Id}
+	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
+	for Name in Rows:
+		FieldsBuffer +=  u"""<option selected="selected">%(Name)s</option> """ % {"Name":Name}
 	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br /><p>Adds a tag to redundant entries among entries that share the following fields AND models 
+	JxHtml = u"""<br /><p>Adds a tag to redundant entries among those that share the following fields and models checked :  
 	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple"> 
 %s
-        </select></span>    <p> 
-        <select id="s6" multiple="multiple"> 
-			<optgroup label="Letters"> 
-				<option>A</option> 
-				<option>B</option> 
-				<option selected="selected">C</option> 
-			</optgroup> 
-            <optgroup label="Numbers"> 
-				<option>1</option> 
-				<option>2</option> 
-				<option selected="selected">3</option> 
-			</optgroup> 
-        </select> 
-    </p> 
-	<ul><li>the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>
+        </select></span>
+	<a href=py:JxGetInfo()>Get Info</a></center>
+	<ul><li id="gah">the younger redundant entries get the "JxDuplicate" tag</li><li>the oldest redundant entry gets the "JxMasterDuplicate" tag</li></ul></p><center><a href=py:JxTagDuplicates()>Tag Duplicates</a></center>
 	<h1>Python Web Plugin Test</h1><div style="text-align:center;">
 	<object type="x-pyqt/widget" width="100" height="20"></object></div>
-	<p>This is a Web plugin written in Python.</p><p><code> 
+	<p id="myHeader">This is a Web plugin written in Python.</p><p><code> 
             $("#s1").dropdownchecklist();
         </code>  </p><p>     </p>  """ % FieldsBuffer
 	
@@ -161,6 +147,32 @@ def JxTools():
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
 
+JxJavaScript = u"""
+	function getInfo(){
+		return document.getElementById("%s").innerHTML;
+	}
+	getInfo();
+	"""
+def JxGetInfo():
+	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
+	Buffer=u""
+	for Name in Rows:
+		Buffer += JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % (u"Model." + Name)).toString()
+
+		"""
+
+function getFields(){
+		//return "Embedded UFCG";
+		var x=document.getElementById("Model.Kanji");
+		alert(x.innerHTML);
+		return x.innerHTML;
+		}
+		getFields();"""
+		
+		
+		
+
+	mw.help.showText(Buffer)
 	
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango}
