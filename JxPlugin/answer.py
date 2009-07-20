@@ -38,6 +38,7 @@ def append_JxPlugin(Answer,Card):
     
     Append = re.search(u"\${.*?}",Answer) == None
 
+    Expression = None
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -59,12 +60,11 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[key] = u""
 
     JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    if Kanji==None: 
+    if Kanji==None and Expression!=None: 
 	    JxAnswerDict[u"WStroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
     else:
            JxAnswerDict[u"WStroke"] = u"" 	    
-    JxAnswerDict[u"Css"] = """
-    <style> 
+    JxAnswerDict[u"Css"] = """<style> 
     .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
     .Kana { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.8em; }
     .Romaji { font-family: Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.5em;}
