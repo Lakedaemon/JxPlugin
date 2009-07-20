@@ -28,12 +28,27 @@ JxMenu = """
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
 <script type="text/javascript" src="jquery.js"></script> 
 <script type="text/javascript" src="ui.core.js"></script> 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+<script language="javascript" type="text/javascript" 
+        src="firebug-lite.js"></script>
+
 <script type="text/javascript"> 
         $(document).ready(function(){
 	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
         });
-</script> 
+	
+	
+	$(document).ready(function(){
+    $('.editable').editable(function(element){
+      // function that will be called when the
+      // user finishes editing and clicks outside of editable area
+      JxString.String = element.innerHTML;
+    });
+  });
+	
+	
+</script>
+<script type="text/javascript" src="editinplace.js"></script> 
 <style type="text/css">
 
 div#content {
@@ -117,6 +132,8 @@ def JxGraphs():
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")+os.sep)
 
+
+
 def JxTools():
 	FieldsBuffer = u""
 	FieldsBuffer +=  u"""<optgroup label="Models">"""
@@ -131,19 +148,40 @@ def JxTools():
 	for Name in Rows:
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> 
+	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> <a href="py:mw.help.showText(JxString.property('String').toString())">rahhh</a>
 	<center><span style="vertical-align:middle;">
 	<select style="display:inline;" id="s1" multiple="multiple">%s</select>
 	</span> &nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a></center>
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul></p>
+	<h3 style="text-align:center;">Answer field</h3> <p id="JxString" class="editable" contenteditable="true">yo essai</p>
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
-	JxWindow.setHtml(JxPage,JxResourcesUrl)
-
 	
+	Jx.setObjectName("Jx")
+	Jx.setProperty("foo",QVariant("fdergg"))	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)
+	JxWindow.page().mainFrame().evaluateJavaScript("Jx.foo='bahhhhhhh'")
+
+	JxString.setObjectName("JxString")	
+	JxString.setProperty("String",QVariant(""))
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
+	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
+	mw.help.showText(JxString.property("String").toString())
+	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
+
+
+	JxWindow.setHtml(JxPage,JxResourcesUrl)
+	mw.help.showText(JxString.property("String").toString())
+#	JxWindow.page().mainFrame().addToJavaScriptWindowObject(u"JxString", JxString);
+#	JxString.Cleared()
+#	mw.connect( JxWindow.page().mainFrame(), QtCore.SIGNAL('javaScriptWindowObjectCleared()'), JxString.Cleared);
+
+
+
+
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
@@ -233,8 +271,8 @@ sizePolicy.setHorizontalStretch(0)
 sizePolicy.setVerticalStretch(0)
 sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
 JxWindow.setSizePolicy(sizePolicy)
-JxWindow.setMinimumSize(QtCore.QSize(310, 400))
-JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
+JxWindow.setMinimumSize(QtCore.QSize(1010, 400))
+JxWindow.setMaximumSize(QtCore.QSize(1010, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 
@@ -268,13 +306,28 @@ def onJxMenu():
 
 
 
-
+class JxcString(QObject):
+	def __init__(self,String=u""):
+		QObject.__init__(self)
+		self.String = String
+	def setString(self,Stuff):
+		self.String = Stuff
+	def debugString(self):
+		mw.help.showText(u"mmmhhhh"+self.String)
+	def printString(self):
+		return self.String	
+	def Cleared(self):
+		JxWindow.page().mainFrame().addToJavaScriptWindowObject(u"JxString", self);
+			
+JxString = JxcString(u"Lol")
 
 
 # needed to run javascript inside JxWindow
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
-
-
+QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptCanOpenWindows, True)
+def JxJavaScriptPrint2Console(Message,Int, Source):
+	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
+JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console
 # QWidget inside QWebView experiment
 #class WebPluginFactory(QWebPluginFactory):
 #
@@ -372,3 +425,18 @@ def init_JxPlugin():
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
 print 'Japanese Extended Plugin loaded'
+
+class JxcString(QObject):
+	def __init__(self, String):
+		QObject.__init__(self)
+		self.String = String
+		
+Jx=QObject()
+
+def Roh():
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)	
+JxString=QObject()
+
+def Rah():
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)	
