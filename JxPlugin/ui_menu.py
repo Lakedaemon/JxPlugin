@@ -121,7 +121,7 @@ ul#navlist li#active {
 <li><a href=py:JxWindow.hide()>X</a></li>
 </ul>
 </div>
-<div id="content" style="clear:both;">${Content}</div><div class="edit" id="div_1">Dolor</div>
+<div id="content" style="clear:both;">${Content}</div>
 </body>
 </html>
 """.decode('utf-8')
@@ -169,17 +169,13 @@ def JxTools():
 	<select style="display:inline;" id="s1" multiple="multiple">%s</select>
 	</span> &nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a></center>
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul></p>
-	<h3 style="text-align:center;">Answer field</h3> <p id="JxString" class="editable" contenteditable="true">yo essai</p>
+	<h3 style="text-align:center;">Answer field</h3>Modeles : <div class="edit" id="div_1">Models</div><br /><p id="JxString" class="editable" contenteditable="true">yo essai</p><br />
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
-	Jx.setObjectName("Jx")
-	Jx.setProperty("foo",QVariant("fdergg"))	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)
-	JxWindow.page().mainFrame().evaluateJavaScript("Jx.foo='bahhhhhhh'")
 
 	JxString.setObjectName("JxString")	
 	JxString.setProperty("String",QVariant(""))
@@ -191,9 +187,7 @@ def JxTools():
 
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
 	mw.help.showText(JxString.property("String").toString())
-#	JxWindow.page().mainFrame().addToJavaScriptWindowObject(u"JxString", JxString);
-#	JxString.Cleared()
-#	mw.connect( JxWindow.page().mainFrame(), QtCore.SIGNAL('javaScriptWindowObjectCleared()'), JxString.Cleared);
+
 
 
 
@@ -446,13 +440,8 @@ class JxcString(QObject):
 	def __init__(self, String):
 		QObject.__init__(self)
 		self.String = String
-		
-Jx=QObject()
-
-def Roh():
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)	
+			
 JxString=QObject()
 
 def Rah():
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx",Jx)	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)	
