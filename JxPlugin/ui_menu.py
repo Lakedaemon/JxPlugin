@@ -26,11 +26,12 @@ JxMenu = """
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
+<script language="javascript" type="text/javascript" src="firebug-lite-compressed.js"></script>
 <script type="text/javascript" src="jquery.js"></script> 
 <script type="text/javascript" src="ui.core.js"></script> 
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-<script language="javascript" type="text/javascript" 
-        src="firebug-lite.js"></script>
+<script type="text/javascript" src="jquery.jeditable.js"></script> 
+<script type="text/javascript" src="editinplace.js"></script>
 
 <script type="text/javascript"> 
         $(document).ready(function(){
@@ -38,17 +39,32 @@ JxMenu = """
         });
 	
 	
-	$(document).ready(function(){
-    $('.editable').editable(function(element){
+
+	$(document).ready(function(){	
+	 $('.edit').editable(function(value, settings) { 
+	       JxString.String = value;
+     console.log(this);
+     console.log(value);
+     console.log(settings);
+     return(value);
+  }, { 
+     type    : 'textarea',
+     submit  : 'OK',
+ });
+ 
+ 
+ 	$(document).ready(function(){
+    $('.editable').AVeditable(function(element){
       // function that will be called when the
       // user finishes editing and clicks outside of editable area
       JxString.String = element.innerHTML;
     });
   });
-	
-	
+ 
+ 
+  });
 </script>
-<script type="text/javascript" src="editinplace.js"></script> 
+
 <style type="text/css">
 
 div#content {
@@ -105,7 +121,7 @@ ul#navlist li#active {
 <li><a href=py:JxWindow.hide()>X</a></li>
 </ul>
 </div>
-<div id="content" style="clear:both;">${Content}</div>
+<div id="content" style="clear:both;">${Content}</div><div class="edit" id="div_1">Dolor</div>
 </body>
 </html>
 """.decode('utf-8')
