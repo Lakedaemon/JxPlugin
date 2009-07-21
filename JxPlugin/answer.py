@@ -44,7 +44,8 @@ def append_JxPlugin(Answer,Card):
 		Expression = ''.join([c for c in Card.fact[key].strip() if ord(c) in KanjiRange])
 		break
 	    except KeyError:
-                Tango = None		    
+                Tango = None	
+                Expression = None	
 		
     for key in [u"Kanji",u"漢字"]:
 	    try:
@@ -59,7 +60,7 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[key] = u""
 
     JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    if Kanji==None: 
+    if Kanji==None and Expression != None: 
 	    JxAnswerDict[u"WStroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
     else:
            JxAnswerDict[u"WStroke"] = u"" 	    
