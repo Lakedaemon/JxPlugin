@@ -33,7 +33,7 @@ function addEvent(el, type, fn){
 
 
 if (jQuery){
-	jQuery.fn.editable = function(onChange){
+	jQuery.fn.Jxeditable = function(onChange){
 		return this.each(function(){
 			editableAreas.add(this, onChange);
 		});
