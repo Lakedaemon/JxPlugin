@@ -164,19 +164,19 @@ def JxTools():
 	for Name in Rows:
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> <a href="py:mw.help.showText(JxString.property('String').toString())">rahhh</a>
+	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> <a href="py:mw.help.showText(JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
 	<center><span style="vertical-align:middle;">
 	<select style="display:inline;" id="s1" multiple="multiple">%s</select>
 	</span> &nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a></center>
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul></p>
-	<h3 style="text-align:center;">Answer field</h3>Modeles : <div class="edit" id="div_1">Models</div><br /><p id="JxString" class="editable" contenteditable="true">yo essai</p><br />
+	<h3 style="text-align:center;">Answer field</h3>The card model ?? of deck model <span class="edit" id="div_1">Models</span> hast the display settings : <br /><p id="JxString" class="editable" contenteditable="true">yo essai</p><br />
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
-
+	JxString=QObject(JxBase)
 	JxString.setObjectName("JxString")	
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
@@ -441,7 +441,10 @@ class JxcString(QObject):
 		QObject.__init__(self)
 		self.String = String
 			
-JxString=QObject()
-
+JxBase=QObject()
+#JxString=QObject()
 def Rah():
+	JxString = JxBase.findChild(QObject,'JxString')
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)	
+#def Rah():
+#	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
