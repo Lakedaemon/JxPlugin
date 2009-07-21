@@ -15,7 +15,7 @@ from loaddata import *
 #
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
-KanjiRange=[c for c in range(ord(u'亜'),ord(u'黑'))] + [c for c in range(ord(u'纊'),ord(u'黑'))]
+KanjiRange=[c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
 
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -45,7 +45,8 @@ def append_JxPlugin(Answer,Card):
 		Expression = ''.join([c for c in Card.fact[key].strip() if ord(c) in KanjiRange])
 		break
 	    except KeyError:
-                Tango = None		    
+                Tango = None	
+                Expression = None	
 		
     for key in [u"Kanji",u"漢字"]:
 	    try:
@@ -60,7 +61,7 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[key] = u""
 
     JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    if Kanji==None and Expression!=None: 
+    if Kanji==None and Expression != None: 
 	    JxAnswerDict[u"WStroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
     else:
            JxAnswerDict[u"WStroke"] = u"" 	    
