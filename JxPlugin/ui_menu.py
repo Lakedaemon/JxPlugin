@@ -35,21 +35,56 @@ JxMenu = """
 
 <script type="text/javascript"> 
         $(document).ready(function(){
-	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
-        });
+	
+		$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
+
+	});
 	
 	
 
 	$(document).ready(function(){	
-	 $('.edit').editable(function(value, settings) { 
+	
+	
+	
+	 $('.edit_Model').editable(function(value, settings) { 
 	       JxString.String = value;
      console.log(this);
      console.log(value);
      console.log(settings);
      return(value);
   }, { 
-     type    : 'textarea',
-     submit  : 'OK',
+     onblur : 'submit',
+    indicator : '<img src="img/indicator.gif">',
+    data   : "${DeckModels}",
+    type   : "select",
+    style  : "inherit",
+    submitdata : function() {
+      return {id : 2};
+    }
+  });    
+    
+    
+    	 $('.edit_CardModel').editable(function(value, settings) { 
+	       JxString.String = value;
+     console.log(this);
+     console.log(value);
+     console.log(settings);
+     return(value);
+  }, { 
+     //type    : 'textarea',
+     //submit  : 'OK',
+     onblur : 'submit',
+    indicator : '<img src="img/indicator.gif">',
+    data   : "{'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit'}",
+    type   : "select",
+    //submit : "OK",
+    style  : "inherit",
+    submitdata : function() {
+      return {id : 2};
+    }
+    
+    
+    
  });
  
  
@@ -59,9 +94,9 @@ JxMenu = """
       // user finishes editing and clicks outside of editable area
       JxString.String = element.innerHTML;
     });
-  });
+
  
- 
+   });
   });
 </script>
 
@@ -152,28 +187,39 @@ JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins"
 
 def JxTools():
 	FieldsBuffer = u""
-	FieldsBuffer +=  u"""<optgroup label="Models">"""
 	FieldsBuffer +=  u"""<option id="Model" selected="selected">All</option>"""
-
+	FieldsBuffer +=  u"""<optgroup label="Models">"""
+	JxPopulateModels = []
 	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
 	for Name in Rows:
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Model."+ Name}
+		JxPopulateModels.append(Name)
+		
 	FieldsBuffer +=  u"""</optgroup>"""
 	FieldsBuffer +=  u"""<optgroup label="Fields">"""
 	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
 	for Name in Rows:
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br /><h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3> <a href="py:mw.help.showText(JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
-	<center><span style="vertical-align:middle;">
-	<select style="display:inline;" id="s1" multiple="multiple">%s</select>
-	</span> &nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a></center>
-	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul></p>
-	<h3 style="text-align:center;">Answer field</h3>The card model ?? of deck model <span class="edit" id="div_1">Models</span> hast the display settings : <br /><p id="JxString" class="editable" contenteditable="true">yo essai</p><br />
+	JxHtml = u"""<br />
+	
+	<h3 style="text-align:center;">DEBUG</h3>
+	<a href="py:mw.help.showText(JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
+	
+	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
+	<center>
+	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple">%s</select></span> 
+	&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
+	</center>
+	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
+
+	<h3 style="text-align:center;">ANSWER FIELDS</h3>
+	<p>The card model <b class="edit_CardModel" id="div_1">Card Models</b> of deck model <b class="edit_Model" id="div_1">Models</b> has the display settings : <i id="JxString" class="editable" contenteditable="true">yo essai</i></p>
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
+	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
 	JxString=QObject(JxBase)
@@ -181,12 +227,12 @@ def JxTools():
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
 	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
-	mw.help.showText(JxString.property("String").toString())
+#	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
 
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
-	mw.help.showText(JxString.property("String").toString())
+#	mw.help.showText(JxString.property("String").toString())
 
 
 
@@ -281,8 +327,8 @@ sizePolicy.setHorizontalStretch(0)
 sizePolicy.setVerticalStretch(0)
 sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
 JxWindow.setSizePolicy(sizePolicy)
-JxWindow.setMinimumSize(QtCore.QSize(1010, 400))
-JxWindow.setMaximumSize(QtCore.QSize(1010, 16777215))
+JxWindow.setMinimumSize(QtCore.QSize(310, 400))
+JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 
