@@ -46,7 +46,7 @@ $(document).ready(function(){
     $('.editable').AVeditable(function(element){
       // function that will be called when the
       // user finishes editing and clicks outside of editable area
-      JxString.String = element.innerHTML;
+      Jx_Model.String = element.innerHTML;
     });
 
  
@@ -60,8 +60,9 @@ $(document).ready(function(){
 	
 	
 $('.edit_Model').editable(function(value, settings) { 
-	       JxString.String = value;
-	       OLHash={'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit',selected:'Dolor sit'};	    	       
+	       Jx_Model.String = value;
+	       OLHash={'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit',selected:'Dolor sit'};	 
+   	       
 		       $('.edit_CardModel').remove();
 		       		       $('.oltest').append("<b class='edit_CardModel'>ouh</b>");
 				       
@@ -256,7 +257,7 @@ def JxTools():
 	JxHtml = u"""<br />
 	
 	<h3 style="text-align:center;">DEBUG</h3>
-	<a href="py:mw.help.showText(JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
+	<a href="py:mw.help.showText(JxBase.findChild(QObject,'Jx_Model').property('String').toString() +' et ' +  JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
 	
 	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
 	<center>
@@ -275,11 +276,20 @@ def JxTools():
 	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
+	Jx_Model=QObject(JxBase)
+	Jx_Model.setObjectName("Jx_Model")	
+	Jx_Model.setProperty("String",QVariant(""))
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)
 	JxString=QObject(JxBase)
 	JxString.setObjectName("JxString")	
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
+	JxTac = JxcFields(JxBase)
+	JxTac.setObjectName("JxTac")	
+	JxTac.setProperty("String",QVariant("oups"))
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
+	JxWindow.page().mainFrame().evaluateJavaScript("JxTac.Field()")	
+#	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
 #	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
@@ -288,9 +298,23 @@ def JxTools():
 #	mw.help.showText(JxString.property("String").toString())
 
 
+    
+    
+    
+class JxcFields(QObject):
+	def __init__(self, String):
+		QObject.__init__(self)
+		self.String = "Tango"
+	@QtCore.pyqtSlot("")
+	def Field(self):
+		FieldsBuffer = u""
+		Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
+		for Name in Rows:
+			FieldsBuffer +=  Name +u" "
+		mw.help.showText(FieldsBuffer)
 
 
-
+	
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
@@ -535,14 +559,13 @@ mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
 print 'Japanese Extended Plugin loaded'
 
-class JxcString(QObject):
-	def __init__(self, String):
-		QObject.__init__(self)
-		self.String = String
-			
+
+
 JxBase=QObject()
 #JxString=QObject()
 def Rah():
+	Jx_Model = JxBase.findChild(QObject,'Jx_Model')
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)	
 	JxString = JxBase.findChild(QObject,'JxString')
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)	
 #def Rah():
