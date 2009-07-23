@@ -288,7 +288,7 @@ def JxTools():
 	JxTac.setObjectName("JxTac")	
 	JxTac.setProperty("String",QVariant("oups"))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
-	JxWindow.page().mainFrame().evaluateJavaScript("JxTac.Field()")	
+	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fold())")	
 #	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
 #	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
@@ -304,16 +304,23 @@ def JxTools():
 class JxcFields(QObject):
 	def __init__(self, String):
 		QObject.__init__(self)
-		self.String = "Tango"
-	@QtCore.pyqtSlot("")
-	def Field(self):
+#		@QtCore.pyqtProperty("QString")
+		self.OK = u"Tano"
+	@QtCore.pyqtSlot(str)
+	def Field(self,model):
+		""" C++: str Field(str) """
 		FieldsBuffer = u""
-		Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
+		Query = u"""select fieldModels.name from fieldModels,models where 
+			models.id = fieldModels.modelId and models.name="%s"
+			group by fieldModels.name order by fieldModels.name""" % model
+		Rows = mw.deck.s.column0(Query)
 		for Name in Rows:
-			FieldsBuffer +=  Name +u" "
-		mw.help.showText(FieldsBuffer)
-
-
+			FieldsBuffer +=  Name + u" "
+		return Query + FieldsBuffer
+	@QtCore.pyqtSlot(result=str)
+	def Fold(self):
+		""" C++: str Fold() """
+		return u"back"
 	
 JxJavaScript = u"""
 	function getInfo(){
