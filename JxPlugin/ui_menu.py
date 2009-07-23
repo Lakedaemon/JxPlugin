@@ -34,20 +34,65 @@ JxMenu = """
 <script type="text/javascript" src="editinplace.js"></script>
 
 <script type="text/javascript"> 
-        $(document).ready(function(){
-	
-		$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
 
-	});
+$(document).ready(function(){	
+		$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
+});
+</script>
+<script type="text/javascript"> 
 	
 	
+	 	$(document).ready(function(){
+    $('.editable').AVeditable(function(element){
+      // function that will be called when the
+      // user finishes editing and clicks outside of editable area
+      JxString.String = element.innerHTML;
+    });
+
+ 
+   });
+</script>
+<script type="text/javascript"> 
+   
+   	       OLHasho={'Dolor sit':'Doeeelor sit',selected:'Dolor sit'};
 
 	$(document).ready(function(){	
 	
 	
-	
-	 $('.edit_Model').editable(function(value, settings) { 
+$('.edit_Model').editable(function(value, settings) { 
 	       JxString.String = value;
+	       OLHash={'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit',selected:'Dolor sit'};	    	       
+		       $('.edit_CardModel').remove();
+		       		       $('.oltest').append("<b class='edit_CardModel'>ouh</b>");
+				       
+				       
+				       $('.edit_CardModel').editable(function(value, settings) { 
+	       JxString.String = value;
+       
+	       
+     console.log(this);
+     console.log(value);
+     console.log(settings);
+     return(value);
+  }, { 
+     onblur : 'submit',
+    indicator : '<img src="img/indicator.gif">',
+    data   : OLHash,
+    type   : "select",
+    placeholder : "OL",
+    style  : "inherit",
+    tooltip   : "Click to edit model !",
+    submitdata : function() {
+      return {id : 2};
+    }
+  });     
+				       
+				       
+				       
+				       
+				       
+	       //$('.edit_CardModel').trigger("blur");	       
+	       	   //    $('.edit_CardModel').trigger("submit");
      console.log(this);
      console.log(value);
      console.log(settings);
@@ -57,47 +102,54 @@ JxMenu = """
     indicator : '<img src="img/indicator.gif">',
     data   : "${DeckModels}",
     type   : "select",
+    placeholder : "${DeckModelselected}",
     style  : "inherit",
+    tooltip   : "Click to edit model !",
     submitdata : function() {
       return {id : 2};
     }
   });    
+  });  
     
     
-    	 $('.edit_CardModel').editable(function(value, settings) { 
+    </script>
+<script type="text/javascript"> 
+   
+   	       OLHash={'Lorum':'gahhhhh'};
+
+	$(document).ready(function(){	
+    
+    
+    
+    
+    
+$('.edit_CardModel').editable(function(value, settings) { 
 	       JxString.String = value;
+       
+	       
      console.log(this);
      console.log(value);
      console.log(settings);
      return(value);
   }, { 
-     //type    : 'textarea',
-     //submit  : 'OK',
      onblur : 'submit',
     indicator : '<img src="img/indicator.gif">',
-    data   : "{'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit'}",
+    data   : OLHash,
     type   : "select",
-    //submit : "OK",
+    placeholder : "OL",
     style  : "inherit",
+    tooltip   : "Click to edit model !",
     submitdata : function() {
       return {id : 2};
     }
+  });     
     
     
     
- });
+  });
  
- 
- 	$(document).ready(function(){
-    $('.editable').AVeditable(function(element){
-      // function that will be called when the
-      // user finishes editing and clicks outside of editable area
-      JxString.String = element.innerHTML;
-    });
 
  
-   });
-  });
 </script>
 
 <style type="text/css">
@@ -214,12 +266,13 @@ def JxTools():
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 
 	<h3 style="text-align:center;">ANSWER FIELDS</h3>
-	<p>The card model <b class="edit_CardModel" id="div_1">Card Models</b> of deck model <b class="edit_Model" id="div_1">Models</b> has the display settings : <i id="JxString" class="editable" contenteditable="true">yo essai</i></p>
+	<p>The card model <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> of deck model <b class="edit_Model" id="div_1"></b> has the display settings : <i id="JxString" class="editable" contenteditable="true">yo essai</i></p>
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
+	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
 	JxString=QObject(JxBase)
@@ -327,8 +380,8 @@ sizePolicy.setHorizontalStretch(0)
 sizePolicy.setVerticalStretch(0)
 sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
 JxWindow.setSizePolicy(sizePolicy)
-JxWindow.setMinimumSize(QtCore.QSize(310, 400))
-JxWindow.setMaximumSize(QtCore.QSize(310, 16777215))
+JxWindow.setMinimumSize(QtCore.QSize(1010, 400))
+JxWindow.setMaximumSize(QtCore.QSize(1010, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 
