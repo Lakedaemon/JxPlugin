@@ -61,8 +61,8 @@ $(document).ready(function(){
 	
 $('.edit_Model').editable(function(value, settings) { 
 	       Jx_Model.String = value;
-	       OLHash={'Lorem ipsum':'Lorem ipsum','Ipsum dolor':'Ipsum dolor','Dolor sit':'Dolor sit',selected:'Dolor sit'};	 
-   	       
+	       
+	       OLHash=   JxTac.Fields(value);   
 		       $('.edit_CardModel').remove();
 		       		       $('.oltest').append("<b class='edit_CardModel'>ouh</b>");
 				       
@@ -284,11 +284,10 @@ def JxTools():
 	JxString.setObjectName("JxString")	
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxTac = JxcFields(JxBase)
-	JxTac.setObjectName("JxTac")	
+	JxTac = Jxj("JxTac")
 	JxTac.setProperty("String",QVariant("oups"))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
-	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fold())")	
+	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fields('Tango'))")	
 #	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
 #	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
@@ -299,28 +298,22 @@ def JxTools():
 
 
     
+JxBase=QObject()
     
-    
-class JxcFields(QObject):
-	def __init__(self, String):
-		QObject.__init__(self)
+class Jxj(QObject):
+	def __init__(self,name,parent=JxBase):
+		QObject.__init__(self,parent)
+		self.setObjectName(name)	
 #		@QtCore.pyqtProperty("QString")
-		self.OK = u"Tano"
-	@QtCore.pyqtSlot(str)
-	def Field(self,model):
-		""" C++: str Field(str) """
-		FieldsBuffer = u""
+#		self. = u"Tano"
+#		self.OK.setObjectName("OK") 
+	@QtCore.pyqtSlot(str,result=str)
+	def Fields(self,model):
 		Query = u"""select fieldModels.name from fieldModels,models where 
 			models.id = fieldModels.modelId and models.name="%s"
-			group by fieldModels.name order by fieldModels.name""" % model
+			group by fieldModels.name order by fieldModels.name""" % u"Tango"
 		Rows = mw.deck.s.column0(Query)
-		for Name in Rows:
-			FieldsBuffer +=  Name + u" "
-		return Query + FieldsBuffer
-	@QtCore.pyqtSlot(result=str)
-	def Fold(self):
-		""" C++: str Fold() """
-		return u"back"
+		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in Rows],u",") + u"}"
 	
 JxJavaScript = u"""
 	function getInfo(){
@@ -446,20 +439,7 @@ def onJxMenu():
 
 
 
-class JxcString(QObject):
-	def __init__(self,String=u""):
-		QObject.__init__(self)
-		self.String = String
-	def setString(self,Stuff):
-		self.String = Stuff
-	def debugString(self):
-		mw.help.showText(u"mmmhhhh"+self.String)
-	def printString(self):
-		return self.String	
-	def Cleared(self):
-		JxWindow.page().mainFrame().addToJavaScriptWindowObject(u"JxString", self);
-			
-JxString = JxcString(u"Lol")
+
 
 
 # needed to run javascript inside JxWindow
@@ -568,12 +548,18 @@ print 'Japanese Extended Plugin loaded'
 
 
 
-JxBase=QObject()
+
 #JxString=QObject()
 def Rah():
 	Jx_Model = JxBase.findChild(QObject,'Jx_Model')
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)	
 	JxString = JxBase.findChild(QObject,'JxString')
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
+	JxTac = JxBase.findChild(QObject,'JxTac')
+	if JxTac: 
+		mw.help.showText("found")
+	else:
+		mw.help.showText("not found")
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)		
 #def Rah():
 #	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
