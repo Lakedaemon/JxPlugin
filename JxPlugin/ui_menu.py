@@ -55,7 +55,8 @@ $(document).ready(function(){
 <script type="text/javascript"> 
 $(document).ready(function(){	
 	$('.edit_Model').editable(function(value, settings) {
-		JxTac.Model= value; 
+		JxTac.Model = value;
+		JxTac.UpdateCardModel();
 	       $('.edit_CardModel').remove();
 	       $('.oltest').append("<b class='edit_CardModel'></b>");
 	       	$('.edit_CardModel').editable(function(value, settings) { 
@@ -64,7 +65,8 @@ $(document).ready(function(){
 		},{ 
 			onblur : 'submit',
 			indicator : '<img src="img/indicator.gif">',
-			data   : JxTac.Fieldselected,
+			data   : JxTac.GetCardModels,
+			placeholder : JxTac.CardModel,
 			type   : "select",
 			style  : "inherit",
 			submitdata : function() {
@@ -75,7 +77,7 @@ $(document).ready(function(){
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : JxTac.Modelselected,
+		data   : JxTac.GetModels,
 		placeholder : JxTac.Model,
 		type   : "select",
 		style  : "inherit",
@@ -94,7 +96,7 @@ $(document).ready(function(){
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : JxTac.Fieldselected,
+		data   : JxTac.GetCardModels,
 		placeholder : JxTac.CardModel,
 		type   : "select",
 		style  : "inherit",
@@ -254,7 +256,7 @@ def JxTools():
 
 #
 #
-def pyprop(func):
+def Jx__Prop(func):
     '''A decorator function for easy property creation.
 
         >>> class CLS(object):
@@ -338,46 +340,47 @@ class Jxj(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)	
-		#Model=QtCore.pyqtProperty("str")
 		self.Model = u""
-		self.setProperty("CardModel",QVariant(""))
-		self.setProperty("String",QVariant(""))
+		self.CardModel = u""
+		self.DisplayString = u""
 		self.UpdateModel()
-		self.UpdateField()
-	@pyprop
+		
+	@Jx__Prop
 	def Model():pass
-#		@QtCore.pyqtProperty("QString")
-#		self. = u"Tano"
-#		self.OK.setObjectName("OK")	
+	@Jx__Prop
+	def CardModel():pass
+	@Jx__Prop
+	def DisplayString():pass
+	
 	@QtCore.pyqtSlot(result=str)
-	def Modelselected(self):
+	def GetModels(self):
 		self.UpdateModel()
 		return self.toHash()
 	@QtCore.pyqtSlot(result=str)
-	def Fieldselected(self):
-		self.UpdateField()
+	def GetCardModels(self):
+		self.UpdateCardModel()
 		return self.toHash()
-	def UpdateField(self):
+	@QtCore.pyqtSlot()
+	def UpdateCardModel(self):
 		Query = u"""select fieldModels.name from fieldModels,models where 
 		models.id = fieldModels.modelId and models.name="%s"
-		group by fieldModels.name order by fieldModels.name""" % self._Model#property("Model").toString()
+		group by fieldModels.name order by fieldModels.name""" % self._Model
 		self.Rows = mw.deck.s.column0(Query)
 		if len(self.Rows) == 0:
-			self.Field = u""
+			self.CardModel = u""
 		else:
-			self.Field = self.Rows[0]
-			self.setProperty("Field",QVariant(self.Field))
-		self.Selected = self.Field
+			self.CardModel = self.Rows[0]
+		self.Selected = self.CardModel
 	def UpdateModel(self):
 		self.Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
 		if len(self.Rows) == 0:
 			self.Model = u""
 		else:
 			self.Model = self.Rows[0]
-		#self.setProperty("Model",QVariant(self.Model))
-		self.Selected = self.Model	
-
-	@QtCore.pyqtSlot(result=str)
+		Rows = self.Rows
+		self.UpdateCardModel()
+		self.Selected = self.Model
+		self.Rows = Rows
 	def toHash(self):
 			return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Rows],u",") + u",'selected':'"  + self.Selected + u"'}"			
 JxJavaScript = u"""
@@ -614,17 +617,7 @@ print 'Japanese Extended Plugin loaded'
 
 
 
-#JxString=QObject()
+
 def Rah():
-	Jx_Model = JxBase.findChild(QObject,'Jx_Model')
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)	
-	JxString = JxBase.findChild(QObject,'JxString')
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxTac = JxBase.findChild(Jxj,'JxTac')
-	if JxTac:
-		mw.help.showText('found')
-	else:
-		mw.help.showText('dumbfounded')		
+	JxTac = JxBase.findChild(Jxj,'JxTac')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)		
-#def Rah():
-#	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
