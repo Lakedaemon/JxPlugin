@@ -55,18 +55,17 @@ $(document).ready(function(){
 <script type="text/javascript"> 
 $(document).ready(function(){	
 	$('.edit_Model').editable(function(value, settings) {
-		JxTac.Model = value;
-		JxTac.UpdateCardModel();
+		JxAnswerSettings.Model = value;
 	       $('.edit_CardModel').remove();
 	       $('.oltest').append("<b class='edit_CardModel'></b>");
 	       	$('.edit_CardModel').editable(function(value, settings) { 
-			JxTac.CardModel = value;
+			JxAnswerSettings.CardModel = value;
 			return value;
 		},{ 
 			onblur : 'submit',
 			indicator : '<img src="img/indicator.gif">',
-			data   : JxTac.GetCardModels,
-			placeholder : JxTac.CardModel,
+			data   : JxAnswerSettings.GetCardModels,
+			placeholder : JxAnswerSettings.CardModel,
 			type   : "select",
 			style  : "inherit",
 			submitdata : function() {
@@ -77,8 +76,8 @@ $(document).ready(function(){
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : JxTac.GetModels,
-		placeholder : JxTac.Model,
+		data   : JxAnswerSettings.GetModels,
+		placeholder : JxAnswerSettings.Model,
 		type   : "select",
 		style  : "inherit",
 		tooltip   : "Click to edit model !",
@@ -91,13 +90,13 @@ $(document).ready(function(){
 <script type="text/javascript">
 $(document).ready(function(){	
 	$('.edit_CardModel').editable(function(value, settings) { 
-	       JxTac.CardModel = value;
+	       JxAnswerSettings.CardModel = value;
 	       return(value);
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : JxTac.GetCardModels,
-		placeholder : JxTac.CardModel,
+		data   : JxAnswerSettings.GetCardModels,
+		placeholder : JxAnswerSettings.CardModel,
 		type   : "select",
 		style  : "inherit",
 		submitdata : function() {
@@ -238,10 +237,9 @@ def JxTools():
 	JxString.setObjectName("JxString")	
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxTac = Jxj("JxTac")
-#	JxTac.setProperty("String",QVariant("ok"))
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
-#	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fieldselected('Tango'))")	
+	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
+#	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxAnswerSettings.Fieldselected('Tango'))")	
 #	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
 #	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
@@ -336,17 +334,21 @@ def Jx__Prop(func):
     
 JxBase=QObject()
     
-class Jxj(QObject):
+class Jx__Model_CardModel_String(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
-		self.setObjectName(name)	
-		self.Model = u""
-		self.CardModel = u""
+		self.setObjectName(name)
+		self.UpdateModels()
+		#self.Model = u""
+		#self.CardModel = u""
 		self.DisplayString = u""
-		self.UpdateModel()
-		
+
+	def Jx__Model_fset(self,value):
+		self._Model = value
+		self.UpdateCardModels()
+
 	@Jx__Prop
-	def Model():pass
+	def Model():return {'fset': lambda self,value:self.Jx__Model_fset(value)}
 	@Jx__Prop
 	def CardModel():pass
 	@Jx__Prop
@@ -354,35 +356,26 @@ class Jxj(QObject):
 	
 	@QtCore.pyqtSlot(result=str)
 	def GetModels(self):
-		self.UpdateModel()
-		return self.toHash()
+		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Models],u",") + u",'selected':'"  + self.Model + u"'}"
 	@QtCore.pyqtSlot(result=str)
 	def GetCardModels(self):
-		self.UpdateCardModel()
-		return self.toHash()
-	@QtCore.pyqtSlot()
-	def UpdateCardModel(self):
+		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
+	def UpdateModels(self):
+		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
+		if len(self.Models) == 0:
+			self.Model = u""
+		else:
+			self.Model = self.Models[0]
+	def UpdateCardModels(self):
 		Query = u"""select fieldModels.name from fieldModels,models where 
 		models.id = fieldModels.modelId and models.name="%s"
 		group by fieldModels.name order by fieldModels.name""" % self._Model
-		self.Rows = mw.deck.s.column0(Query)
-		if len(self.Rows) == 0:
+		self.CardModels = mw.deck.s.column0(Query)
+		if len(self.CardModels) == 0:
 			self.CardModel = u""
 		else:
-			self.CardModel = self.Rows[0]
-		self.Selected = self.CardModel
-	def UpdateModel(self):
-		self.Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
-		if len(self.Rows) == 0:
-			self.Model = u""
-		else:
-			self.Model = self.Rows[0]
-		Rows = self.Rows
-		self.UpdateCardModel()
-		self.Selected = self.Model
-		self.Rows = Rows
-	def toHash(self):
-			return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Rows],u",") + u",'selected':'"  + self.Selected + u"'}"			
+			self.CardModel = self.CardModels[0]
+
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
@@ -619,5 +612,5 @@ print 'Japanese Extended Plugin loaded'
 
 
 def Rah():
-	JxTac = JxBase.findChild(Jxj,'JxTac')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)		
+	JxAnswerSettings = JxBase.findChild(Jxj,'JxAnswerSettings')	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)		
