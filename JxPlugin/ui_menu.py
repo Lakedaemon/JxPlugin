@@ -53,104 +53,58 @@ $(document).ready(function(){
    });
 </script>
 <script type="text/javascript"> 
-   
-   	       OLHasho={'Dolor sit':'Doeeelor sit',selected:'Dolor sit'};
-
-	$(document).ready(function(){	
-	
-	
-$('.edit_Model').editable(function(value, settings) { 
-	       Jx_Model.String = value;
-	       
-	       OLHash=   JxTac.Fields(value);   
-		       $('.edit_CardModel').remove();
-		       		       $('.oltest').append("<b class='edit_CardModel'>ouh</b>");
-				       
-				       
-				       $('.edit_CardModel').editable(function(value, settings) { 
+Mandrake='yop'
+$(document).ready(function(){	
+	$('.edit_Model').editable(function(value, settings) {
+//		Jx_Model.String = value;
+	       Jx_Hasho = JxTac.Fieldselected(value);   
+	       $('.edit_CardModel').remove();
+	       $('.oltest').append("<b class='edit_CardModel'></b>");
+	       	$('.edit_CardModel').editable(function(value, settings) { 
+//			JxString.String = value;
+			return value;
+		},{ 
+			onblur : 'submit',
+			indicator : '<img src="img/indicator.gif">',
+			data   : Jx_Hasho,
+			type   : "select",
+			style  : "inherit",
+			submitdata : function() {
+				return {id : 2};
+			}
+		});
+		return value;
+	}, { 
+		onblur : 'submit',
+		indicator : '<img src="img/indicator.gif">',
+		data   : JxTac.Modelselected,
+		placeholder : Mandrake,
+		type   : "select",
+		style  : "inherit",
+		tooltip   : "Click to edit model !",
+		submitdata : function() {
+			return {id : 2};
+		}
+	});    
+});  
+</script>
+<script type="text/javascript">
+Jx_Hash = JxTac.Fieldselected('Kanji'); 
+$(document).ready(function(){	
+	$('.edit_CardModel').editable(function(value, settings) { 
 	       JxString.String = value;
-       
-	       
-     console.log(this);
-     console.log(value);
-     console.log(settings);
-     return(value);
-  }, { 
-     onblur : 'submit',
-    indicator : '<img src="img/indicator.gif">',
-    data   : OLHash,
-    type   : "select",
-    placeholder : "OL",
-    style  : "inherit",
-    tooltip   : "Click to edit model !",
-    submitdata : function() {
-      return {id : 2};
-    }
-  });     
-				       
-				       
-				       
-				       
-				       
-	       //$('.edit_CardModel').trigger("blur");	       
-	       	   //    $('.edit_CardModel').trigger("submit");
-     console.log(this);
-     console.log(value);
-     console.log(settings);
-     return(value);
-  }, { 
-     onblur : 'submit',
-    indicator : '<img src="img/indicator.gif">',
-    data   : "${DeckModels}",
-    type   : "select",
-    placeholder : "${DeckModelselected}",
-    style  : "inherit",
-    tooltip   : "Click to edit model !",
-    submitdata : function() {
-      return {id : 2};
-    }
-  });    
-  });  
-    
-    
-    </script>
-<script type="text/javascript"> 
-   
-   	       OLHash={'Lorum':'gahhhhh'};
-
-	$(document).ready(function(){	
-    
-    
-    
-    
-    
-$('.edit_CardModel').editable(function(value, settings) { 
-	       JxString.String = value;
-       
-	       
-     console.log(this);
-     console.log(value);
-     console.log(settings);
-     return(value);
-  }, { 
-     onblur : 'submit',
-    indicator : '<img src="img/indicator.gif">',
-    data   : OLHash,
-    type   : "select",
-    placeholder : "OL",
-    style  : "inherit",
-    tooltip   : "Click to edit model !",
-    submitdata : function() {
-      return {id : 2};
-    }
-  });     
-    
-    
-    
-  });
- 
-
- 
+	       return(value);
+	}, { 
+		onblur : 'submit',
+		indicator : '<img src="img/indicator.gif">',
+		data   : Jx_Hash,
+		type   : "select",
+		style  : "inherit",
+		submitdata : function() {
+			return {id : 2};
+		}
+	});     
+}); 
 </script>
 
 <style type="text/css">
@@ -285,9 +239,9 @@ def JxTools():
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
 	JxTac = Jxj("JxTac")
-	JxTac.setProperty("String",QVariant("oups"))
+	JxTac.setProperty("String",QVariant("ok"))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
-	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fields('Tango'))")	
+#	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fieldselected('Tango'))")	
 #	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
 #	mw.help.showText(JxString.property("String").toString())
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
@@ -304,16 +258,29 @@ class Jxj(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)	
+		self.setProperty("Model",QVariant(""))
+		self.setProperty("CardModel",QVariant(""))
+		self.setProperty("String",QVariant(""))
 #		@QtCore.pyqtProperty("QString")
 #		self. = u"Tano"
-#		self.OK.setObjectName("OK") 
+#		self.OK.setObjectName("OK")
+	@QtCore.pyqtSlot(result=str)
+	def toHash(self,stringList):
+		if len(stringList) == 0:
+			Selected = u""
+		else:
+			Selected = stringList[0]
+			return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in stringList],u",") + u",'selected':'"  + Selected + u"'}"		
+	@QtCore.pyqtSlot(result=str)
+	def Modelselected(self):
+		Query = u"""select name from models group by name order by name"""
+		return self.toHash(mw.deck.s.column0(Query))
 	@QtCore.pyqtSlot(str,result=str)
-	def Fields(self,model):
+	def Fieldselected(self,model):
 		Query = u"""select fieldModels.name from fieldModels,models where 
 			models.id = fieldModels.modelId and models.name="%s"
-			group by fieldModels.name order by fieldModels.name""" % u"Tango"
-		Rows = mw.deck.s.column0(Query)
-		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in Rows],u",") + u"}"
+			group by fieldModels.name order by fieldModels.name""" % model
+		return self.toHash(mw.deck.s.column0(Query))
 	
 JxJavaScript = u"""
 	function getInfo(){
@@ -555,11 +522,11 @@ def Rah():
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)	
 	JxString = JxBase.findChild(QObject,'JxString')
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
-	JxTac = JxBase.findChild(QObject,'JxTac')
-	if JxTac: 
-		mw.help.showText("found")
+	JxTac = JxBase.findChild(Jxj,'JxTac')
+	if JxTac:
+		mw.help.showText('found')
 	else:
-		mw.help.showText("not found")
+		mw.help.showText('dumbfounded')		
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)		
 #def Rah():
 #	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
