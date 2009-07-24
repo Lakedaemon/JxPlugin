@@ -53,20 +53,18 @@ $(document).ready(function(){
    });
 </script>
 <script type="text/javascript"> 
-Mandrake='yop'
 $(document).ready(function(){	
 	$('.edit_Model').editable(function(value, settings) {
-//		Jx_Model.String = value;
-	       Jx_Hasho = JxTac.Fieldselected(value);   
+		JxTac.Model= value; 
 	       $('.edit_CardModel').remove();
 	       $('.oltest').append("<b class='edit_CardModel'></b>");
 	       	$('.edit_CardModel').editable(function(value, settings) { 
-//			JxString.String = value;
+			JxTac.CardModel = value;
 			return value;
 		},{ 
 			onblur : 'submit',
 			indicator : '<img src="img/indicator.gif">',
-			data   : Jx_Hasho,
+			data   : JxTac.Fieldselected,
 			type   : "select",
 			style  : "inherit",
 			submitdata : function() {
@@ -78,7 +76,7 @@ $(document).ready(function(){
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
 		data   : JxTac.Modelselected,
-		placeholder : Mandrake,
+		placeholder : JxTac.Model,
 		type   : "select",
 		style  : "inherit",
 		tooltip   : "Click to edit model !",
@@ -89,15 +87,15 @@ $(document).ready(function(){
 });  
 </script>
 <script type="text/javascript">
-Jx_Hash = JxTac.Fieldselected('Kanji'); 
 $(document).ready(function(){	
 	$('.edit_CardModel').editable(function(value, settings) { 
-	       JxString.String = value;
+	       JxTac.CardModel = value;
 	       return(value);
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : Jx_Hash,
+		data   : JxTac.Fieldselected,
+		placeholder : JxTac.CardModel,
 		type   : "select",
 		style  : "inherit",
 		submitdata : function() {
@@ -239,7 +237,7 @@ def JxTools():
 	JxString.setProperty("String",QVariant(""))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
 	JxTac = Jxj("JxTac")
-	JxTac.setProperty("String",QVariant("ok"))
+#	JxTac.setProperty("String",QVariant("ok"))
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTac",JxTac)	
 #	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxTac.Fieldselected('Tango'))")	
 #	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
@@ -251,6 +249,88 @@ def JxTools():
 #	mw.help.showText(JxString.property("String").toString())
 
 
+
+
+
+#
+#
+def pyprop(func):
+    '''A decorator function for easy property creation.
+
+        >>> class CLS(object):
+        ...   def __init__(self):
+        ...      self._name='Runsun Pan'
+        ...      self._mod='panprop'
+        ...      self.CLS_crazy = 'Customized internal name'
+        ...
+        ...   @prop
+        ...   def name(): pass           # Simply pass
+        ...
+        ...   @prop
+        ...   def mod():                 # Read-only, customized get
+        ...      return {'fset':None,
+        ...              'fget': lambda self: "{%s}"%self._mod  }
+        ...
+        ...   @prop
+        ...   def crazy():               # Doc string and customized prefix
+        ...      return {'prefix': 'CLS_',
+        ...              'doc':'I can be customized!'}
+
+        >>> cls = CLS()
+
+        ----------------------------   default
+        >>> cls.name
+        'Runsun Pan'
+
+        >>> cls.name = "Pan"
+        >>> cls.name
+        'Pan'
+
+        ---------------------------   Read-only
+        >>> cls.mod
+        '{panprop}'
+
+        Trying to set cls.mod=??? will get:
+        AttributeError: can't set attribute 
+
+        ---------------------------   Customized prefix for internal name
+        >>> cls.crazy       
+        'Customized internal name'
+
+        >>> cls.CLS_crazy
+        'Customized internal name'
+
+        ---------------------------   docstring 
+        >>> CLS.name.__doc__
+        ''
+      
+        >>> CLS.mod.__doc__
+        ''
+      
+        >>> CLS.crazy.__doc__
+        'I can be customized!'
+
+        ---------------------------  delete
+        >>> del cls.crazy
+
+        Trying to get cls.crazy will get:
+        AttributeError: 'CLS' object has no attribute 'CLS_crazy'
+      
+    '''
+    ops = func() or {}
+    name=ops.get('prefix','_')+func.__name__ # property name
+    fget=ops.get('fget',lambda self:getattr(self, name))
+    fset=ops.get('fset',lambda self,value:setattr(self,name,value))
+    fdel=ops.get('fdel',lambda self:delattr(self,name))
+    return QtCore.pyqtProperty ('QString', fget, fset, fdel, ops.get('doc','') )
+#
+#
+
+
+
+
+
+
     
 JxBase=QObject()
     
@@ -258,30 +338,48 @@ class Jxj(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)	
-		self.setProperty("Model",QVariant(""))
+		#Model=QtCore.pyqtProperty("str")
+		self.Model = u""
 		self.setProperty("CardModel",QVariant(""))
 		self.setProperty("String",QVariant(""))
+		self.UpdateModel()
+		self.UpdateField()
+	@pyprop
+	def Model():pass
 #		@QtCore.pyqtProperty("QString")
 #		self. = u"Tano"
-#		self.OK.setObjectName("OK")
-	@QtCore.pyqtSlot(result=str)
-	def toHash(self,stringList):
-		if len(stringList) == 0:
-			Selected = u""
-		else:
-			Selected = stringList[0]
-			return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in stringList],u",") + u",'selected':'"  + Selected + u"'}"		
+#		self.OK.setObjectName("OK")	
 	@QtCore.pyqtSlot(result=str)
 	def Modelselected(self):
-		Query = u"""select name from models group by name order by name"""
-		return self.toHash(mw.deck.s.column0(Query))
-	@QtCore.pyqtSlot(str,result=str)
-	def Fieldselected(self,model):
+		self.UpdateModel()
+		return self.toHash()
+	@QtCore.pyqtSlot(result=str)
+	def Fieldselected(self):
+		self.UpdateField()
+		return self.toHash()
+	def UpdateField(self):
 		Query = u"""select fieldModels.name from fieldModels,models where 
-			models.id = fieldModels.modelId and models.name="%s"
-			group by fieldModels.name order by fieldModels.name""" % model
-		return self.toHash(mw.deck.s.column0(Query))
-	
+		models.id = fieldModels.modelId and models.name="%s"
+		group by fieldModels.name order by fieldModels.name""" % self._Model#property("Model").toString()
+		self.Rows = mw.deck.s.column0(Query)
+		if len(self.Rows) == 0:
+			self.Field = u""
+		else:
+			self.Field = self.Rows[0]
+			self.setProperty("Field",QVariant(self.Field))
+		self.Selected = self.Field
+	def UpdateModel(self):
+		self.Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
+		if len(self.Rows) == 0:
+			self.Model = u""
+		else:
+			self.Model = self.Rows[0]
+		#self.setProperty("Model",QVariant(self.Model))
+		self.Selected = self.Model	
+
+	@QtCore.pyqtSlot(result=str)
+	def toHash(self):
+			return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Rows],u",") + u",'selected':'"  + self.Selected + u"'}"			
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
