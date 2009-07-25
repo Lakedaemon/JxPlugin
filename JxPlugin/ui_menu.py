@@ -167,7 +167,7 @@ def JxTools():
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 
 	<h3 style="text-align:center;">ANSWER FIELDS</h3>
-	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model  has the display settings : <center><i class="oltestb"><i class="edit_Settings">fdfdbfdbbbbbx</i></i></center><center><i id="JxString" class="editable" contenteditable="true">essai</i></center></p>
+	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
@@ -285,18 +285,19 @@ class Jx__Model_CardModel_String(QObject):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
 		self.UpdateModels()
-		#self.Model = u""
-		#self.CardModel = u""
-		self.DisplayString = u""
 
 	def Jx__Model_fset(self,value):
 		self._Model = value
 		self.UpdateCardModels()
-
 	@Jx__Prop
 	def Model():return {'fset': lambda self,value:self.Jx__Model_fset(value)}
+
+	def Jx__CardModel_fset(self,value):
+		self._CardModel = value
+		self.UpdateDisplayString()
 	@Jx__Prop
-	def CardModel():pass
+	def CardModel():return {'fset': lambda self,value:self.Jx__CardModel_fset(value)}
+	
 	@Jx__Prop
 	def DisplayString():pass
 	
@@ -312,16 +313,25 @@ class Jx__Model_CardModel_String(QObject):
 			self.Model = u""
 		else:
 			self.Model = self.Models[0]
-	def UpdateCardModels(self):
-		Query = u"""select fieldModels.name from fieldModels,models where 
-		models.id = fieldModels.modelId and models.name="%s"
-		group by fieldModels.name order by fieldModels.name""" % self._Model
+	def UpdateCardModels(self):#beware "models.name" and "cardModels.name" aren't fields with the "unique" feature
+		Query = u"""select cardModels.name from cardModels,models where 
+		models.id = cardModels.modelId and models.name="%s"
+		group by cardModels.name order by cardModels.name""" % self._Model
 		self.CardModels = mw.deck.s.column0(Query)
 		if len(self.CardModels) == 0:
 			self.CardModel = u""
 		else:
 			self.CardModel = self.CardModels[0]
-
+	def UpdateDisplayString(self):
+		Query = u"""select cardModels.aformat from cardModels,models where 
+		models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
+		""" % {'Model':self._Model,'CardModel':self._CardModel}
+		s=mw.deck.s.scalar(Query)
+#		s = s.replace("<", "&lt;")
+#		s = s.replace(">", "&gt;")
+		mw.help.showText(s)
+		self.DisplayString = s
+			
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
