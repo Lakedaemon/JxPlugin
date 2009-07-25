@@ -72,6 +72,7 @@ $(document).ready(function(){
 				return {id : 2};
 			}
 		});
+		$('.edit_Settings').html("gahhhhhhhhh");
 		return value;
 	}, { 
 		onblur : 'submit',
@@ -105,7 +106,20 @@ $(document).ready(function(){
 	});     
 }); 
 </script>
+<script type="text/javascript">
+$(document).ready(function(){	
 
+ $('.edit_Settings').editable(function(value, settings) { 
+     console.log(this);
+     console.log(value);
+     console.log(settings);
+     return(value);
+  }, { 
+     type    : 'textarea',
+     submit  : 'OK',
+ }); 
+}); 
+</script>
 <style type="text/css">
 
 div#content {
@@ -220,7 +234,7 @@ def JxTools():
 	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 
 	<h3 style="text-align:center;">ANSWER FIELDS</h3>
-	<p>The card model <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> of deck model <b class="edit_Model" id="div_1"></b> has the display settings : <i id="JxString" class="editable" contenteditable="true">yo essai</i></p>
+	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model  has the display settings : <center><i class="oltestb"><i class="edit_Settings">fdfdbfdbbbbbx</i></i></center><center><i id="JxString" class="editable" contenteditable="true">essai</i></center></p>
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
@@ -240,8 +254,7 @@ def JxTools():
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 #	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxAnswerSettings.Fieldselected('Tango'))")	
-#	JxWindow.page().mainFrame().evaluateJavaScript("JxString.String='beurkeu'")
-#	mw.help.showText(JxString.property("String").toString())
+
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
 
@@ -608,9 +621,8 @@ mw.registerPlugin("Japanese Extended Support", 666)
 print 'Japanese Extended Plugin loaded'
 
 
-
-
+JxAnswerSettings={}
 
 def Rah():
-	JxAnswerSettings = JxBase.findChild(Jxj,'JxAnswerSettings')	
+	JxAnswerSettings = JxBase.findChild(Jx__Model_CardModel_String,'JxAnswerSettings')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)		
