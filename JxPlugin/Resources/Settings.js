@@ -1,4 +1,8 @@
 $(document).ready(function(){
+	// dropdown list checkboxes
+	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
+
+	// Linked selects
 	$('.edit_Mode').editable(function(value, settings) {
 		//JxAnswerSettings.Mode = value;
 		return value;
@@ -55,6 +59,52 @@ $(document).ready(function(){
 		height : 100,
 		onblur : 'submit'
 	}); 
-
+	$('.edit_ChooseKey').editable(function(value, settings) {
+		//JxAnswerSettings.Mode = value;
+		return value;
+	}, { 
+		onblur : 'submit',
+		indicator : '<img src="img/indicator.gif">',
+		data   : {'Append':'Append','Prepend':'Prepend','Override':'Override','selected':'Append'},
+		placeholder : 'Append',
+		type   : "select",
+		style  : "inherit",
+		tooltip   : "Click to edit model !",
+		submitdata : function() {
+			return {id : 2};
+		}
+	});
+	// Source-> Target
+	$('.edit_CardTemplate').editable(function(value, settings) {
+		//JxAnswerSettings.Mode = value;
+		return value;
+	}, { 
+		onblur : 'submit',
+		indicator : '<img src="img/indicator.gif">',
+		data   : JxTemplateOverride.GetEntries,
+//		placeholder : 'Append',
+		type   : "select",
+		style  : "inherit",
+		tooltip   : "Click to edit model !",
+		submitdata : function() {
+			return {id : 2};
+		}
+	});
+	$('.edit_SourceTemplate').editable(function(value, settings) { 
+		return(value);
+	}, { 
+		type    : 'textarea',
+		width : 150,
+		height : 100,
+		onblur : 'submit'
+	}); 
+	$('.edit_TargetTemplate').editable(function(value, settings) { 
+		return(value);
+	}, { 
+		type    : 'textarea',
+		width : 150,
+		height : 100,
+		onblur : 'submit'
+	}); 
 });	
 

@@ -16,7 +16,7 @@ from answer import *
 from stats import *
 from ui_graphs import *
 from tools import *
-
+from metacode import *
 
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
@@ -31,27 +31,8 @@ JxMenu = """
 <script type="text/javascript" src="ui.core.js"></script> 
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
 <script type="text/javascript" src="jquery.jeditable.js"></script> 
-<script type="text/javascript" src="editinplace.js"></script>
 <script type="text/javascript" src="Settings.js"></script>
-<script type="text/javascript"> 
 
-$(document).ready(function(){	
-		$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
-});
-</script>
-<script type="text/javascript"> 
-	
-	
-	 	$(document).ready(function(){
-    $('.editable').AVeditable(function(element){
-      // function that will be called when the
-      // user finishes editing and clicks outside of editable area
-      Jx_Model.String = element.innerHTML;
-    });
-
- 
-   });
-</script>
 
 <style type="text/css">
 
@@ -164,10 +145,18 @@ def JxTools():
 	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple">%s</select></span> 
 	&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
 	</center>
-	<ul><li id="gah">young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
+	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 
 	<h3 style="text-align:center;">ANSWER FIELDS</h3>
 	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
+
+	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
+	Your decks are using the following mappings : <b class="edit_CardTemplate"> essai </b>
+	<center><table>
+	<tr><th>source Template</th><th></th><th>Target Template</th></tr>
+	<tr><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
+	</table></center>	
+	
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
@@ -176,18 +165,12 @@ def JxTools():
 	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
-	Jx_Model=QObject(JxBase)
-	Jx_Model.setObjectName("Jx_Model")	
-	Jx_Model.setProperty("String",QVariant(""))
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("Jx_Model",Jx_Model)
-	JxString=QObject(JxBase)
-	JxString.setObjectName("JxString")	
-	JxString.setProperty("String",QVariant(""))
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxString",JxString)
+
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 #	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxAnswerSettings.Fieldselected('Tango'))")	
-
+	JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
 
@@ -200,86 +183,53 @@ def JxTools():
 
 #
 #
-def Jx__Prop(func):
-    '''A decorator function for easy property creation.
-
-        >>> class CLS(object):
-        ...   def __init__(self):
-        ...      self._name='Runsun Pan'
-        ...      self._mod='panprop'
-        ...      self.CLS_crazy = 'Customized internal name'
-        ...
-        ...   @prop
-        ...   def name(): pass           # Simply pass
-        ...
-        ...   @prop
-        ...   def mod():                 # Read-only, customized get
-        ...      return {'fset':None,
-        ...              'fget': lambda self: "{%s}"%self._mod  }
-        ...
-        ...   @prop
-        ...   def crazy():               # Doc string and customized prefix
-        ...      return {'prefix': 'CLS_',
-        ...              'doc':'I can be customized!'}
-
-        >>> cls = CLS()
-
-        ----------------------------   default
-        >>> cls.name
-        'Runsun Pan'
-
-        >>> cls.name = "Pan"
-        >>> cls.name
-        'Pan'
-
-        ---------------------------   Read-only
-        >>> cls.mod
-        '{panprop}'
-
-        Trying to set cls.mod=??? will get:
-        AttributeError: can't set attribute 
-
-        ---------------------------   Customized prefix for internal name
-        >>> cls.crazy       
-        'Customized internal name'
-
-        >>> cls.CLS_crazy
-        'Customized internal name'
-
-        ---------------------------   docstring 
-        >>> CLS.name.__doc__
-        ''
-      
-        >>> CLS.mod.__doc__
-        ''
-      
-        >>> CLS.crazy.__doc__
-        'I can be customized!'
-
-        ---------------------------  delete
-        >>> del cls.crazy
-
-        Trying to get cls.crazy will get:
-        AttributeError: 'CLS' object has no attribute 'CLS_crazy'
-      
-    '''
-    ops = func() or {}
-    name=ops.get('prefix','_')+func.__name__ # property name
-    fget=ops.get('fget',lambda self:getattr(self, name))
-    fset=ops.get('fset',lambda self,value:setattr(self,name,value))
-    fdel=ops.get('fdel',lambda self:delattr(self,name))
-    return QtCore.pyqtProperty ('QString', fget, fset, fdel, ops.get('doc','') )
-#
-#
 
 
 
 
 
 
+JxTable = [(u"Word recall",
+	"""%(Reading)s""",
+	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""),
+(u"Word recognition",
+	"""%(Reading)s<br>%(Meaning)s""",
+	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""),
+(u"Kanji character",
+	"""%(Kanji)s""",
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""),
+(u"Kanji meaning",
+	"""%(Meaning)s""",
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""),
+(u"Kanji readings",
+	"""%(OnYomi)s<br>%(KunYomi)s""",
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
     
 JxBase=QObject()
-    
+
+class Jx__Entry_Source_Target(QObject):
+	def __init__(self,name,parent=JxBase):
+		QObject.__init__(self,parent)
+		self.setObjectName(name)
+
+	@Jx__Prop
+	def Entry():pass
+	
+	@Jx__Prop
+	def Source():pass
+
+	@Jx__Prop
+	def Target():pass
+	
+	@QtCore.pyqtSlot(result=str)	
+	def GetEntries(self):
+		Hash = []
+		for name,source,target in JxTable:
+			Hash.append(u"'" + name + u"':'" + name + u"'")
+		Hash.append(u"'add':'add Entry'")
+		Hash.append(u"'selected':'" + JxTable[0][0] + u"'")
+		return u"{" + u",".join(Hash) + u"}"
+
 class Jx__Model_CardModel_String(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
@@ -575,4 +525,7 @@ JxAnswerSettings={}
 
 def Rah():
 	JxAnswerSettings = JxBase.findChild(Jx__Model_CardModel_String,'JxAnswerSettings')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)		
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
+	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
+	
