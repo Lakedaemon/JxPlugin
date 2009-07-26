@@ -327,11 +327,28 @@ class Jx__Model_CardModel_String(QObject):
 		models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
 		""" % {'Model':self._Model,'CardModel':self._CardModel}
 		s=mw.deck.s.scalar(Query)
+		if s in JxLink:
+			so=JxLink[s]
+			s=so
 #		s = s.replace("<", "&lt;")
 #		s = s.replace(">", "&gt;")
-		mw.help.showText(s)
 		self.DisplayString = s
 			
+			
+			
+JxLink = {
+"""%(Reading)s""":
+	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Expression)s<br />%(Reading)s</center></div>""",
+"""%(Reading)s<br>%(Meaning)s""":
+	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Reading)s<br \>%(Meaning)s</center></div>""",
+"""%(Kanji)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
+"""%(Meaning)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(Meaning)s</center><center>${K2Words}</center>""",
+"""%(OnYomi)s<br>%(KunYomi)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(OnYomi)s<br />%(KunYomi)s</center><center>${K2Words}</center>"""
+}			
+
 JxJavaScript = u"""
 	function getInfo(){
 	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";

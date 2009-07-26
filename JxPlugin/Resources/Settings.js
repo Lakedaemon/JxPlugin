@@ -1,11 +1,11 @@
 $(document).ready(function(){
 	$('.edit_Mode').editable(function(value, settings) {
-		JxAnswerSettings.Mode = value;
+		//JxAnswerSettings.Mode = value;
 		return value;
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
-		data   : {'Append':'Apend','Prepend':'Prepend','Overide':'Overide','selected':'Append'},
+		data   : {'Append':'Append','Prepend':'Prepend','Override':'Override','selected':'Append'},
 		placeholder : 'Append',
 		type   : "select",
 		style  : "inherit",
@@ -46,11 +46,11 @@ $(document).ready(function(){
 			return {id : 2};
 		}
 	});
+	$('.edit_DisplayString').html(JxAnswerSettings.DisplayString);
 	$('.edit_DisplayString').editable(function(value, settings) { 
 		return(value);
 	}, { 
 		type    : 'textarea',
-		placeholder : JxAnswerSettings.DisplayString,
 		width : 250,
 		height : 100,
 		onblur : 'submit'
