@@ -12,15 +12,15 @@ from loaddata import *
 
 JxLink = {
 """%(Reading)s""":
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Expression)s<br />%(Reading)s</center></div>""",
+	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>""",
 """%(Reading)s<br>%(Meaning)s""":
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Reading)s<br \>%(Meaning)s</center></div>""",
+	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>""",
 """%(Kanji)s""":
 	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
 """%(Meaning)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(Meaning)s</center><center>${K2Words}</center>""",
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>""",
 """%(OnYomi)s<br>%(KunYomi)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(OnYomi)s<br />%(KunYomi)s</center><center>${K2Words}</center>"""
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>"""
 }
 ###############################################################################################################
 #
@@ -49,14 +49,22 @@ def JxDefaultAnswer(Buffer,String,Dict):
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
     mw.help.showText("Card : " + str(Card.id) +"Fact :" + str(Card.fact) + "CardModel : " + str(Card.cardModel.aformat))
+    
+    # First, get and translate the CardModel Template
     try:
 	    JxAnswer = JxLink[Card.cardModel.aformat]
     except KeyError:
 	    JxAnswer = Card.cardModel.aformat
-	    
+
+    # Then create a dictionnary for all data replacement strings...
+    
+
+
+
 #    Append = re.search(u"\${.*?}",Answer) == None
 
-
+    # try to guess if this is a Tango card or a Kanji card and fill the appropriate data Tango & Expression (for stroke order of tango) or Kanji 
+    
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -74,6 +82,11 @@ def append_JxPlugin(Answer,Card):
 
 
     JxAnswerDict = {}
+    
+    # first fill in the fact information
+    for FieldModel in Card.fact.model.fieldModels:
+	    JxAnswerDict[FieldModel.name] = Card.fact[FieldModel.name]     #(FieldModel.id, FieldModel.fact[FieldModel.name])
+    
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
 
