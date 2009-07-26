@@ -26,7 +26,6 @@ JxMenu = """
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
-<script language="javascript" type="text/javascript" src="firebug-lite-compressed.js"></script>
 <script type="text/javascript" src="jquery.js"></script> 
 <script type="text/javascript" src="ui.core.js"></script> 
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
@@ -153,7 +152,7 @@ def JxTools():
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
 	Your decks are using the following mappings : <b class="edit_CardTemplate"> essai </b>
 	<center><table>
-	<tr><th>source Template</th><th></th><th>Target Template</th></tr>
+	<tr><th>Source Template</th><th></th><th>Target Template</th></tr>
 	<tr><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
 	</table></center>	
 	
@@ -189,21 +188,22 @@ def JxTools():
 
 
 
-JxTable = [(u"Word recall",
-	"""%(Reading)s""",
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""),
-(u"Word recognition",
-	"""%(Reading)s<br>%(Meaning)s""",
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""),
-(u"Kanji character",
-	"""%(Kanji)s""",
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""),
-(u"Kanji meaning",
-	"""%(Meaning)s""",
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""),
-(u"Kanji readings",
-	"""%(OnYomi)s<br>%(KunYomi)s""",
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
+JxTable = {
+u"Word recall":
+	{"""%(Reading)s""":
+		"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""},
+u"Word recognition":
+	{"""%(Reading)s<br>%(Meaning)s""":"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""},
+u"Kanji character":
+	{"""%(Kanji)s""":
+		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""},
+u"Kanji meaning":
+	{"""%(Meaning)s""":
+		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""},
+u"Kanji readings":
+	{"""%(OnYomi)s<br>%(KunYomi)s""":
+		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>"""},
+}
     
 JxBase=QObject()
 
@@ -211,23 +211,40 @@ class Jx__Entry_Source_Target(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-
+		self.Entry = JxTable.keys()[0]
+		
+	def Jx__Entry_fset(self,value):
+		self._Entry = str(value)
+		if self._Entry != u"Add Entry":
+			self._Source = JxTable[self._Entry].keys()[0]
+			self._Target = JxTable[self._Entry].values()[0]
+		else:
+			self._Source = u"Add Source<br>(must be unique)"
+			self._Target = u"Add Target"			
 	@Jx__Prop
-	def Entry():pass
+	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value)}
+
+	def Jx__Source_fset(self,value):
+		self._Source = str(value)
+		TempDict=set(Dict.keys()[0] for (name,Dict) in JxTable.iteritems() if name !=self._Entry)
+#		mw.help.showText(str(TempDict))
+		JxTable[self._Entry] = {self._Source:self._Target}
+	@Jx__Prop
+	def Source():return {'fset': lambda self,value:self.Jx__Source_fset(value)}
 	
+	def Jx__Target_fset(self,value):
+		self._Target = str(value)
+		JxTable[self._Entry] = {self._Source:self._Target}
 	@Jx__Prop
-	def Source():pass
-
-	@Jx__Prop
-	def Target():pass
+	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
 	
 	@QtCore.pyqtSlot(result=str)	
 	def GetEntries(self):
 		Hash = []
-		for name,source,target in JxTable:
+		for name in JxTable.keys():
 			Hash.append(u"'" + name + u"':'" + name + u"'")
-		Hash.append(u"'add':'add Entry'")
-		Hash.append(u"'selected':'" + JxTable[0][0] + u"'")
+		Hash.append(u"'Add Entry':'Add Entry'")
+		Hash.append(u"'selected':'" + self._Entry + u"'")
 		return u"{" + u",".join(Hash) + u"}"
 
 class Jx__Model_CardModel_String(QObject):

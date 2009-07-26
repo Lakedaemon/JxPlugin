@@ -76,7 +76,9 @@ $(document).ready(function(){
 	});
 	// Source-> Target
 	$('.edit_CardTemplate').editable(function(value, settings) {
-		//JxAnswerSettings.Mode = value;
+		JxTemplateOverride.Entry = value;
+		$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
+		$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
 		return value;
 	}, { 
 		onblur : 'submit',
@@ -90,7 +92,16 @@ $(document).ready(function(){
 			return {id : 2};
 		}
 	});
-	$('.edit_SourceTemplate').editable(function(value, settings) { 
+	$('.edit_NameTemplate').html(JxTemplateOverride.Entry);
+	$('.edit_NameTemplate').editable(function(value, settings) { 
+		return(value);
+	}, { 
+		type    : 'textarea',
+		onblur : 'submit'
+	}); 
+	$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
+	$('.edit_SourceTemplate').editable(function(value, settings) {
+		JxTemplateOverride.Source = value;
 		return(value);
 	}, { 
 		type    : 'textarea',
@@ -98,7 +109,9 @@ $(document).ready(function(){
 		height : 100,
 		onblur : 'submit'
 	}); 
-	$('.edit_TargetTemplate').editable(function(value, settings) { 
+	$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
+	$('.edit_TargetTemplate').editable(function(value, settings) {
+		JxTemplateOverride.Target = value;
 		return(value);
 	}, { 
 		type    : 'textarea',
