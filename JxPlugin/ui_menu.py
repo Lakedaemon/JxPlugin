@@ -298,6 +298,7 @@ class Jx__Model_CardModel_String(QObject):
 	@Jx__Prop
 	def CardModel():return {'fset': lambda self,value:self.Jx__CardModel_fset(value)}
 	
+	# to do : implement writing display string in the database if it's different
 	@Jx__Prop
 	def DisplayString():pass
 	
@@ -336,18 +337,7 @@ class Jx__Model_CardModel_String(QObject):
 			
 			
 			
-JxLink = {
-"""%(Reading)s""":
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Expression)s<br />%(Reading)s</center></div>""",
-"""%(Reading)s<br>%(Meaning)s""":
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>%(Reading)s<br \>%(Meaning)s</center></div>""",
-"""%(Kanji)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
-"""%(Meaning)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(Meaning)s</center><center>${K2Words}</center>""",
-"""%(OnYomi)s<br>%(KunYomi)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>%(OnYomi)s<br />%(KunYomi)s</center><center>${K2Words}</center>"""
-}			
+		
 
 JxJavaScript = u"""
 	function getInfo(){
