@@ -135,19 +135,6 @@ def JxTools():
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
-	
-	<h3 style="text-align:center;">DEBUG</h3>
-	<a href="py:mw.help.showText(JxBase.findChild(QObject,'Jx_Model').property('String').toString() +' et ' +  JxBase.findChild(QObject,'JxString').property('String').toString())">rahhh</a>
-	
-	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
-	<center>
-	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple">%s</select></span> 
-	&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
-	</center>
-	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
-
-	<h3 style="text-align:center;">ANSWER FIELDS</h3>
-	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
 
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
 	Your decks are using the following mappings : <b class="edit_CardTemplate"> essai </b>
@@ -155,6 +142,16 @@ def JxTools():
 	<tr><th>Entry</th><th></th><th>Source Template</th><th></th><th>Target Template</th></tr>
 	<tr><td class="edit_NameTemplate"></td><td>:</td><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
 	</table></center>	
+
+	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
+	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
+
+	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
+	<center>
+	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple">%s</select></span> 
+	&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
+	</center>
+	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 	
 	 """ % FieldsBuffer
 	
@@ -314,8 +311,8 @@ class Jx__Entry_Source_Target(QObject):
 (u"Kanji readings","""%(OnYomi)s<br>%(KunYomi)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
 			self.SaveTable()
 		JxLink = {}
-		#for (Name, Source,Target) in self.Table:
-		#	JxLink[Source] = Target
+		for (Name, Source,Target) in self.Table:
+			JxLink[Source] = Target
 
 
 
@@ -472,14 +469,15 @@ sizePolicy.setHorizontalStretch(0)
 sizePolicy.setVerticalStretch(0)
 sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
 JxWindow.setSizePolicy(sizePolicy)
-JxWindow.setMinimumSize(QtCore.QSize(1010, 400))
-JxWindow.setMaximumSize(QtCore.QSize(1010, 16777215))
+JxWindow.setMinimumSize(QtCore.QSize(410, 400))
+JxWindow.setMaximumSize(QtCore.QSize(410, 16777215))
 JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 
 JxWindow.hide()
 
-
+#def sizeHint(self):
+#        return QSize(100,100)
 
 import sys
 from PyQt4.QtCore import QSize, Qt
@@ -515,64 +513,16 @@ QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptCanOpenWindows, True)
 def JxJavaScriptPrint2Console(Message,Int, Source):
 	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
-JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console
-# QWidget inside QWebView experiment
-#class WebPluginFactory(QWebPluginFactory):
-#
-#    def __init__(self, parent = None):
-#        QWebPluginFactory.__init__(self, parent)
-#    
-#    def create(self, mimeType, url, names, values):
-#        if mimeType == "x-pyqt/widget":
-#            return JxField()
-    
-#    def plugins(self):
-#        plugin = QWebPluginFactory.Plugin()
-#        plugin.name = "PyQt Widget"
-#        plugin.description = "An example Web plugin written with PyQt."
-#        mimeType = QWebPluginFactory.MimeType()
-#        mimeType.name = "x-pyqt/widget"
-#        mimeType.description = "PyQt widget"
-#        mimeType.fileExtensions = []
-#        plugin.mimeTypes = [mimeType]
-#        print "plugins"
-#        return [plugin]
-	
-#class JxFieldb(QComboBox):
-#    def __init__(self, parent = None):
-#        QComboBox.__init__(self, parent)
-#        Rows = mw.deck.s.all(u"""select name, id from models""")
-#        self.SizeAdjustPolicy(QComboBox.AdjustToContents)
-#        for (Name, Id) in Rows:
-#		self.addItem(Name)
-#        self.show()
-	
-#class JxField(QMenuBar):	
-#    def __init__(self, parent = None):
-#	QMenuBar.__init__(self, parent)
-#	Menu = QMenu("Fields",self)
-#
-#	Rows = mw.deck.s.all(u"""select name, id from models""")
-#	for (Name, Id) in Rows:
-#              Menu.addAction(Name)
-#	self.addMenu(Menu)
-#	self.show()
-
-# with this you can enable QWidget inside a QWebView
-#QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
-#factory = WebPluginFactory()
-#JxWindow.page().setPluginFactory(factory)	
-
+JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console	
 
 
 def exit_JxPlugin():
 	JxWindow.hide()
 
+
 def init_JxPlugin():
 
 #	Initialises the Anki GUI to present an option to invoke the plugin.
-
-
 	
 	widg ={}
 	n = mw.mainWin.hboxlayout.count()
