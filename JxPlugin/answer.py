@@ -7,8 +7,21 @@
 import re
 from math import log
 from string import Template
+
 from loaddata import *
 
+JxLink = {
+"""%(Reading)s""":
+	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:500%">${Expression}</font><br /><font style="font-size:300%">${Reading}</font></center></div>""",
+"""%(Reading)s<br>%(Meaning)s""":
+	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:300%">${Reading}<br \>${Meaning}</font></center></div>""",
+"""%(Kanji)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
+"""%(Meaning)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:300%">${Meaning}</font></center><center>${K2Words}</center>""",
+"""%(OnYomi)s<br>%(KunYomi)s""":
+	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:500%">${OnYomi}<br />${KunYomi}</font></center><center>${K2Words}</center>"""
+}
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -35,10 +48,24 @@ def JxDefaultAnswer(Buffer,String,Dict):
 		
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
+    #mw.help.showText("Card : " + str(Card.id) +"Fact :" + str(Card.fact) + "CardModel : " + str(Card.cardModel.aformat))
     
-    Append = re.search(u"\${.*?}",Answer) == None
+    # First, get and translate the CardModel Template
+    try:
+	    JxAnswer = JxLink[Card.cardModel.aformat]
+    except KeyError:
+	    JxAnswer = Card.cardModel.aformat
 
-    Expression = None
+    # Then create a dictionnary for all data replacement strings...
+    
+
+
+
+
+#    Append = re.search(u"\${.*?}",Answer) == None
+
+    # try to guess if this is a Tango card or a Kanji card and fill the appropriate data Tango & Expression (for stroke order of tango) or Kanji 
+    
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -57,6 +84,11 @@ def append_JxPlugin(Answer,Card):
 
 
     JxAnswerDict = {}
+    
+    # first fill in the fact information
+    for FieldModel in Card.fact.model.fieldModels:
+	    JxAnswerDict[FieldModel.name] = Card.fact[FieldModel.name]     #(FieldModel.id, FieldModel.fact[FieldModel.name])
+    
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
 
@@ -75,56 +107,57 @@ def append_JxPlugin(Answer,Card):
     </style>"""
 
 
-    if Append:
-	    AnswerBuffer = u"""${Css}"""		
+#    if Append:
+#	    AnswerBuffer = u"""${Css}"""		
     
     # Word2JLPT
     try:
         JxAnswerDict[u"T2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Word2Data[Tango]]
-	if Append:
-		AnswerBuffer += u""" <div class="JLPT">${T2JLPT}</div>"""
+#	if Append:
+#		AnswerBuffer += u""" <div class="JLPT">${T2JLPT}</div>"""
     except KeyError:
-	    pass
+	    JxAnswerDict[u"T2JLPT"] =  u""
 
     # Word2Frequency
     try:
 		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Word2Frequency[Tango]+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100) 
-		if Append:
-			AnswerBuffer += """ <div class="Frequency">${T2Freq}</div>"""
+#		if Append:
+#			AnswerBuffer += """ <div class="Frequency">${T2Freq}</div>"""
     except KeyError:
-		pass
+		JxAnswerDict[u"T2Freq"] = u""
 
     if Kanji != None:
 		
 		# Stroke Order
-		if Append:
-			AnswerBuffer += u"""<div style="float:left;">${Stroke}</div>"""
+#		if Append:
+#			AnswerBuffer += u"""<div style="float:left;">${Stroke}</div>"""
 			
 		# Kanji2JLPT
 		try:
-			JxAnswerDict[u"K2JLPT"] =  """<span class="JLPT">%s</span>""" % Map[Kanji2JLPT[Kanji]]
-			if Append:
-				AnswerBuffer += u""" <div class="JLPT">${K2JLPT}</div>"""
+			JxAnswerDict[u"K2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Kanji2JLPT[Kanji]]
+#			if Append:
+#				AnswerBuffer += u""" <div class="JLPT">${K2JLPT}</div>"""
 		except KeyError:
-			pass
+			JxAnswerDict[u"K2JLPT"] =  u""
 	
 		# Kanji2Jouyou	
 		try:
 			JxAnswerDict[u"K2Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji["Legend"][Kanji2JLPT[Kanji]]
-			if Append:
-				AnswerBuffer += u""" <div class="Jouyou">${K2Jouyou}</div>"""
+#			if Append:
+#				AnswerBuffer += u""" <div class="Jouyou">${K2Jouyou}</div>"""
 		except KeyError:
-			pass
+			JxAnswerDict[u"K2Jouyou"] =  u""
 
 		# Word2Frequency
 		try:    
 			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Kanji2Frequency[Kanji]+1,2)-log(MaxFrequency+1,2))*10+100)
-			if Append:
-				AnswerBuffer += """ <div class="Frequency">${K2Freq}</div>"""
+#			if Append:
+#				AnswerBuffer += """ <div class="Frequency">${K2Freq}</div>"""
 		except KeyError:
-			pass		
+			JxAnswerDict[u"K2Freq"] = u""	
 				
-		# Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning
+		# Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning 
+		# limit hardcoded to 6
 		query = """select expression.value, reading.value, meaning.value from 
 		fields as expression, fields as reading, fields as meaning, 
 		fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
@@ -143,15 +176,15 @@ def append_JxPlugin(Answer,Card):
 		# if there Html Buffer isn't empty, adds it to the card info
 		if len(info):
 			JxAnswerDict[u"K2Words"] = """<table style="text-align:center;" align="center">%s</table>""" % info
-			if Append:
-				AnswerBuffer += """${K2Words}"""
+#			if Append:
+#				AnswerBuffer += """${K2Words}"""
 		else:
 			pass			
 
-    if Append:
+    if False:
 	    return Template(Answer+AnswerBuffer).safe_substitute(JxAnswerDict)
     else:
-	    return Template(Answer).safe_substitute(JxAnswerDict)
+	    return Template(JxAnswer).safe_substitute(JxAnswerDict)
 
 
 

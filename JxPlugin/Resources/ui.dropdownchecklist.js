@@ -127,6 +127,7 @@
                 var checked = checkBox.attr("checked");
                 checkBox.attr("checked", !checked)
                 self._syncSelected(checkBox);
+                self.sourceSelect.trigger("change");
             }
             label.click(checkItem);
             item.click(checkItem);
@@ -152,31 +153,40 @@
         _appendItems: function() {
             var self = this, sourceSelect = this.sourceSelect, controlWrapper = this.controlWrapper, dropWrapper = this.dropWrapper;
             var dropContainerDiv = dropWrapper.find(".ui-dropdownchecklist-dropcontainer");
-            dropContainerDiv.css({ float: "left" }); // to allow getting the actual width of the container
-			sourceSelect.children("optgroup").each(function(index) { // when the select has groups
-				var optgroup = $(this);
-				var text = optgroup.attr("label");
-				var group = self._createGroupItem(text);
-				dropContainerDiv.append(group);
-				self._appendOptions(optgroup, dropContainerDiv, true);
+            dropContainerDiv.css({ "float": "left" }); // to allow getting the actual width of the container
+			sourceSelect.children().each(function(index) { // when the select has groups
+				var opt = $(this);
+                if (opt.is("option")) {
+                    self._appendOption(opt, dropContainerDiv, index, false);
+                } else {
+                    var text = opt.attr("label");
+                    var group = self._createGroupItem(text);
+                    dropContainerDiv.append(group);
+                    self._appendOptions(opt, dropContainerDiv, index, true);
+                }
 			});
-			self._appendOptions(sourceSelect, dropContainerDiv, false); // when no groups
+			//self._appendOptions(sourceSelect, dropContainerDiv, false); // when no groups
             var divWidth = dropContainerDiv.outerWidth();
             var divHeight = dropContainerDiv.outerHeight();
-            dropContainerDiv.css({ float: "" }); // set it back
+            dropContainerDiv.css({ "float": "" }); // set it back
             return { width: divWidth, height: divHeight };
         },
-		_appendOptions : function(parent, container, indent) {
+		_appendOptions: function(parent, container, parentIndex, indent) {
 			var self = this;
             parent.children("option").each(function(index) {
                 var option = $(this);
-				var text = option.text();
-				var value = option.val();
-				var selected = option.attr("selected");
-				var item = self._createDropItem(index, value,text, selected, indent);
-				container.append(item);
+                var childIndex = (parentIndex + "." + index);
+                self._appendOption(option, container, childIndex, indent);
             })
 		},
+        _appendOption: function(option, container, index, indent) {
+            var self = this;
+            var text = option.text();
+            var value = option.val();
+            var selected = option.attr("selected");
+            var item = self._createDropItem(index, value, text, selected, indent);
+            container.append(item);            
+        },
         // Synchronizes the items checked and the source select
         // When firstItemChecksAll option is active also synchronizes the checked items
         // senderCheckbox parameters is the checkbox input that generated the synchronization
@@ -185,19 +195,19 @@
             var allCheckboxes = dropWrapper.find("input");
             if (options.firstItemChecksAll) {
                 // if firstItemChecksAll is true, check all checkboxes if the first one is checked
-                if (senderCheckbox.attr("value") =="All") {//OL senderCheckbox.attr(index)=0 
+                if (senderCheckbox.attr("index") == 0) {
                     allCheckboxes.attr("checked", senderCheckbox.attr("checked"));
                 } else {
                     // check the first checkbox if all the other checkboxes are checked
                     var allChecked;
                     allChecked = true;
                     allCheckboxes.each(function(index) {
-                        if ($(this).attr("value")!="All")  {//OL index > 0 
+                        if (index > 0) {
                             var checked = $(this).attr("checked");
                             if (!checked) allChecked = false;
                         }
                     });
-                    var firstCheckbox = allCheckboxes.filter("[value=All]"); //OL
+                    var firstCheckbox = allCheckboxes.filter(":first");
                     firstCheckbox.attr("checked", false);
                     if (allChecked) {
                         firstCheckbox.attr("checked", true);
@@ -217,12 +227,9 @@
         // Updates the text shown in the control depending on the checked (selected) items
         _updateControlText: function() {
             var self = this, sourceSelect = this.sourceSelect, options = this.options, controlWrapper = this.controlWrapper, dropWrapper = this.dropWrapper;
-            var firsttSelect = sourceSelect.find("option");
-           var firstSelect = firsttSelect.filter(":first");            
+            var firstSelect = sourceSelect.find("option:first");
             var allSelected = null != firstSelect && firstSelect.attr("selected");
-
             var selectOptions = sourceSelect.find("option");
-            
             var text = self._formatText(selectOptions, options.firstItemChecksAll, allSelected);
             var controlLabel = controlWrapper.find(".ui-dropdownchecklist-text");
             controlLabel.text(text);
@@ -230,21 +237,15 @@
         },
         // Formats the text that is shown in the control
         _formatText: function(selectOptions, firstItemChecksAll, allSelected) {
-                 allSelected = true;//OL
-                selectOptions.each(function() {//OL
-                    if (!$(this).attr("selected") && $(this).attr("value")!="All") {//OL
-                        allSelected=false;//OL
-                    }//OL
-                });//OL
             var text;
             if (firstItemChecksAll && allSelected) {
                 // just set the text from the first item
-                text = selectOptions.filter("[value=All]").text();//Ol
+                text = selectOptions.filter(":first").text();
             } else {
                 // concatenate the text from the checked items
                 text = "";
                 selectOptions.each(function() {
-                    if ($(this).attr("selected") && $(this).attr("value")!="All") {//OL
+                    if ($(this).attr("selected")) {
                         text += $(this).text() + ", ";
                     }
                 });
@@ -268,7 +269,8 @@
                     instance.controlWrapper.find(".ui-dropdownchecklist").toggleClass("ui-dropdownchecklist-active");
                     instance.dropWrapper.drop = false;
                     $.ui.dropdownchecklist.drop = null;
-                    $(document).unbind("click", hide);                    
+                    $(document).unbind("click", hide);
+					self.sourceSelect.trigger("blur");
                 }
             }
             // shows the given drop container instance
@@ -284,6 +286,7 @@
                 instance.dropWrapper.drop = true;
                 $.ui.dropdownchecklist.drop = instance;
                 $(document).bind("click", hide);
+				self.sourceSelect.trigger("focus");
             }
             if (dropWrapper.drop) {
                 hide(self);
