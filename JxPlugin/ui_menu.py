@@ -17,6 +17,8 @@ from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
+from utils import *
+import codecs
 
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
@@ -180,23 +182,6 @@ def JxTools():
 
 
 
-#
-#
-
-
-import os
-#import codecs
-import cPickle
-import itertools
-
-def JxReadFile(File):
-	"""Reads a tab separated file text and returns a list of tupples."""
-	List = []
-	File = codecs.open(File, "r", "utf8")
-	for Line in File:
-		List.append(tuple(Line.strip('\n').split('\t')))
-	f.close()
-	return List
 
 
 
@@ -481,26 +466,6 @@ JxWindow.hide()
 
 
 
-import sys
-from PyQt4.QtCore import QSize, Qt
-from PyQt4.QtGui import *
-from PyQt4.QtWebKit import *
-class WebWidget(QWidget):
-
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setBrush(Qt.white)
-        painter.setPen(Qt.black)
-        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
-        painter.setBrush(Qt.red)
-        painter.setPen(Qt.NoPen)
-        painter.drawRect(self.width()/4, self.height()/4,
-                         self.width()/2, self.height()/2)
-        painter.end()
-    
-    def sizeHint(self):
-        return QSize(100, 100)
 	
 def onJxMenu():
 	JxStats('JLPT')
@@ -516,52 +481,7 @@ QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptCanOpenWindows
 def JxJavaScriptPrint2Console(Message,Int, Source):
 	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
 JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console
-# QWidget inside QWebView experiment
-#class WebPluginFactory(QWebPluginFactory):
-#
-#    def __init__(self, parent = None):
-#        QWebPluginFactory.__init__(self, parent)
-#    
-#    def create(self, mimeType, url, names, values):
-#        if mimeType == "x-pyqt/widget":
-#            return JxField()
-    
-#    def plugins(self):
-#        plugin = QWebPluginFactory.Plugin()
-#        plugin.name = "PyQt Widget"
-#        plugin.description = "An example Web plugin written with PyQt."
-#        mimeType = QWebPluginFactory.MimeType()
-#        mimeType.name = "x-pyqt/widget"
-#        mimeType.description = "PyQt widget"
-#        mimeType.fileExtensions = []
-#        plugin.mimeTypes = [mimeType]
-#        print "plugins"
-#        return [plugin]
-	
-#class JxFieldb(QComboBox):
-#    def __init__(self, parent = None):
-#        QComboBox.__init__(self, parent)
-#        Rows = mw.deck.s.all(u"""select name, id from models""")
-#        self.SizeAdjustPolicy(QComboBox.AdjustToContents)
-#        for (Name, Id) in Rows:
-#		self.addItem(Name)
-#        self.show()
-	
-#class JxField(QMenuBar):	
-#    def __init__(self, parent = None):
-#	QMenuBar.__init__(self, parent)
-#	Menu = QMenu("Fields",self)
-#
-#	Rows = mw.deck.s.all(u"""select name, id from models""")
-#	for (Name, Id) in Rows:
-#              Menu.addAction(Name)
-#	self.addMenu(Menu)
-#	self.show()
 
-# with this you can enable QWidget inside a QWebView
-#QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True)
-#factory = WebPluginFactory()
-#JxWindow.page().setPluginFactory(factory)	
 
 
 
