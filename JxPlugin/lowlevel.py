@@ -5,6 +5,7 @@
 # This file is a plugin for the "anki" flashcard application http://repose.cx/anki/
 # ---------------------------------------------------------------------------
 import codecs
+import os
 
 def JxReadFile(File):
 	"""Reads a tab separated text file and returns a list of tuples."""

@@ -17,8 +17,10 @@ from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
-from utils import *
+
+
 import codecs
+import os
 
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
@@ -196,7 +198,14 @@ JxBase=QObject()
 	
 	
 	
-	
+def JxReadFile(File):
+	"""Reads a tab separated text file and returns a list of tuples."""
+	List = []
+	File = codecs.open(File, "r", "utf8")
+	for Line in File:
+		List.append(tuple(Line.strip('\n').split('\t')))
+	File.close()
+	return List
 	
 
 
