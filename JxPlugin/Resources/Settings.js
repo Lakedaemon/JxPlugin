@@ -75,13 +75,13 @@ $(document).ready(function(){
 		}
 	});
 	// Source-> Target
-	$('.edit_CardTemplate').html(JxTemplateOverride.Entry);
+	$('.edit_CardTemplate').html(JxTemplateOverride.Name);
 	$('.edit_CardTemplate').editable(function(value, settings) {
 		JxTemplateOverride.Entry = value;
 		$('.edit_NameTemplate').html(JxTemplateOverride.Name);
 		$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
 		$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
-		return value;
+		return JxTemplateOverride.Name;
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
@@ -95,10 +95,9 @@ $(document).ready(function(){
 	});
 	$('.edit_NameTemplate').html(JxTemplateOverride.Name);
 	$('.edit_NameTemplate').editable(function(value, settings) { 
-		uniquevalue = JxTemplateOverride.MakeNameUnique(value)
-		JxTemplateOverride.Name = uniquevalue;
+		JxTemplateOverride.Name = value;
 		$('.edit_CardTemplate').html(JxTemplateOverride.Name);
-		return(uniquevalue);
+		return(value);
 	}, { 
 		type    : 'textarea',
 		onblur : 'submit'

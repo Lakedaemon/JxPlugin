@@ -168,7 +168,7 @@ def JxTools():
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 #	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxAnswerSettings.Fieldselected('Tango'))")	
-	JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
+
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
@@ -184,103 +184,145 @@ def JxTools():
 #
 
 
+import os
+#import codecs
+import cPickle
+import itertools
+
+def JxReadFile(File):
+	"""Reads a tab separated file text and returns a list of tupples."""
+	List = []
+	File = codecs.open(File, "r", "utf8")
+	for Line in File:
+		List.append(tuple(Line.strip('\n').split('\t')))
+	f.close()
+	return List
 
 
 
 
-JxTable = {
-u"Word recall":
-	{"""%(Reading)s""":
-		"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""},
-u"Word recognition":
-	{"""%(Reading)s<br>%(Meaning)s""":"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""},
-u"Kanji character":
-	{"""%(Kanji)s""":
-		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""},
-u"Kanji meaning":
-	{"""%(Meaning)s""":
-		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""},
-u"Kanji readings":
-	{"""%(OnYomi)s<br>%(KunYomi)s""":
-		"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>"""},
-}
-    
 JxBase=QObject()
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+	
+
+
+
 
 class Jx__Entry_Source_Target(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-		self.Entry = JxTable.keys()[0]
-		
+		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User", "JxTable.txt")
+		self.InitTables()
+		self.Entry = 0
+
+	def Jx__Entry_fget(self):return str(self._Entry)
 	def Jx__Entry_fset(self,value):
-		self._Entry = str(value)
-		if self._Entry != u"Add Entry":
-			self._Name = self._Entry
-			self._Source = JxTable[self._Entry].keys()[0]
-			self._Target = JxTable[self._Entry].values()[0]
+		self._Entry = int(value)
+		N = len(self.Table)
+		if self._Entry != N:
+			(self._Name,self._Source,self._Target) = self.Table[self._Entry]
 		else:
-			self._Name = self.MakeNameUnique(u"Name<br>(must be unique)")
-			self._Source = self.MakeSourceUnique(u"Add Source<br>(must be unique)")
-			self._Target = u"Add Target"
-			JxTable[self._Name] = {self._Source:self._Target}
-			self._Entry = self. _Name			
+			self._Entry = N
+			(self._Name,self._Source,self._Target) = (u"Entry", self.MakeSourceUnique(u"Add Source<br>(must be unique)"), u"Add Target")
+			self.Table.append((self._Name,self._Source,self._Target))
+			
 	@Jx__Prop
-	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value)}
+	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value),'fget': lambda self:self.Jx__Entry_fget()}
 
 	def Jx__Name_fset(self,value):
 		self._Name=str(value)
-		if self._Name != self._Entry:
-			del JxTable[self._Entry]
-		JxTable[self._Name] = {self._Source:self._Target}
-		self._Entry = self._Name
+		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		if self._Name != OldName:
+			self.Table[self._Entry]=(self._Name,OldSource,OldTarget)
+			self.SaveTable()
 	@Jx__Prop
 	def Name():return {'fset': lambda self,value:self.Jx__Name_fset(value)}
 
 	def Jx__Source_fset(self,value):
 		self._Source=str(value)
-		JxTable[self._Name] = {self._Source:self._Target}
+		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		if self._Source != OldSource:
+			self.Table[self._Entry]=(OldName,self._Source,OldTarget)
+			self.SaveTable()
+			del JxLink[OldSource]
+			JxLink[self._Source]=self._Target
 	@Jx__Prop
 	def Source():return {'fset': lambda self,value:self.Jx__Source_fset(value)}
 	
 	def Jx__Target_fset(self,value):
 		self._Target = str(value)
-		JxTable[self._Name] = {self._Source:self._Target}
+		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		if self._Target != OldTarget:
+			self.Table[self._Entry]=(OldName,OldSource,self._Target)
+			self.SaveTable()
+			JxLink[OldSource]=self._Target
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
 	
 	@QtCore.pyqtSlot(result=str)	
 	def GetEntries(self):
 		Hash = []
-		for name in JxTable.keys():
-			Hash.append(u"'" + name + u"':'" + name + u"'")
-		Hash.append(u"'Add Entry':'Add Entry'")
-		Hash.append(u"'selected':'" + self._Entry + u"'")
+		N = len(self.Table)
+		for Entry in range(0, N):
+			Hash.append(u"'" + str(Entry) + u"':'" + self.Table[Entry][0] + u"'")
+		Hash.append(u"'" + str(N) + u"':'Add Entry'")
+		Hash.append(u"'selected':'0'")
 		return u"{" + u",".join(Hash) + u"}"
-
-	@QtCore.pyqtSlot(str,result=str)	
-	def MakeNameUnique(self,value):
-		"""Make sure to return a unique name field"""
-		String = str(value)
-		TempDict = set(name for name in JxTable.keys() if name !=self._Entry)
-		JxUnicityBuffer = u""
-		a = 0
-		while JxUnicityBuffer + String in TempDict:
-			JxUnicityBuffer = u"%s! " % a	
-			a += 1
-		return JxUnicityBuffer + String
 
 	@QtCore.pyqtSlot(str,result=str)	
 	def MakeSourceUnique(self,value):
 		"""Make sure to return a unique source field"""
 		String = str(value)
-		TempDict = set(Dict.keys()[0] for (name,Dict) in JxTable.iteritems() if name !=self._Entry)
+		TempDict = set(self.Table[Entry][0] for Entry in range(0,len(self.Table)) if Entry != self._Entry)
 		JxUnicityBuffer = u""
 		a = 0
 		while JxUnicityBuffer + String in TempDict:
 			JxUnicityBuffer = u"%s! " % a	
 			a += 1
 		return JxUnicityBuffer + String
+	def SaveTable(self):
+		File = codecs.open(self.File, "wb", "utf8")  
+		for (Name,Source,Target) in self.Table:
+			File.write(u"%s	%s	%s\n"%(Name,Source,Target))
+		File.close()
+	def InitTables(self):
+		if os.path.exists(self.File):
+			self.Table = JxReadFile(self.File)
+		else : 
+			self.Table = [
+(u"Word recall","""%(Reading)s""","""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""),
+(u"Word recognition","""%(Reading)s<br>%(Meaning)s""","""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""),
+(u"Kanji character","""%(Kanji)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""),
+(u"Kanji meaning","""%(Meaning)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""),
+(u"Kanji readings","""%(OnYomi)s<br>%(KunYomi)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
+			self.SaveTable()
+		JxLink = {}
+		#for (Name, Source,Target) in self.Table:
+		#	JxLink[Source] = Target
+
+
+
+JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
+
+
+
 
 class Jx__Model_CardModel_String(QObject):
 	def __init__(self,name,parent=JxBase):
