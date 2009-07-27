@@ -152,8 +152,8 @@ def JxTools():
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
 	Your decks are using the following mappings : <b class="edit_CardTemplate"> essai </b>
 	<center><table>
-	<tr><th>Source Template</th><th></th><th>Target Template</th></tr>
-	<tr><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
+	<tr><th>Entry</th><th></th><th>Source Template</th><th></th><th>Target Template</th></tr>
+	<tr><td class="edit_NameTemplate"></td><td>:</td><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
 	</table></center>	
 	
 	 """ % FieldsBuffer
@@ -216,25 +216,36 @@ class Jx__Entry_Source_Target(QObject):
 	def Jx__Entry_fset(self,value):
 		self._Entry = str(value)
 		if self._Entry != u"Add Entry":
+			self._Name = self._Entry
 			self._Source = JxTable[self._Entry].keys()[0]
 			self._Target = JxTable[self._Entry].values()[0]
 		else:
-			self._Source = u"Add Source<br>(must be unique)"
-			self._Target = u"Add Target"			
+			self._Name = self.MakeNameUnique(u"Name<br>(must be unique)")
+			self._Source = self.MakeSourceUnique(u"Add Source<br>(must be unique)")
+			self._Target = u"Add Target"
+			JxTable[self._Name] = {self._Source:self._Target}
+			self._Entry = self. _Name			
 	@Jx__Prop
 	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value)}
 
+	def Jx__Name_fset(self,value):
+		self._Name=str(value)
+		if self._Name != self._Entry:
+			del JxTable[self._Entry]
+		JxTable[self._Name] = {self._Source:self._Target}
+		self._Entry = self._Name
+	@Jx__Prop
+	def Name():return {'fset': lambda self,value:self.Jx__Name_fset(value)}
+
 	def Jx__Source_fset(self,value):
-		self._Source = str(value)
-		TempDict=set(Dict.keys()[0] for (name,Dict) in JxTable.iteritems() if name !=self._Entry)
-#		mw.help.showText(str(TempDict))
-		JxTable[self._Entry] = {self._Source:self._Target}
+		self._Source=str(value)
+		JxTable[self._Name] = {self._Source:self._Target}
 	@Jx__Prop
 	def Source():return {'fset': lambda self,value:self.Jx__Source_fset(value)}
 	
 	def Jx__Target_fset(self,value):
 		self._Target = str(value)
-		JxTable[self._Entry] = {self._Source:self._Target}
+		JxTable[self._Name] = {self._Source:self._Target}
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
 	
@@ -246,6 +257,30 @@ class Jx__Entry_Source_Target(QObject):
 		Hash.append(u"'Add Entry':'Add Entry'")
 		Hash.append(u"'selected':'" + self._Entry + u"'")
 		return u"{" + u",".join(Hash) + u"}"
+
+	@QtCore.pyqtSlot(str,result=str)	
+	def MakeNameUnique(self,value):
+		"""Make sure to return a unique name field"""
+		String = str(value)
+		TempDict = set(name for name in JxTable.keys() if name !=self._Entry)
+		JxUnicityBuffer = u""
+		a = 0
+		while JxUnicityBuffer + String in TempDict:
+			JxUnicityBuffer = u"%s! " % a	
+			a += 1
+		return JxUnicityBuffer + String
+
+	@QtCore.pyqtSlot(str,result=str)	
+	def MakeSourceUnique(self,value):
+		"""Make sure to return a unique source field"""
+		String = str(value)
+		TempDict = set(Dict.keys()[0] for (name,Dict) in JxTable.iteritems() if name !=self._Entry)
+		JxUnicityBuffer = u""
+		a = 0
+		while JxUnicityBuffer + String in TempDict:
+			JxUnicityBuffer = u"%s! " % a	
+			a += 1
+		return JxUnicityBuffer + String
 
 class Jx__Model_CardModel_String(QObject):
 	def __init__(self,name,parent=JxBase):

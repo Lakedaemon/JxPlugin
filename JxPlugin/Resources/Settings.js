@@ -75,8 +75,10 @@ $(document).ready(function(){
 		}
 	});
 	// Source-> Target
+	$('.edit_CardTemplate').html(JxTemplateOverride.Entry);
 	$('.edit_CardTemplate').editable(function(value, settings) {
 		JxTemplateOverride.Entry = value;
+		$('.edit_NameTemplate').html(JxTemplateOverride.Name);
 		$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
 		$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
 		return value;
@@ -84,7 +86,6 @@ $(document).ready(function(){
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
 		data   : JxTemplateOverride.GetEntries,
-//		placeholder : 'Append',
 		type   : "select",
 		style  : "inherit",
 		tooltip   : "Click to edit model !",
@@ -92,17 +93,21 @@ $(document).ready(function(){
 			return {id : 2};
 		}
 	});
-	$('.edit_NameTemplate').html(JxTemplateOverride.Entry);
+	$('.edit_NameTemplate').html(JxTemplateOverride.Name);
 	$('.edit_NameTemplate').editable(function(value, settings) { 
-		return(value);
+		uniquevalue = JxTemplateOverride.MakeNameUnique(value)
+		JxTemplateOverride.Name = uniquevalue;
+		$('.edit_CardTemplate').html(JxTemplateOverride.Name);
+		return(uniquevalue);
 	}, { 
 		type    : 'textarea',
 		onblur : 'submit'
 	}); 
 	$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
 	$('.edit_SourceTemplate').editable(function(value, settings) {
-		JxTemplateOverride.Source = value;
-		return(value);
+		uniquevalue = JxTemplateOverride.MakeSourceUnique(value)
+		JxTemplateOverride.Source = uniquevalue;
+		return(uniquevalue);
 	}, { 
 		type    : 'textarea',
 		width : 150,
