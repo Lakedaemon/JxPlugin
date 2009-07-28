@@ -18,6 +18,7 @@ from ui_graphs import *
 from tools import *
 from metacode import *
 
+
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
@@ -31,7 +32,7 @@ JxMenu = """
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
 <script type="text/javascript" src="jquery.jeditable.js"></script> 
 <script type="text/javascript" src="Settings.js"></script>
-
+<script type="text/javascript" src="firebug-lite-compressed.js"></script>
 
 <style type="text/css">
 
@@ -136,11 +137,13 @@ def JxTools():
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
 
+	<center>Test<b class="edit_Markup"></b>Test</center>
+
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
-	Your decks are using the following mappings : <b class="edit_CardTemplate"> essai </b>
+	Your decks are using the following mappings : <b class="edit_CardTemplate"></b>
 	<center><table>
-	<tr><th>Entry</th><th></th><th>Source Template</th><th></th><th>Target Template</th></tr>
-	<tr><td class="edit_NameTemplate"></td><td>:</td><td class="edit_SourceTemplate"></td><td>&hArr;</td><td class="edit_TargetTemplate"></td></tr>
+	<tr><th>Entry</th><th>Source Template</th><th>Target Template</th></tr>
+	<tr><td class="edit_NameTemplate"></td><td class="edit_SourceTemplate"></td><td class="edit_TargetTemplate"></td></tr>
 	</table></center>	
 
 	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
@@ -153,6 +156,8 @@ def JxTools():
 	</center>
 	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 	
+
+	
 	 """ % FieldsBuffer
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
@@ -164,21 +169,12 @@ def JxTools():
 
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
-#	JxWindow.page().mainFrame().evaluateJavaScript("alert(JxAnswerSettings.Fieldselected('Tango'))")	
 
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
-
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
-#	mw.help.showText(JxString.property("String").toString())
 
-
-
-
-
-#
-#
 
 
 import os
@@ -216,12 +212,12 @@ JxBase=QObject()
 
 
 
-	
 
 
 
 
 class Jx__Entry_Source_Target(QObject):
+	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
@@ -229,23 +225,21 @@ class Jx__Entry_Source_Target(QObject):
 		self.InitTables()
 		self.Entry = 0
 
-	def Jx__Entry_fget(self):return str(self._Entry)
 	def Jx__Entry_fset(self,value):
 		self._Entry = int(value)
 		N = len(self.Table)
 		if self._Entry != N:
 			(self._Name,self._Source,self._Target) = self.Table[self._Entry]
 		else:
-			self._Entry = N
-			(self._Name,self._Source,self._Target) = (u"Entry", self.MakeSourceUnique(u"Add Source<br>(must be unique)"), u"Add Target")
+			(self._Name,self._Source,self._Target) = (u"New Entry", self.MakeSourceUnique(u"Add Source<br>(must be unique)"), u"Add Target")
 			self.Table.append((self._Name,self._Source,self._Target))
 			
 	@Jx__Prop
-	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value),'fget': lambda self:self.Jx__Entry_fget()}
+	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value)}
 
 	def Jx__Name_fset(self,value):
 		self._Name=str(value)
-		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		(OldName,OldSource,OldTarget) = self.Table[self._Entry]
 		if self._Name != OldName:
 			self.Table[self._Entry]=(self._Name,OldSource,OldTarget)
 			self.SaveTable()
@@ -254,7 +248,7 @@ class Jx__Entry_Source_Target(QObject):
 
 	def Jx__Source_fset(self,value):
 		self._Source=str(value)
-		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		(OldName,OldSource,OldTarget) = self.Table[self._Entry]
 		if self._Source != OldSource:
 			self.Table[self._Entry]=(OldName,self._Source,OldTarget)
 			self.SaveTable()
@@ -262,16 +256,21 @@ class Jx__Entry_Source_Target(QObject):
 			JxLink[self._Source]=self._Target
 	@Jx__Prop
 	def Source():return {'fset': lambda self,value:self.Jx__Source_fset(value)}
-	
+		
 	def Jx__Target_fset(self,value):
 		self._Target = str(value)
-		(OldName, OldSource,OldTarget) = self.Table[self._Entry]
+		(OldName,OldSource,OldTarget) = self.Table[self._Entry]
 		if self._Target != OldTarget:
 			self.Table[self._Entry]=(OldName,OldSource,self._Target)
 			self.SaveTable()
 			JxLink[OldSource]=self._Target
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
+	
+	@QtCore.pyqtSlot(str,result=str)
+	def GetEscaped(self,String):
+		String.replace(u"<",u"&lt;")
+		return String.replace(u">",u"&gt;")
 	
 	@QtCore.pyqtSlot(result=str)	
 	def GetEntries(self):
@@ -280,7 +279,7 @@ class Jx__Entry_Source_Target(QObject):
 		for Entry in range(0, N):
 			Hash.append(u"'" + str(Entry) + u"':'" + self.Table[Entry][0] + u"'")
 		Hash.append(u"'" + str(N) + u"':'Add Entry'")
-		Hash.append(u"'selected':'0'")
+		Hash.append(u"'selected':'%s'"%self._Entry)
 		return u"{" + u",".join(Hash) + u"}"
 
 	@QtCore.pyqtSlot(str,result=str)	
@@ -303,12 +302,8 @@ class Jx__Entry_Source_Target(QObject):
 		if os.path.exists(self.File):
 			self.Table = JxReadFile(self.File)
 		else : 
-			self.Table = [
-(u"Word recall","""%(Reading)s""","""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Expression}<br />${Reading}</center></div>"""),
-(u"Word recognition","""%(Reading)s<br>%(Meaning)s""","""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center>${Reading}<br \>${Meaning}</center></div>"""),
-(u"Kanji character","""%(Kanji)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>"""),
-(u"Kanji meaning","""%(Meaning)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""),
-(u"Kanji readings","""%(OnYomi)s<br>%(KunYomi)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
+			from default import Jx__Entry_Source_Target__Default
+			self.Table = Jx__Entry_Source_Target__Default
 			self.SaveTable()
 		JxLink = {}
 		for (Name, Source,Target) in self.Table:
@@ -322,6 +317,7 @@ JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
 
 
 class Jx__Model_CardModel_String(QObject):
+	"""Data class for the HtmlJavascript Model/Card/String Widget"""
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)

@@ -1,3 +1,11 @@
+function Escape(value){
+	var String = value;
+return String.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function UnEscape(value){
+	var String = value;
+return String.replace(/&lt;/g,"<").replace(/&gt;/g,">");
+}
 $(document).ready(function(){
 	// dropdown list checkboxes
 	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
@@ -75,53 +83,56 @@ $(document).ready(function(){
 		}
 	});
 	// Source-> Target
-	$('.edit_CardTemplate').html(JxTemplateOverride.Name);
 	$('.edit_CardTemplate').editable(function(value, settings) {
 		JxTemplateOverride.Entry = value;
-		$('.edit_NameTemplate').html(JxTemplateOverride.Name);
-		$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
-		$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
-		return JxTemplateOverride.Name;
+		$('.edit_NameTemplate').html(Escape(JxTemplateOverride.Name));
+		$('.edit_SourceTemplate').html(Escape(JxTemplateOverride.Source));
+		$('.edit_TargetTemplate').html(Escape(JxTemplateOverride.Target));
+		return Escape(JxTemplateOverride.Name);
 	}, { 
 		onblur : 'submit',
 		indicator : '<img src="img/indicator.gif">',
 		data   : JxTemplateOverride.GetEntries,
+		placeholder : Escape(JxTemplateOverride.Name),
 		type   : "select",
 		style  : "inherit",
-		tooltip   : "Click to edit model !",
+		tooltip   : "Click to choose a card template mapping !",
 		submitdata : function() {
 			return {id : 2};
 		}
 	});
-	$('.edit_NameTemplate').html(JxTemplateOverride.Name);
 	$('.edit_NameTemplate').editable(function(value, settings) { 
 		JxTemplateOverride.Name = value;
-		$('.edit_CardTemplate').html(JxTemplateOverride.Name);
-		return(value);
+		$('.edit_CardTemplate').html(Escape(JxTemplateOverride.Name));
+		return Escape(JxTemplateOverride.Name);
 	}, { 
 		type    : 'textarea',
+		data : function(value,settings) {return JxTemplateOverride.Name;},
+		placeholder : Escape(JxTemplateOverride.Name),
 		onblur : 'submit'
 	}); 
-	$('.edit_SourceTemplate').html(JxTemplateOverride.Source);
 	$('.edit_SourceTemplate').editable(function(value, settings) {
 		uniquevalue = JxTemplateOverride.MakeSourceUnique(value)
 		JxTemplateOverride.Source = uniquevalue;
-		return(uniquevalue);
+		return Escape(uniquevalue);
 	}, { 
 		type    : 'textarea',
+		data : function(value,settings) {return JxTemplateOverride.Source;},
+		placeholder : Escape(JxTemplateOverride.Source),
 		width : 150,
 		height : 100,
 		onblur : 'submit'
 	}); 
-	$('.edit_TargetTemplate').html(JxTemplateOverride.Target);
 	$('.edit_TargetTemplate').editable(function(value, settings) {
 		JxTemplateOverride.Target = value;
-		return(value);
+		return Escape(value);
 	}, { 
 		type    : 'textarea',
+		data : function(value,settings) {return JxTemplateOverride.Target;},
+		placeholder : Escape(JxTemplateOverride.Target),
 		width : 150,
 		height : 100,
 		onblur : 'submit'
-	}); 
+	});
 });	
 
