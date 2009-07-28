@@ -32,7 +32,6 @@ JxMenu = """
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
 <script type="text/javascript" src="jquery.jeditable.js"></script> 
 <script type="text/javascript" src="Settings.js"></script>
-<script type="text/javascript" src="firebug-lite-compressed.js"></script>
 
 <style type="text/css">
 
@@ -137,14 +136,15 @@ def JxTools():
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
 
-	<center>Test<b class="edit_Markup"></b>Test</center>
-
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
-	Your decks are using the following mappings : <b class="edit_CardTemplate"></b>
-	<center><table>
-	<tr><th>Entry</th><th>Source Template</th><th>Target Template</th></tr>
-	<tr><td class="edit_NameTemplate"></td><td class="edit_SourceTemplate"></td><td class="edit_TargetTemplate"></td></tr>
-	</table></center>	
+	<form name="Translator"> 
+	<center><textarea name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
+     <br />
+     	<table width="80%%" align="center"><tr><td style="text-align:center;"><a href = "javascript:void(0)" onClick="$('.Entry').html(JxTemplateOverride.ReduceForm());
+	document.forms.Translator.Target.value=JxTemplateOverride.Target;
+	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td class="Entry" style="text-align:center"></td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table><br />
+	<center><textarea name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
+	</form>
 
 	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
 	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
@@ -200,8 +200,15 @@ JxBase=QObject()
 
 
 
-	
-	
+def JxSelect(List,Dict):
+	Select = u"""<form name="%(Form)s"> <select name="%(Select)s">""" % Dict
+	for (Value,Selected) in List:
+		if Value == Selected: 
+			SelectedString = u" selected"
+		else:
+			SelectedString = u""			
+		Select += u"""<option value="%(Value)s"%(Selected)s>%(Text)s</option>""" % {u'Value':Value,u'Text':Text,u'Selected':SelectedString} 
+	return Select + u"""</select></form> """
 	
 	
 	
@@ -223,16 +230,26 @@ class Jx__Entry_Source_Target(QObject):
 		self.setObjectName(name)
 		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User", "JxTable.txt")
 		self.InitTables()
-		self.Entry = 0
-
+		if len(self.Table)>0:
+			self.Entry = 0
+		else:
+			self._Entry = 0
+			self._Name = u""
+			self._Source = u""
+			self._Target = u""			
 	def Jx__Entry_fset(self,value):
 		self._Entry = int(value)
 		N = len(self.Table)
 		if self._Entry != N:
 			(self._Name,self._Source,self._Target) = self.Table[self._Entry]
+			mw.help.showText(u"ok"+str(10*N+self._Entry))
 		else:
-			(self._Name,self._Source,self._Target) = (u"New Entry", self.MakeSourceUnique(u"Add Source<br>(must be unique)"), u"Add Target")
+			(self._Name,self._Source,self._Target) = (self.MakeUnique(u"New Entry",0), self.MakeUnique(u"""Add Source
+				(must be unique)""",1), u"Add Target")
 			self.Table.append((self._Name,self._Source,self._Target))
+			JxLink[self._Source]=self._Target
+			mw.help.showText(u"pas ok"+str(10*N+self._Entry))
+			
 			
 	@Jx__Prop
 	def Entry():return {'fset': lambda self,value:self.Jx__Entry_fset(value)}
@@ -266,33 +283,59 @@ class Jx__Entry_Source_Target(QObject):
 			JxLink[OldSource]=self._Target
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
-	
-	@QtCore.pyqtSlot(str,result=str)
-	def GetEscaped(self,String):
-		String.replace(u"<",u"&lt;")
-		return String.replace(u">",u"&gt;")
-	
+
 	@QtCore.pyqtSlot(result=str)	
-	def GetEntries(self):
-		Hash = []
+	def GetForm(self):
+		Form = u"""<select name="Entry" onchange="
+		JxTemplateOverride.Entry = document.forms.Translator.Entry.options.selectedIndex;
+		document.forms.Translator.Target.value = JxTemplateOverride.Target;
+		document.forms.Translator.Source.value = JxTemplateOverride.Source;
+		$('.Entry').html(JxTemplateOverride.GetForm())">"""
 		N = len(self.Table)
 		for Entry in range(0, N):
-			Hash.append(u"'" + str(Entry) + u"':'" + self.Table[Entry][0] + u"'")
-		Hash.append(u"'" + str(N) + u"':'Add Entry'")
-		Hash.append(u"'selected':'%s'"%self._Entry)
-		return u"{" + u",".join(Hash) + u"}"
-
-	@QtCore.pyqtSlot(str,result=str)	
-	def MakeSourceUnique(self,value):
-		"""Make sure to return a unique source field"""
+			Select = u""	
+			if Entry == self._Entry: 
+				Select = u" selected"
+			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Entry, u'Text':self.Table[Entry][0] , u'Selected':Select} 
+		Form += u"""<option value="%s">New Entry</option>""" % N 
+		if len(self.Table) !=0:
+			return Form + u"""</select>"""
+		else:
+			return u"""<button name="Entry" onclick="
+			JxTemplateOverride.Entry = 0;
+			document.forms.Translator.Target.value = JxTemplateOverride.Target;
+			document.forms.Translator.Source.value = JxTemplateOverride.Source;
+			$('.Entry').html(JxTemplateOverride.GetForm())">New Entry</button>"""
+		
+	@QtCore.pyqtSlot(str,int,result=str)	
+	def MakeUnique(self,value,Int):
+		"""Make sure to return a unique field"""
 		String = str(value)
-		TempDict = set(self.Table[Entry][0] for Entry in range(0,len(self.Table)) if Entry != self._Entry)
+		TempDict = set(self.Table[Entry][Int] for Entry in range(0,len(self.Table)) if Entry != self._Entry)
+		if Int == 0:
+			TempDict.	add(u"New Entry")
 		JxUnicityBuffer = u""
-		a = 0
-		while JxUnicityBuffer + String in TempDict:
-			JxUnicityBuffer = u"%s! " % a	
+		a = 1
+		while String + JxUnicityBuffer in TempDict:
+			JxUnicityBuffer = u" %s" % a	
 			a += 1
-		return JxUnicityBuffer + String
+		return String + JxUnicityBuffer
+	@QtCore.pyqtSlot(result=str)	
+	def ReduceForm(self):
+		if len(self.Table)>0:
+			del JxLink[self._Source]
+			self.Table.pop(self._Entry)
+			self.SaveTable()
+
+		if len(self.Table)>0:
+			self.Entry = 0
+		else:
+			self._Entry = 0
+			self._Name = u""
+			self._Source = u""
+			self._Target = u""
+		return self.GetForm()
+		
 	def SaveTable(self):
 		File = codecs.open(self.File, "wb", "utf8")  
 		for (Name,Source,Target) in self.Table:
@@ -457,6 +500,8 @@ def onClick(url):
 	if String.startswith("py:"):
 		String = String[3:]
 		eval(String)
+	else:
+		QDesktopServices.openUrl(QUrl(link))
 
 # I now have my own window =^.^=
 JxWindow = QWebView(mw)
@@ -507,9 +552,9 @@ def onJxMenu():
 # needed to run javascript inside JxWindow
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptCanOpenWindows, True)
-def JxJavaScriptPrint2Console(Message,Int, Source):
-	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
-JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console	
+#def JxJavaScriptPrint2Console(Message,Int, Source):
+#	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
+#JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console	
 
 
 def exit_JxPlugin():
