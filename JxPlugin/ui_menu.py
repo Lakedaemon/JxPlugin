@@ -157,8 +157,6 @@ def JxTools():
 	
 	</form>
 
-	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
-	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <center><i class="edit_DisplayString"></i></center></p>
 
 	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
 	<center>
@@ -178,8 +176,8 @@ def JxTools():
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
 
-	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
+	#JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
+	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
@@ -209,17 +207,6 @@ JxBase=QObject()
 
 
 
-
-
-def JxSelect(List,Dict):
-	Select = u"""<form name="%(Form)s"> <select name="%(Select)s">""" % Dict
-	for (Value,Selected) in List:
-		if Value == Selected: 
-			SelectedString = u" selected"
-		else:
-			SelectedString = u""			
-		Select += u"""<option value="%(Value)s"%(Selected)s>%(Text)s</option>""" % {u'Value':Value,u'Text':Text,u'Selected':SelectedString} 
-	return Select + u"""</select></form> """
 	
 
 
@@ -531,23 +518,49 @@ class Jx__Browser(QWebView):
 	"""A modless QWebkit Window for Stuff that requires lot of space/focus."""
 	def __init__(self,parent=None):
 		QWebView.__init__(self,parent)
-		sizePolicyd = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)	
-		sizePolicyd.setHorizontalStretch(0)
-		sizePolicyd.setVerticalStretch(0)
-		sizePolicyd.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+		sizePolicyd = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)	
+		sizePolicyd.setHorizontalStretch(QSizePolicy.GrowFlag+QSizePolicy.ShrinkFlag)
+		sizePolicyd.setVerticalStretch(QSizePolicy.GrowFlag+QSizePolicy.ShrinkFlag)
+		#sizePolicyd.setHeightForWidth(self.sizePolicy().sizeHint())#hasHeightForWidth())
 		self.setSizePolicy(sizePolicyd)
-		self.setMinimumSize(QtCore.QSize(210, 400))
-		self.setMaximumSize(QtCore.QSize(210, 16777215))
+		#self.setMinimumSize(QtCore.QSize(210, 400))
+		#self.setMaximumSize(QtCore.QSize(210, 16777215))
 		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 		mw.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)	
 		self.hide()
+
+		
+	def minimumSizeHint(self):
+		return(QSize(400,200))		
+	def sizeHint(self):
+		return(QSize(400,200))
+	
+	
 	
 # I now have 2windows =^.^=
 JxPreview = Jx__Browser()
 
-def JxBrowse():
-	JxPreview.show()
 
+
+
+def JxBrowse():
+		
+	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
+	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
+	mw.connect( JxPreview.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
+
+	JxPreview.setHtml(u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="demo.css" /> 
+<script type="text/javascript" src="jquery.js"></script> 
+<script type="text/javascript" src="jquery.jeditable.js"></script> 
+<script type="text/javascript" src="Settings.js"></script><h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
+	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <hr /><center><i class="edit_DisplayString"></i></center></p>""",JxResourcesUrl)
+	JxPreview.show()
+	
 import sys
 from PyQt4.QtCore import QSize, Qt
 from PyQt4.QtGui import *
@@ -638,7 +651,7 @@ JxAnswerSettings={}
 
 def Rah():
 	JxAnswerSettings = JxBase.findChild(Jx__Model_CardModel_String,'JxAnswerSettings')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
+	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	
