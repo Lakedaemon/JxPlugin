@@ -1,8 +1,9 @@
 	function Rename (){
-		$('.Entry').html('<textarea name="Name" style="text-align:center" onChange="Restore()">'+ JxTemplateOverride.Name +'</textarea>');	
+		$('.Entry').html('<textarea name="Name" style="text-align:center" onBlur="Restore();" onChange="	JxTemplateOverride.Name = JxTemplateOverride.MakeUnique(document.forms.Translator.Name.value,0);Restore();">'+ JxTemplateOverride.Name +'</textarea>');	
+		document.forms.Translator.Name.focus();
 	};
 	function Restore (){
-		JxTemplateOverride.Name = JxTemplateOverride.MakeUnique(document.forms.Translator.Name.value,0);
+
 		$('.Entry').html(JxTemplateOverride.GetForm());	
 	};
 $(document).ready(function(){

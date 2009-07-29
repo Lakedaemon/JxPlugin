@@ -138,12 +138,19 @@ def JxTools():
 
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
 	<form name="Translator"> 
+	
 	<center><textarea name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
-     <br />
+	
+	<br />
+	
      	<table width="80%%" align="center"><tr><td style="text-align:center;"><a href = "javascript:void(0)" onClick="$('.Entry').html(JxTemplateOverride.ReduceForm());
 	document.forms.Translator.Target.value=JxTemplateOverride.Target;
-	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td class="Entry" style="text-align:center"></td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table><br />
+	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td class="Entry" style="text-align:center">&nbsp;</td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table>
+	
+	<br />
+	
 	<center><textarea name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
+	
 	</form>
 
 	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
@@ -242,13 +249,11 @@ class Jx__Entry_Source_Target(QObject):
 		N = len(self.Table)
 		if self._Entry != N:
 			(self._Name,self._Source,self._Target) = self.Table[self._Entry]
-			mw.help.showText(u"ok"+str(10*N+self._Entry))
 		else:
 			(self._Name,self._Source,self._Target) = (self.MakeUnique(u"New Entry",0), self.MakeUnique(u"""Add Source
 				(must be unique)""",1), u"Add Target")
 			self.Table.append((self._Name,self._Source,self._Target))
 			JxLink[self._Source]=self._Target
-			mw.help.showText(u"pas ok"+str(10*N+self._Entry))
 			
 			
 	@Jx__Prop
