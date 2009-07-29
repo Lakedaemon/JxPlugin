@@ -361,13 +361,13 @@ class Jx__Model_CardModel_String(QObject):
 		self.UpdateModels()
 
 	def Jx__Model_fset(self,value):
-		self._Model = value
+		self._Model = str(value)
 		self.UpdateCardModels()
 	@Jx__Prop
 	def Model():return {'fset': lambda self,value:self.Jx__Model_fset(value)}
 
 	def Jx__CardModel_fset(self,value):
-		self._CardModel = value
+		self._CardModel = str(value)
 		self.UpdateDisplayString()
 	@Jx__Prop
 	def CardModel():return {'fset': lambda self,value:self.Jx__CardModel_fset(value)}
@@ -379,6 +379,39 @@ class Jx__Model_CardModel_String(QObject):
 	@QtCore.pyqtSlot(result=str)
 	def GetModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Models],u",") + u",'selected':'"  + self.Model + u"'}"
+		
+	@QtCore.pyqtSlot(result=str)
+	def GetFormModels(self):		
+		Form = u"""<select name="Model" onChange="
+		var index = document.forms.Browser.Model.options.selectedIndex;
+		JxAnswerSettings.Model = document.forms.Browser.Model.options[index].text;
+		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+		$('.Answer').html(JxAnswerSettings.DisplayString);		
+		">"""
+		for Stuff in self.Models:
+			Select = u""	
+			if Stuff == self._Model: 
+				Select = u" selected"
+			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
+		return Form + u"""</select>"""
+	@QtCore.pyqtSlot(result=str)
+	def GetFormCardModels(self):		
+		Form = u"""<select name="CardModel" onChange="
+		var index = document.forms.Browser.CardModel.options.selectedIndex;
+		JxAnswerSettings.CardModel = document.forms.Browser.CardModel.options[index].text;
+		$('.Answer').html(JxAnswerSettings.DisplayString);	
+		">"""
+		for Stuff in self.CardModels:
+			Select = u""	
+			if Stuff == self._CardModel: 
+				Select = u" selected"
+			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
+		return Form + u"""</select>"""
+			
+			
+			
+		
+	
 	@QtCore.pyqtSlot(result=str)
 	def GetCardModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
@@ -523,17 +556,15 @@ class Jx__Browser(QWebView):
 		sizePolicyd.setVerticalStretch(QSizePolicy.GrowFlag+QSizePolicy.ShrinkFlag)
 		#sizePolicyd.setHeightForWidth(self.sizePolicy().sizeHint())#hasHeightForWidth())
 		self.setSizePolicy(sizePolicyd)
-		#self.setMinimumSize(QtCore.QSize(210, 400))
+		self.setMinimumSize(QtCore.QSize(400, 200))
 		#self.setMaximumSize(QtCore.QSize(210, 16777215))
 		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 		mw.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)	
 		self.hide()
 
-		
-	def minimumSizeHint(self):
-		return(QSize(400,200))		
+			
 	def sizeHint(self):
-		return(QSize(400,200))
+		return(QSize(800,600))
 	
 	
 	
@@ -548,7 +579,7 @@ def JxBrowse():
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	mw.connect( JxPreview.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
-
+	JxPreview.setWindowTitle(u"Answer Template Browser")
 	JxPreview.setHtml(u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
 <head>
@@ -557,8 +588,9 @@ def JxBrowse():
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
 <script type="text/javascript" src="jquery.js"></script> 
 <script type="text/javascript" src="jquery.jeditable.js"></script> 
-<script type="text/javascript" src="Settings.js"></script><h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
-	<p>In the <b class="edit_Model" id="div_1"></b> deck model, the <b class="oltest"><b class="edit_CardModel" id="div_1"></b></b> card model; <b id="JxString" class="edit_Mode"></b> the answer settings with  : <hr /><center><i class="edit_DisplayString"></i></center></p>""",JxResourcesUrl)
+<script type="text/javascript" src="Browser.js"></script></head><body><form name="Browser">
+<div><table align="center" width="80%"><tr><td style="text-align:center;">Deck Model : <span class="Model">&nbsp;</span></td><td style="text-align:center;">Card Model : <span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
+<div class="Answer"></div></form></body></html>""",JxResourcesUrl)
 	JxPreview.show()
 	
 import sys
