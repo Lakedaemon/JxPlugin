@@ -135,11 +135,12 @@ def JxTools():
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
+<STYLE> textarea.sample { BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } </STYLE>
 
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
 	<form name="Translator"> 
 	
-	<center><textarea name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
+	<center><textarea  class="sample" name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
 	
 	<br />
 	
@@ -149,7 +150,7 @@ def JxTools():
 	
 	<br />
 	
-	<center><textarea name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
+	<center><textarea class="sample" name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
 	
 	<br />
 	
@@ -382,11 +383,16 @@ class Jx__Model_CardModel_String(QObject):
 		
 	@QtCore.pyqtSlot(result=str)
 	def GetFormModels(self):		
-		Form = u"""<select name="Model" onChange="
+		Form = u"""<select  name="Model" onChange="
 		var index = document.forms.Browser.Model.options.selectedIndex;
 		JxAnswerSettings.Model = document.forms.Browser.Model.options[index].text;
-		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
-		$('.Answer').html(JxAnswerSettings.DisplayString);		
+		Jx('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+		var myCfe = new cfe.replace();
+	        myCfe.init({ 
+		scope: $('forme') 
+		});	
+		//$$('select').DoSexy();
+		Jx('.Answer').html(JxAnswerSettings.DisplayString);		
 		">"""
 		for Stuff in self.Models:
 			Select = u""	
@@ -396,10 +402,12 @@ class Jx__Model_CardModel_String(QObject):
 		return Form + u"""</select>"""
 	@QtCore.pyqtSlot(result=str)
 	def GetFormCardModels(self):		
-		Form = u"""<select name="CardModel" onChange="
-		var index = document.forms.Browser.CardModel.options.selectedIndex;
-		JxAnswerSettings.CardModel = document.forms.Browser.CardModel.options[index].text;
-		$('.Answer').html(JxAnswerSettings.DisplayString);	
+		Form = u"""<select  class="gah" name="CardModel" onChange="
+		var index = document.forms.Brawser.CardModel.options.selectedIndex;
+		JxAnswerSettings.CardModel = document.forms.Brawser.CardModel.options[index].text;
+		Jx('.Answer').html(JxAnswerSettings.DisplayString);	
+				var myCfe = new cfe.replace();
+	        myCfe.init({ scope: $('form') });	
 		">"""
 		for Stuff in self.CardModels:
 			Select = u""	
@@ -586,13 +594,43 @@ def JxBrowse():
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
-<script type="text/javascript" src="jquery.js"></script> 
-<script type="text/javascript" src="jquery.jeditable.js"></script> 
-<script type="text/javascript" src="Browser.js"></script></head><body><form name="Browser">
-<div><table align="center" width="80%"><tr><td style="text-align:center;">Deck Model : <span class="Model">&nbsp;</span></td><td style="text-align:center;">Card Model : <span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
-<div class="Answer"></div></form></body></html>""",JxResourcesUrl)
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript">
+jQuery.noConflict();
+var Jx = jQuery;
+</script>
+
+
+
+<script type="text/javascript" src="js/lib/mootools-1.2.1-core.js"></script>
+<script type="text/javascript" src="js/lib/mootools-1.2-more.js"></script>
+
+
+<link type="text/css" rel="stylesheet" href="asexyforms-blue.css"/>
+<script type="text/javascript" src="asexyforms.v1.1.mootools.js"></script>
+
+<link rel="stylesheet" type="text/css" href="css/cfe.css" />
+<script type="text/javascript" src="Browser.js"></script>
+
+
+</head><body>
+<div><table align="center" width="80%"><tr><td style="text-align:center;">Deck Model : <form id="form" name="Browser" class="form"><span class="Model">&nbsp;</span></form></td><td style="text-align:center;">Card Model : <form  name="Brawser" class="form"><span id="forme" class="CardModel">&nbsp;</span></td></tr></table></div><hr />
+<textarea class="Answer">yo</textarea><select><option name="a">c</option><option name="a">b</option></select></form>
+<script type="text/javascript" src="js/cfe/base/cfe.base.js"></script>
+<script type="text/javascript" src="js/cfe/base/cfe.replace.js"></script>
+<script type="text/javascript" src="js/cfe/modules/cfe.module.text.js"></script>
+<script type="text/javascript" src="js/cfe/modules/cfe.module.textarea.js"></script>
+<script type="text/javascript" src="js/cfe/modules/cfe.module.select.js"></script>
+
+<script type="text/javascript" src="js/cfe/base/cfe.replace.autostart.js"></script>
+<script type="text/javascript" src="firebug-lite-compressed.js"></script>
+</body></html>""",JxResourcesUrl)
 	JxPreview.show()
-	
+
+
+#<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/mootools/1.2.2/mootools-yui-compressed.js"></script>
+#<link type="text/css" rel="stylesheet" href="asexyforms-blue.css"/>
+#<script type="text/javascript" src="asexyforms.v1.1.mootools.js"></script>
 import sys
 from PyQt4.QtCore import QSize, Qt
 from PyQt4.QtGui import *
