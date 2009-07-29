@@ -151,6 +151,10 @@ def JxTools():
 	
 	<center><textarea name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
 	
+	<br />
+	
+	<table align="center"  width="70%%"><tr><td style="text-align:center;"><a href="py:JxBrowse()">Preview</a></td><td style="text-align:center;"><a href="javascript:void(0);">Help</a></td></tr></table>
+	
 	</form>
 
 	<h3 style="text-align:center;">ANSWER FIELDS BROWSER</h3>
@@ -217,9 +221,7 @@ def JxSelect(List,Dict):
 		Select += u"""<option value="%(Value)s"%(Selected)s>%(Text)s</option>""" % {u'Value':Value,u'Text':Text,u'Selected':SelectedString} 
 	return Select + u"""</select></form> """
 	
-	
-	
-	
+
 
 
 
@@ -524,6 +526,27 @@ JxWindow.hide()
 
 #def sizeHint(self):
 #        return QSize(100,100)
+
+class Jx__Browser(QWebView):
+	"""A modless QWebkit Window for Stuff that requires lot of space/focus."""
+	def __init__(self,parent=None):
+		QWebView.__init__(self,parent)
+		sizePolicyd = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)	
+		sizePolicyd.setHorizontalStretch(0)
+		sizePolicyd.setVerticalStretch(0)
+		sizePolicyd.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+		self.setSizePolicy(sizePolicyd)
+		self.setMinimumSize(QtCore.QSize(210, 400))
+		self.setMaximumSize(QtCore.QSize(210, 16777215))
+		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+		mw.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)	
+		self.hide()
+	
+# I now have 2windows =^.^=
+JxPreview = Jx__Browser()
+
+def JxBrowse():
+	JxPreview.show()
 
 import sys
 from PyQt4.QtCore import QSize, Qt
