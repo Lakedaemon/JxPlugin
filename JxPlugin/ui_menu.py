@@ -383,38 +383,33 @@ class Jx__Model_CardModel_String(QObject):
 		
 	@QtCore.pyqtSlot(result=str)
 	def GetFormModels(self):		
-		Form = u"""<select  name="Model" onChange="
-		var index = document.forms.Browser.Model.options.selectedIndex;
-		JxAnswerSettings.Model = document.forms.Browser.Model.options[index].text;
+		Form = u"""<form id ="FormModel"><select name="Model" onChange="
+		var index = document.forms.FormModel.Model.options.selectedIndex;
+		JxAnswerSettings.Model = document.forms.FormModel.Model.options[index].text;
 		Jx('.CardModel').html(JxAnswerSettings.GetFormCardModels());
 		var myCfe = new cfe.replace();
-	        myCfe.init({ 
-		scope: $('forme') 
-		});	
-		//$$('select').DoSexy();
-		Jx('.Answer').html(JxAnswerSettings.DisplayString);		
+	       myCfe.init({ scope: $('FormCardModel') });
+	       	Jx('.Answer').html(JxAnswerSettings.DisplayString);	
 		">"""
 		for Stuff in self.Models:
 			Select = u""	
 			if Stuff == self._Model: 
-				Select = u" selected"
-			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
-		return Form + u"""</select>"""
+				Select = u"selected"
+			Form += u"""<option value="%(Entry)s" %(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
+		return Form + u"""</select></form>"""
 	@QtCore.pyqtSlot(result=str)
 	def GetFormCardModels(self):		
-		Form = u"""<select  class="gah" name="CardModel" onChange="
-		var index = document.forms.Brawser.CardModel.options.selectedIndex;
-		JxAnswerSettings.CardModel = document.forms.Brawser.CardModel.options[index].text;
+		Form = u"""<form id="FormCardModel"><select  name="CardModel" onChange="
+		var index = document.forms.FormCardModel.CardModel.options.selectedIndex;
+		JxAnswerSettings.CardModel = document.forms.FormCardModel.CardModel.options[index].text;
 		Jx('.Answer').html(JxAnswerSettings.DisplayString);	
-				var myCfe = new cfe.replace();
-	        myCfe.init({ scope: $('form') });	
 		">"""
 		for Stuff in self.CardModels:
 			Select = u""	
 			if Stuff == self._CardModel: 
 				Select = u" selected"
 			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
-		return Form + u"""</select>"""
+		return Form + u"""</select></form>"""
 			
 			
 			
@@ -605,25 +600,40 @@ var Jx = jQuery;
 <script type="text/javascript" src="js/lib/mootools-1.2.1-core.js"></script>
 <script type="text/javascript" src="js/lib/mootools-1.2-more.js"></script>
 
-
-<link type="text/css" rel="stylesheet" href="asexyforms-blue.css"/>
-<script type="text/javascript" src="asexyforms.v1.1.mootools.js"></script>
+<link   type="text/css" rel="stylesheet" href="sexyforms/blue/sexyforms-blue.css"  media="all" id="theme" /> 
+<script type="text/javascript" src="sexyforms.v1.1.mootools.js"></script>
 
 <link rel="stylesheet" type="text/css" href="css/cfe.css" />
-<script type="text/javascript" src="Browser.js"></script>
-
-
-</head><body>
-<div><table align="center" width="80%"><tr><td style="text-align:center;">Deck Model : <form id="form" name="Browser" class="form"><span class="Model">&nbsp;</span></form></td><td style="text-align:center;">Card Model : <form  name="Brawser" class="form"><span id="forme" class="CardModel">&nbsp;</span></td></tr></table></div><hr />
-<textarea class="Answer">yo</textarea><select><option name="a">c</option><option name="a">b</option></select></form>
+<script type="text/javascript" src="aBrowser.js"></script>
 <script type="text/javascript" src="js/cfe/base/cfe.base.js"></script>
 <script type="text/javascript" src="js/cfe/base/cfe.replace.js"></script>
 <script type="text/javascript" src="js/cfe/modules/cfe.module.text.js"></script>
 <script type="text/javascript" src="js/cfe/modules/cfe.module.textarea.js"></script>
 <script type="text/javascript" src="js/cfe/modules/cfe.module.select.js"></script>
 
-<script type="text/javascript" src="js/cfe/base/cfe.replace.autostart.js"></script>
-<script type="text/javascript" src="firebug-lite-compressed.js"></script>
+<script type="text/javascript" src="ajs/cfe/base/acfe.replace.autostart.js"></script>
+<script type="text/javascript">
+window.addEvent('domready', function() {
+		Jx('.Model').html(JxAnswerSettings.GetFormModels());
+		Jx('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+		Jx('.Answer').html(JxAnswerSettings.DisplayString);	
+		//$$("input", "select", "textarea").each(function(el) {
+		//	el.DoSexy();
+		//});
+		var myCfe = new cfe.replace();
+		myCfe.setModuleOptions("select",{
+			scrolling: false,
+			scollSteps: 5
+		});
+		myCfe.init({scope: $('form')});
+});
+</script>
+</head><body>
+<div><table align="center" width="80%"><tr>
+<td style="text-align:center;"><span class="Model">&nbsp;</span></td>
+<td style="text-align:center;"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
+<div class="Answer">yo</div>
+<select class="sexyform"><option name="a">c</option><option name="a" selected="selected">b</option></select>
 </body></html>""",JxResourcesUrl)
 	JxPreview.show()
 
