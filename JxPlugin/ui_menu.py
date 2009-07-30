@@ -32,7 +32,9 @@ JxMenu = """
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
 <script type="text/javascript" src="jquery.jeditable.js"></script> 
 <script type="text/javascript" src="Settings.js"></script>
+<script type="text/javascript">
 
+</script>
 <style type="text/css">
 
 div#content {
@@ -146,8 +148,12 @@ def JxTools():
 	
      	<table width="80%%" align="center"><tr><td style="text-align:center;"><a href = "javascript:void(0)" onClick="$('.Entry').html(JxTemplateOverride.ReduceForm());
 	document.forms.Translator.Target.value=JxTemplateOverride.Target;
-	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td class="Entry" style="text-align:center">&nbsp;</td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table>
-	
+	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td id="Entry" class="Entry" style="text-align:center">&nbsp;</td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table>
+<script type="text/javascript">
+$(document).ready(function(){
+		$('select#Entry').selectmenu();
+});
+</script>
 	<br />
 	
 	<center><textarea class="sample" name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
@@ -383,13 +389,12 @@ class Jx__Model_CardModel_String(QObject):
 		
 	@QtCore.pyqtSlot(result=str)
 	def GetFormModels(self):		
-		Form = u"""<form id ="FormModel"><select name="Model" onChange="
+		Form = u"""<form id ="FormModel"><select id="Model" name="Model" onChange="
 		var index = document.forms.FormModel.Model.options.selectedIndex;
 		JxAnswerSettings.Model = document.forms.FormModel.Model.options[index].text;
-		Jx('.CardModel').html(JxAnswerSettings.GetFormCardModels());
-		var myCfe = new cfe.replace();
-	       myCfe.init({ scope: $('FormCardModel') });
-	       	Jx('.Answer').html(JxAnswerSettings.DisplayString);	
+		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+	       	$('.Answer').html(JxAnswerSettings.DisplayString);
+		$('select#CardModel').selectmenu();
 		">"""
 		for Stuff in self.Models:
 			Select = u""	
@@ -399,10 +404,10 @@ class Jx__Model_CardModel_String(QObject):
 		return Form + u"""</select></form>"""
 	@QtCore.pyqtSlot(result=str)
 	def GetFormCardModels(self):		
-		Form = u"""<form id="FormCardModel"><select  name="CardModel" onChange="
+		Form = u"""<form id="FormCardModel"><select  id="CardModel" name="CardModel" onChange="
 		var index = document.forms.FormCardModel.CardModel.options.selectedIndex;
 		JxAnswerSettings.CardModel = document.forms.FormCardModel.CardModel.options[index].text;
-		Jx('.Answer').html(JxAnswerSettings.DisplayString);	
+		$('.Answer').html(JxAnswerSettings.DisplayString);	
 		">"""
 		for Stuff in self.CardModels:
 			Select = u""	
@@ -590,50 +595,90 @@ def JxBrowse():
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
 <script type="text/javascript" src="jquery.js"></script>
-<script type="text/javascript">
-jQuery.noConflict();
-var Jx = jQuery;
+
+
+<link rel="Stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/ui-darkness/jquery-ui.css" type="text/css" /> 
+	<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/jquery-ui.min.js"></script> 
+	<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
+	<style type="text/css"> 
+		/*demo styles*/
+		body {font-size: 62.5%; font-family:"Verdana",sans-serif; margin: 70px 10px;}
+		fieldset { border:0;  margin-bottom: 40px;}	
+		label,select,.ui-select-menu { float: left; margin-right: 10px; }
+		select { width: 200px; }
+		
+		/*select with custom icons*/
+		body a.customicons { height: 2.8em;}
+		body .customicons li a, body a.customicons span.ui-selectmenu-status { line-height: 2em; padding-left: 30px !important; }
+		body .video .ui-selectmenu-item-icon, body .podcast .ui-selectmenu-item-icon, body .rss .ui-selectmenu-item-icon { height: 24px; width: 24px; }
+		body .video .ui-selectmenu-item-icon { background: url(sample_icons/24-video-square.png) 0 0 no-repeat; }
+		body .podcast .ui-selectmenu-item-icon { background: url(sample_icons/24-podcast-square.png) 0 0 no-repeat; }
+		body .rss .ui-selectmenu-item-icon { background: url(sample_icons/24-rss-square.png) 0 0 no-repeat; }
+		
+		
+	</style> 
+	<script type="text/javascript"> 
+	
+	
+
+		
+		
+		//a custom format option callback
+		var addressFormatting = function(text){
+			var newText = text;
+			//array of find replaces
+			var findreps = [
+				{find:/^([^\-]+) \- /g, rep: '<span class="ui-selectmenu-item-header">$1</span>'},
+				{find:/([^\|><]+) \| /g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
+				{find:/([^\|><\(\)]+) (\()/g, rep: '<span class="ui-selectmenu-item-content">$1</span>$2'},
+				{find:/([^\|><\(\)]+)$/g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
+				{find:/(\([^\|><]+\))$/g, rep: '<span class="ui-selectmenu-item-footer">$1</span>'}
+			];
+			
+			for(var i in findreps){
+				newText = newText.replace(findreps[i].find, findreps[i].rep);
+			}
+			return newText;
+		}
+		
+		
+ 
+			
+		
+		
+	</script> 
+	<script type="text/javascript" src="http://ui.jquery.com/applications/themeroller/themeswitchertool/"></script> 
+<script type="text/javascript"> $(function(){ $('<div style="position: absolute; top: 20px; right: 10px;" />').appendTo('body').themeswitcher(); }); </script> 
+
+
+
+
+
+
+
+
+<script type="text/javascript" src="qBrowser.js"></script>
+
+
 </script>
-
-
-
-<script type="text/javascript" src="js/lib/mootools-1.2.1-core.js"></script>
-<script type="text/javascript" src="js/lib/mootools-1.2-more.js"></script>
-
-<link   type="text/css" rel="stylesheet" href="sexyforms/blue/sexyforms-blue.css"  media="all" id="theme" /> 
-<script type="text/javascript" src="sexyforms.v1.1.mootools.js"></script>
-
-<link rel="stylesheet" type="text/css" href="css/cfe.css" />
-<script type="text/javascript" src="aBrowser.js"></script>
-<script type="text/javascript" src="js/cfe/base/cfe.base.js"></script>
-<script type="text/javascript" src="js/cfe/base/cfe.replace.js"></script>
-<script type="text/javascript" src="js/cfe/modules/cfe.module.text.js"></script>
-<script type="text/javascript" src="js/cfe/modules/cfe.module.textarea.js"></script>
-<script type="text/javascript" src="js/cfe/modules/cfe.module.select.js"></script>
-
-<script type="text/javascript" src="ajs/cfe/base/acfe.replace.autostart.js"></script>
 <script type="text/javascript">
-window.addEvent('domready', function() {
-		Jx('.Model').html(JxAnswerSettings.GetFormModels());
-		Jx('.CardModel').html(JxAnswerSettings.GetFormCardModels());
-		Jx('.Answer').html(JxAnswerSettings.DisplayString);	
-		//$$("input", "select", "textarea").each(function(el) {
-		//	el.DoSexy();
-		//});
-		var myCfe = new cfe.replace();
-		myCfe.setModuleOptions("select",{
-			scrolling: false,
-			scollSteps: 5
-		});
-		myCfe.init({scope: $('form')});
+$(document).ready(function(){
+		$('.Model').html(JxAnswerSettings.GetFormModels());
+		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+		$('.Answer').html(JxAnswerSettings.DisplayString);	
+		$('select#Model').selectmenu();
+		$('select#CardModel').selectmenu();
 });
 </script>
 </head><body>
+
+
 <div><table align="center" width="80%"><tr>
 <td style="text-align:center;"><span class="Model">&nbsp;</span></td>
 <td style="text-align:center;"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
-<div class="Answer">yo</div>
-<select class="sexyform"><option name="a">c</option><option name="a" selected="selected">b</option></select>
+<div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
 </body></html>""",JxResourcesUrl)
 	JxPreview.show()
 
