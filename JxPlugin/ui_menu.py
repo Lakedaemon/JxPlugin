@@ -26,20 +26,66 @@ JxMenu = """
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<!--<link rel="stylesheet" type="text/css" href="demo.css" /> -->
+
 
 <link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
 <link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
 <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+
+
+
+
+
+<!--                  Buttons                          -->
+
+<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+
+
+<script src="ui.button/ui.classnameoptions.js"></script> 
+<script src="ui.button/ui.button.js"></script> 
+<script src="ui.button/ui.buttonset.js"></script> 
+<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+
+
+
+<!--                     Selects                          -->
+
+
+
+
+
 <script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-<script type="text/javascript" src="Settings.js"></script>
-<script type="text/javascript">
 
-</script>
+
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+
+<script type="text/javascript" src="Settings.js"></script>
+
+
+
+
+
+
+
+<script> 
+	jQuery().ready(function(){
+/*		var icon = "info"; 
+		var buttonOptions={
+			checkButtonset:true
+		}; */
+		$('.ui-button').button();    //button(buttonOptions);
+	});
+</script> 
+
+
+
+
+
+
+
 <style type="text/css">
 
 div#content {
@@ -152,11 +198,13 @@ def JxTools():
 	<br />
 	
      	<table width="80%%" align="center"><tr><td style="text-align:center;"><a href = "javascript:void(0)" onClick="$('.Entry').html(JxTemplateOverride.ReduceForm());
+        $('select#Entry').selectmenu({width:200});
+        $('.ui-button').button();
 	document.forms.Translator.Target.value=JxTemplateOverride.Target;
 	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td id="Entry" class="Entry" style="text-align:center">&nbsp;</td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table>
 <script type="text/javascript">
 $(document).ready(function(){
-		$('select#Entry').selectmenu();
+		$('select#Entry').selectmenu({width:200});
 });
 </script>
 	<br />
@@ -310,12 +358,13 @@ class Jx__Entry_Source_Target(QObject):
 		if len(self.Table) !=0:
 			return Form + u"""</select>"""
 		else:
-			return u"""<button id="Entry" name="Entry" onclick="
+			return u"""<button class="ui-button" id="Entry" name="Entry" onclick="
 			JxTemplateOverride.Entry = 0;
 			document.forms.Translator.Target.value = JxTemplateOverride.Target;
 			document.forms.Translator.Source.value = JxTemplateOverride.Source;
 			$('.Entry').html(JxTemplateOverride.GetForm());
-			$('select#Entry').selectmenu({width:200});">New Entry</button>"""
+                           $('select#Entry').selectmenu({width:200});
+                        ">New Entry</button>"""
 		
 	@QtCore.pyqtSlot(str,int,result=str)	
 	def MakeUnique(self,value,Int):
@@ -349,7 +398,7 @@ class Jx__Entry_Source_Target(QObject):
 	def SaveTable(self):
 		File = codecs.open(self.File, "wb", "utf8")  
 		for (Name,Source,Target) in self.Table:
-			File.write(u"%s	%s	%s\n"%(Name,Source,Target))
+			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
 		File.close()
 	def InitTables(self):
 		if os.path.exists(self.File):

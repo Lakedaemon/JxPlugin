@@ -4,13 +4,14 @@
 	};
 	function Restore (){
 
-		$('.Entry').html(JxTemplateOverride.GetForm());	
+		$('.Entry').html(JxTemplateOverride.GetForm());
+                $('select#Entry').selectmenu({width:200});
 	};
 $(document).ready(function(){
 		document.forms.Translator.Source.value = JxTemplateOverride.Source;
 		document.forms.Translator.Target.value = JxTemplateOverride.Target;
 		$(".Entry").html(JxTemplateOverride.GetForm());
-		$('select#Entry').selectmenu({width:180});
+		$('select#Entry').selectmenu({width:200});
 		
 	// dropdown list checkboxes
 	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
