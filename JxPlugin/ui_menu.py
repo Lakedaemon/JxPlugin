@@ -26,7 +26,7 @@ JxMenu = """
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<link rel="stylesheet" type="text/css" href="demo.css" /> 
+<!--<link rel="stylesheet" type="text/css" href="demo.css" /> -->
 
 <link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
 <link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
@@ -36,7 +36,6 @@ JxMenu = """
 
 
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-<!--<script type="text/javascript" src="jquery.jeditable.js"></script> -->
 <script type="text/javascript" src="Settings.js"></script>
 <script type="text/javascript">
 
