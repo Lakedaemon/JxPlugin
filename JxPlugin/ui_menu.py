@@ -216,7 +216,9 @@ def JxReadFile(File):
 
 
 
+
 JxBase=QObject()
+
 
 
 
@@ -665,6 +667,7 @@ class WebWidget(QWidget):
     
     def sizeHint(self):
         return QSize(100, 100)
+
 	
 def onJxMenu():
 	JxStats('JLPT')
@@ -677,9 +680,6 @@ def onJxMenu():
 # needed to run javascript inside JxWindow
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptEnabled, True)
 QWebSettings.globalSettings().setAttribute(QWebSettings.JavascriptCanOpenWindows, True)
-#def JxJavaScriptPrint2Console(Message,Int, Source):
-#	mw.help.showText("Line "+ str(Int) + " SourceID " + Source + "/n" + Message)
-#JxWindow.javaScriptConsoleMessage=JxJavaScriptPrint2Console	
 
 
 def exit_JxPlugin():
