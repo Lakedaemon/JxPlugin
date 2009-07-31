@@ -27,10 +27,16 @@ JxMenu = """
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
 <link rel="stylesheet" type="text/css" href="demo.css" /> 
-<script type="text/javascript" src="jquery.js"></script> 
-<script type="text/javascript" src="ui.core.js"></script> 
+
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
+
+
 <script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-<script type="text/javascript" src="jquery.jeditable.js"></script> 
+<!--<script type="text/javascript" src="jquery.jeditable.js"></script> -->
 <script type="text/javascript" src="Settings.js"></script>
 <script type="text/javascript">
 
@@ -287,11 +293,12 @@ class Jx__Entry_Source_Target(QObject):
 
 	@QtCore.pyqtSlot(result=str)	
 	def GetForm(self):
-		Form = u"""<select name="Entry" onchange="
+		Form = u"""<select id="Entry" name="Entry" onchange="
 		JxTemplateOverride.Entry = document.forms.Translator.Entry.options.selectedIndex;
 		document.forms.Translator.Target.value = JxTemplateOverride.Target;
 		document.forms.Translator.Source.value = JxTemplateOverride.Source;
-		$('.Entry').html(JxTemplateOverride.GetForm())">"""
+		$('.Entry').html(JxTemplateOverride.GetForm());
+		$('select#Entry').selectmenu({width:200});">"""
 		N = len(self.Table)
 		for Entry in range(0, N):
 			Select = u""	
@@ -302,11 +309,12 @@ class Jx__Entry_Source_Target(QObject):
 		if len(self.Table) !=0:
 			return Form + u"""</select>"""
 		else:
-			return u"""<button name="Entry" onclick="
+			return u"""<button id="Entry" name="Entry" onclick="
 			JxTemplateOverride.Entry = 0;
 			document.forms.Translator.Target.value = JxTemplateOverride.Target;
 			document.forms.Translator.Source.value = JxTemplateOverride.Source;
-			$('.Entry').html(JxTemplateOverride.GetForm())">New Entry</button>"""
+			$('.Entry').html(JxTemplateOverride.GetForm());
+			$('select#Entry').selectmenu({width:200});">New Entry</button>"""
 		
 	@QtCore.pyqtSlot(str,int,result=str)	
 	def MakeUnique(self,value,Int):
@@ -394,7 +402,7 @@ class Jx__Model_CardModel_String(QObject):
 		JxAnswerSettings.Model = document.forms.FormModel.Model.options[index].text;
 		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
 	       	$('.Answer').html(JxAnswerSettings.DisplayString);
-		$('select#CardModel').selectmenu();
+		$('select#CardModel').selectmenu({style:'dropdown'});
 		">"""
 		for Stuff in self.Models:
 			Select = u""	
@@ -593,64 +601,18 @@ def JxBrowse():
 <head>
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" type="text/css" href="demo.css" /> 
-<script type="text/javascript" src="jquery.js"></script>
+<!--<link rel="stylesheet" type="text/css" href="demo.css" /> -->
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
+<style type="text/css"> select { width: 200px; }</style> 
 
-<link rel="Stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/ui-darkness/jquery-ui.css" type="text/css" /> 
-	<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script> 
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/jquery-ui.min.js"></script> 
-	<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-	<style type="text/css"> 
-		/*demo styles*/
-		body {font-size: 62.5%; font-family:"Verdana",sans-serif; margin: 70px 10px;}
-		fieldset { border:0;  margin-bottom: 40px;}	
-		label,select,.ui-select-menu { float: left; margin-right: 10px; }
-		select { width: 200px; }
-		
-		/*select with custom icons*/
-		body a.customicons { height: 2.8em;}
-		body .customicons li a, body a.customicons span.ui-selectmenu-status { line-height: 2em; padding-left: 30px !important; }
-		body .video .ui-selectmenu-item-icon, body .podcast .ui-selectmenu-item-icon, body .rss .ui-selectmenu-item-icon { height: 24px; width: 24px; }
-		body .video .ui-selectmenu-item-icon { background: url(sample_icons/24-video-square.png) 0 0 no-repeat; }
-		body .podcast .ui-selectmenu-item-icon { background: url(sample_icons/24-podcast-square.png) 0 0 no-repeat; }
-		body .rss .ui-selectmenu-item-icon { background: url(sample_icons/24-rss-square.png) 0 0 no-repeat; }
-		
-		
-	</style> 
-	<script type="text/javascript"> 
-	
-	
-
-		
-		
-		//a custom format option callback
-		var addressFormatting = function(text){
-			var newText = text;
-			//array of find replaces
-			var findreps = [
-				{find:/^([^\-]+) \- /g, rep: '<span class="ui-selectmenu-item-header">$1</span>'},
-				{find:/([^\|><]+) \| /g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
-				{find:/([^\|><\(\)]+) (\()/g, rep: '<span class="ui-selectmenu-item-content">$1</span>$2'},
-				{find:/([^\|><\(\)]+)$/g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
-				{find:/(\([^\|><]+\))$/g, rep: '<span class="ui-selectmenu-item-footer">$1</span>'}
-			];
-			
-			for(var i in findreps){
-				newText = newText.replace(findreps[i].find, findreps[i].rep);
-			}
-			return newText;
-		}
-		
-		
- 
-			
-		
-		
-	</script> 
-	<script type="text/javascript" src="http://ui.jquery.com/applications/themeroller/themeswitchertool/"></script> 
+<!--	<script type="text/javascript" src="http://ui.jquery.com/applications/themeroller/themeswitchertool/"></script> 
 <script type="text/javascript"> $(function(){ $('<div style="position: absolute; top: 20px; right: 10px;" />').appendTo('body').themeswitcher(); }); </script> 
+-->
 
 
 
@@ -658,20 +620,17 @@ def JxBrowse():
 
 
 
-
-<script type="text/javascript" src="qBrowser.js"></script>
-
-
-</script>
 <script type="text/javascript">
 $(document).ready(function(){
 		$('.Model').html(JxAnswerSettings.GetFormModels());
 		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
 		$('.Answer').html(JxAnswerSettings.DisplayString);	
-		$('select#Model').selectmenu();
-		$('select#CardModel').selectmenu();
+		$('select#Model').selectmenu({style:'dropdown'});
+		$('select#CardModel').selectmenu({style:'dropdown'});
 });
+
 </script>
+
 </head><body>
 
 
