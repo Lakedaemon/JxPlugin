@@ -25,42 +25,49 @@ JxMenu = """
 <head>
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
 
 
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+
+<!--                  jQuery & UI                          -->
+
+
 <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
 
 
+<!--                         Theme                          -->
 
+<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
 
 
 <!--                  Buttons                          -->
 
-<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+
+
 
 
 <script src="ui.button/ui.classnameoptions.js"></script> 
 <script src="ui.button/ui.button.js"></script> 
-<script src="ui.button/ui.buttonset.js"></script> 
 <link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+<script src="ui.button/ui.buttonset.js"></script> 
 
 
+
+	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
 
 <!--                     Selects                          -->
 
+<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
 
-
-
-
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
 <script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
 
 
 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+
 
 <script type="text/javascript" src="Settings.js"></script>
 
@@ -72,12 +79,10 @@ JxMenu = """
 
 <script> 
 	jQuery().ready(function(){
-/*		var icon = "info"; 
-		var buttonOptions={
-			checkButtonset:true
-		}; */
-		$('.ui-button').button();    //button(buttonOptions);
-	});
+		//var icon = "info"; 
+               $('.ui-button').button({checkButtonset:true});
+
+});
 </script> 
 
 
@@ -130,6 +135,26 @@ ul#navlist li#active {
 }
 
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </head>
 <body>
 <div id="navcontainer">
@@ -197,11 +222,8 @@ def JxTools():
 	
 	<br />
 	
-     	<table width="80%%" align="center"><tr><td style="text-align:center;"><a href = "javascript:void(0)" onClick="$('.Entry').html(JxTemplateOverride.ReduceForm());
-        $('select#Entry').selectmenu({width:200});
-        $('.ui-button').button();
-	document.forms.Translator.Target.value=JxTemplateOverride.Target;
-	document.forms.Translator.Source.value=JxTemplateOverride.Source;">Delete</a></td><td id="Entry" class="Entry" style="text-align:center">&nbsp;</td><td style="text-align:center;"><a href = "javascript:void(0)" onclick="Rename()">Rename</a></td></tr></table>
+     	<center class="Entry">&nbsp;</center>
+
 <script type="text/javascript">
 $(document).ready(function(){
 		$('select#Entry').selectmenu({width:200});
@@ -213,7 +235,19 @@ $(document).ready(function(){
 	
 	<br />
 	
-	<table align="center"  width="70%%"><tr><td style="text-align:center;"><a href="py:JxBrowse()">Preview</a></td><td style="text-align:center;"><a href="py:JxPreview.setHtml(JxHelpAutomaticMapping,JxResourcesUrl)">Help</a></td></tr></table>
+
+<center><div class="ui-buttonset-small">
+        <a class="ui-button" href = "javascript:void(0)" onClick="
+                $('.Entry').html(JxTemplateOverride.ReduceForm());
+                $('select#Entry').selectmenu({width:200});
+                $('.ui-button').button();
+                document.forms.Translator.Target.value=JxTemplateOverride.Target;
+                document.forms.Translator.Source.value=JxTemplateOverride.Source;"
+        >Delete</a>
+        <a class="ui-button" href="py:JxBrowse()">Preview</a>
+        <a class="ui-button" href = "javascript:void(0)" onclick="Rename()">Rename</a>
+        <a class="ui-button" href="py:JxHelp()">Help</a></div>
+</center>
 	
 	</form>
 
@@ -225,7 +259,6 @@ $(document).ready(function(){
 	</center>
 	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
 	
-
 	
 	 """ % FieldsBuffer
 	
@@ -244,7 +277,9 @@ $(document).ready(function(){
 
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
 
-
+def JxHelp():
+        JxPreview.setHtml(JxHelpAutomaticMapping,JxResourcesUrl)
+        JxPreview.show()
 
 import os
 #import codecs
