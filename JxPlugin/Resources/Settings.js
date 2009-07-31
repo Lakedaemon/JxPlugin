@@ -1,6 +1,8 @@
 	function Rename (){
+                if (JxTemplateOverride.Name != "New Entry") {
 		$('.Entry').html('<textarea name="Name" style="text-align:center" onBlur="Restore();" onChange="	JxTemplateOverride.Name = JxTemplateOverride.MakeUnique(document.forms.Translator.Name.value,0);Restore();">'+ JxTemplateOverride.Name +'</textarea>');	
 		document.forms.Translator.Name.focus();
+                };
 	};
 	function Restore (){
 

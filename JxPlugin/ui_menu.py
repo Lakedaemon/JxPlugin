@@ -213,7 +213,7 @@ $(document).ready(function(){
 	
 	<br />
 	
-	<table align="center"  width="70%%"><tr><td style="text-align:center;"><a href="py:JxBrowse()">Preview</a></td><td style="text-align:center;"><a href="javascript:void(0);">Help</a></td></tr></table>
+	<table align="center"  width="70%%"><tr><td style="text-align:center;"><a href="py:JxBrowse()">Preview</a></td><td style="text-align:center;"><a href="py:JxPreview.setHtml(JxHelpAutomaticMapping,JxResourcesUrl)">Help</a></td></tr></table>
 	
 	</form>
 
@@ -292,7 +292,7 @@ class Jx__Entry_Source_Target(QObject):
 			self.Entry = 0
 		else:
 			self._Entry = 0
-			self._Name = u""
+			self._Name = "New Entry"
 			self._Source = u""
 			self._Target = u""			
 	def Jx__Entry_fset(self,value):
@@ -390,7 +390,7 @@ class Jx__Entry_Source_Target(QObject):
 			self.Entry = 0
 		else:
 			self._Entry = 0
-			self._Name = u""
+			self._Name = "New Entry"
 			self._Source = u""
 			self._Target = u""
 		return self.GetForm()
@@ -786,4 +786,140 @@ def Rah():
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
+        
+        
+        
+        
+        
+        
+        
+JxHelpAutomaticMapping="""
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+ 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+  <head> 
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8" /> 
+        <title>Documentation - JxPlugin - GitHub</title> 
+
+
+
+ 
+    <meta name="description" content="Japanese Extended Plugin for the Spaced Repetition System ANKI" /> 
+ 
+ 
+    
+ 
+  </head> <body><style>
+html,body{height:100%;}
+body{background-color:white;font:13.34px helvetica,arial,clean,sans-serif;*font-size:small;text-align:center;}
+table{font-size:inherit;font:100%;}
+select,input[type=text],input[type=password],input[type=image],textarea{font:99% helvetica,arial,sans-serif;}
+select,option{padding:0 .25em;}
+input.text{padding:1px 0;}
+optgroup{margin-top:.5em;}
+pre,code{font:115% Monaco,"Courier New",monospace;*font-size:100%;}
+body *{line-height:1.4em;}
+img{border:0;}
+a{color:#4183c4;text-decoration:none;}
+a.action{color:#d00;text-decoration:underline;}
+a.action span{text-decoration:none;}
+a:hover{text-decoration:underline;}
+.clear{clear:both;}
+.sparkline{display:none;}
+.right{float:right;}
+.left{float:left;}
+.hidden{display:none;}
+img.help{vertical-align:middle;}
+.notification{background:#FFFBE2 none repeat scroll 0;border:1px solid #FFE222;padding:1em;margin:1em 0;font-weight:bold;}
+.warning{background:#fffccc;font-weight:bold;padding:.5em;margin-bottom:.8em;}
+.error_box{background:#FFEBE8 none repeat scroll 0;border:1px solid #DD3C10;padding:1em;font-weight:bold;}
+abbr{border-bottom:none;}
+.flash{color:green;}
+body{text-align:center;}  
+
+</style>
+<div >
+        <h1><span class="caps">AUTOMATIC MAPPING</span></h1>
+<p>These settings are usefull if you want to customize the display of the Answer cards when reviewing in Anki.</p>
+<table align="center" style="border: 1px solid black;">
+	<tbody><tr>
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 150px; height: 30px;">%(Reading)s</textarea> &nbsp; <b>(1)</b></center></td>
+
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+		<td style="text-align: center;"><b>(2)</b>&nbsp;<a>Delete</a></td>
+		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recall </span><span style="border: 1px solid black; padding: 2px 5px;">V</span>&nbsp;<b>(3)</b></td>
+
+		<td style="text-align: center;"><a>Rename </a>&nbsp;<b>(4)</b></td>
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">${Css}&lt;div style="float:left"&gt;&lt;div&gt;${T2JLPT}&lt;/div&gt;&lt;div&gt;${T2Freq}&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;center&gt;${Expression}&lt;br /&gt;${Reading}&lt;/center&gt;&lt;/div&gt;</textarea>&nbsp;<b>(5)</b></center></td>
+
+	</tr>
+	<tr>
+		<td colspan="3"><center><b>(6)</b>&nbsp;<a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a>&nbsp;<b>(7)</b></center></td>
+	</tr>
+</tbody></table>
+<h2>How to enhance the &quot;recognition&quot; template for Words</h2>
+<p>You first select &quot;Word recognition&quot; in the select menu <b>(3)</b> to get</p>
+
+<table align="center" style="border: 1px solid black;">
+	<tbody><tr>
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 170px; height: 35px;">%(Reading)s&lt;br&gt;%(Meaning)</textarea></center></td>
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+		<td style="text-align: center;"><a>Delete</a></td>
+
+		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recognition</span><span style="border: 1px solid black; padding: 2px 5px;">V</span>&nbsp;<b>(3)</b></td>
+		<td style="text-align: center;"><a>Rename </a></td>
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">${Css} &lt;b&gt;(4)&lt;/b&gt;&lt;div style="float:left;"&gt;&lt;div&gt;${T2JLPT}&lt;/div&gt;&lt;div&gt;${T2Freq}&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;center&gt;${Reading}&lt;br&gt;${Meaning}&lt;/center&gt;&lt;/div&gt;</textarea></center></td>
+	</tr>
+	<tr>
+		<td colspan="3"><center><a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a></center></td>
+	</tr>
+</tbody></table>
+<p>Then, you modify the field <b>(5)</b> to your liking, using <span class="caps">HTML</span> and Css markup. The JxPlugin ads support for some special symbols related to the study of japanese that you can use too like $(CSS), $([Field Name]), $(WJLPT), $(TJLPT), …</p>
+
+<table align="center" style="border: 1px solid black;">
+	<tbody><tr>
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 170px; height: 35px;">%(Reading)s&lt;br&gt;%(Meaning)</textarea></center></td>
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+		<td style="text-align: center;"><a>Delete</a></td>
+
+		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recognition</span><span style="border: 1px solid black; padding: 2px 5px;">V</span></td>
+		<td style="text-align: center;"><a>Rename </a></td>
+	</tr>
+	<tr>
+		<td colspan="3"></td>
+	</tr>
+	<tr>
+
+		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">&lt;center&gt;My markup code for $(Expression)&lt;/center&gt;JLPT Level is : $(WJLPT)</textarea>&nbsp;<b>(5)</b></center></td>
+	</tr>
+	<tr>
+		<td colspan="3"><center><a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a></center></td>
+	</tr>
+</tbody></table>
+      </div><p></p></body></html>
+"""
 	
