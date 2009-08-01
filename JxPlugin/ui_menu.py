@@ -161,6 +161,7 @@ ul#navlist li#active {
 <ul id="navlist">
 <li ${JLPT}><a href=py:JxStats("JLPT")>JLPT</a></li>
 <li ${Jouyou}><a href=py:JxStats("Jouyou")>Jouyou</a></li>
+<li ${Kanken}><a href=py:JxStats("Kanken")>Kanken</a></li>
 <li ${Zone}><a href=py:JxStats("Zone")>Frequency</a></li>
 <li><a href=py:JxGraphs()>Graphs</a></li>
 <li ${Tools}><a href=py:JxTools()>Tools</a></li>
@@ -262,7 +263,7 @@ $(document).ready(function(){
 	
 	 """ % FieldsBuffer
 	
-	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict = {"JLPT":'',"Jouyou":'',"Kanken":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict["Tools"] = 'id="active"'
 	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
 	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
@@ -580,7 +581,7 @@ def JxGetInfo():
 	
 	
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
-"Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango}
+"Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango,"Kanji2Kanken":MapKankenKanji}
 
 def JxStats(Type):
 	
@@ -588,7 +589,7 @@ def JxStats(Type):
 	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
 	JxHtml += HtmlReport(JxMap["Kanji2"+Type],QueryKanji)
 	
-	if Type!="Jouyou":
+	if Type not in ["Jouyou","Kanken"]:
 		JxHtml +="""<br /><center><b style="font-size:1.4em;">TANGO</b></center>"""
 		JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Tango')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Tango')>Seen</a></center><br />"""
 		JxHtml += HtmlReport(JxMap["Tango2"+Type],QueryTango)
@@ -617,7 +618,7 @@ def JxSeen(Type,Set):
 	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">SEEN ${CAPSET}</b></center><center><a href=py:JxMissing("${Type}","${Set}")>Missing</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=upper(Set)) 
 	JxHtml += SeenHtml(JxMap[Set+"2"+Type],JxQuery[Set+"b"])
 	
-	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
+	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Kanken":'',"Tools":'',"Content":JxHtml}
 	Dict[Type] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	

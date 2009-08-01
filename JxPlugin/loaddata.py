@@ -113,6 +113,33 @@ else:
 	cPickle.dump(Word2Data, f, cPickle.HIGHEST_PROTOCOL)
 	f.close()
 	
+######################################################################
+#
+#                      Kanken for Kanji
+#
+######################################################################
+Kanji2Kanken = {}
+
+file = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Kanken.csv")
+
+def read_Kanken(file):
+	"""Reads Kanken levels from file."""
+	f = codecs.open(file, "r", "utf8")
+	
+	def keyfunc(line):
+		if line=="\n":
+			return False
+		else:
+			return True
+	for key, group in itertools.groupby(f.readlines(), keyfunc):
+		if key:
+			group=list(group)
+			data=[l.rstrip().split("	".decode("utf-8")) for l in group]
+			for linol in data:
+			    Kanji2Kanken[linol[0].strip(u" ")] = str(linol[1])
+	f.close()
+
+read_Kanken(file)
 
 
 ######################################################################
@@ -201,11 +228,23 @@ for (key,value) in Word2Frequency.iteritems():
 		Word2Zone[key] = 4
 	else:
 		Word2Zone[key] = 5
-	
-MapJLPTTango = {"From":"Tango","To":"JLPT","Legend":{1:"Lvl 1",2:"Lvl 2",3:"Lvl 3",4:"Lvl 4"},"Dict":Word2Data}
-MapZoneTango = {"From":"Tango","To":"Frequency","Legend":{1:"Highest",2:"High",3:"Fair",4:"Low",5:"Lowest"},"Dict":Word2Zone}
-MapJLPTKanji = {"From":"Kanji","To":"JLPT","Legend":{1:"Lvl 1",2:"Lvl 2",3:"Lvl 3",4:"Lvl 4"},"Dict":Kanji2JLPT}
-MapZoneKanji = {"From":"Kanji","To":"Frequency","Legend":{1:"Highest",2:"High",3:"Fair",4:"Low",5:"Lowest"},"Dict":Kanji2Zone}
-MapJouyouKanji = {"From":"Kanji","To":"Jouyou","Legend":{1:"Grade 1",2:"Grade 2",3:"Grade 3",4:"Grade 4",5:"Grade 5",6:"Grade 6","HS":"H.School"},"Dict":Kanji2Grade}
 
+class FileList(dict):
+        def __init__(self,From,To,Dict,Order):
+                self.From = From
+                self.To = To
+                self.Dict = Dict
+                self.LegendDict = dict(Order)
+                self.Order = Order
+                self.Rank = [Value for Key,Value in Order]
+        def Legend(self,key):
+                return self.LegendDict[key]
+                
+MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")])
+MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
+MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")])
+MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
+MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"Grade 1"),(2,"Grade 2"),(3,"Grade 3"),(4,"Grade 4"),(5,"Grade 5"),(6,"Grade 6"),("HS","H.School")])
+MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),
+        ('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])
 

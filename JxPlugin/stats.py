@@ -44,15 +44,17 @@ def ComputeCount(Dict,Query):
 	return Count
 
 def HtmlReport(Map,Query):
-	Map.update(ComputeCount(Map["Dict"],Query))
+        Dict = ComputeCount(Map.Dict,Query)
+        Dict['To'] = Map.To
+        Dict['From'] = Map.From
 	JStatsHTML = """
 	<table width="100%%" align="center" style="margin:0 20 0 20;">
 	<tr><td align="left"><b>%(To)s</b></td><th colspan=2 align="center"><b>%(From)s</b></th><td align="right"><b>Percent</b></td></tr>
 	""" 
-	for key,value in Map["Legend"].iteritems():
+	for Key,Value in Map.Order:
 		JStatsHTML += """
 		<tr><td align="left"><b>%s</b></td><td align="right">%%(L%s)s</td><td align="left"> / %%(T%s)s</td><td align="right">%%(P%s).1f %%%%</td></tr>
-		""" % (value,key,key,key) 
+		""" % (Value,Key,Key,Key) 
 
 	JStatsHTML += """
 	<tr><td align="left"><b>Total</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InMap)s</td><td align="right">%(PInsideInMap).1f %%</td></tr>
@@ -60,38 +62,38 @@ def HtmlReport(Map,Query):
 	<tr><td align="left"><b> %(To)s/All</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InQuery)s</td><td align="right">%(PInsideInQuery).1f %%</td></tr>
 	</table>
 	""" 
-        return JStatsHTML % Map
+        return JStatsHTML % Dict
 
 def SeenHtml(Map,Query):
-	Dict=Map["Dict"]
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
 	Seen = {}
-	Color = {0:True}
-	Buffer = {0:u""}
-	for value in Dict.values():
-		Buffer[value] = u""
-		Color[value] = True	
+	Color = {u"Other":True}
+	Buffer = {u"Other":u""}
+	for (Key,Value) in Map.Order:
+		Buffer[Key] = u""
+		Color[Key] = True	
 	for (Stuff,Id) in mw.deck.s.all(Query):
 		if Stuff not in Seen:
 			try: 
-				value = Dict[Stuff]	  
+				Key = Map.Dict[Stuff]	  
 			except KeyError:
-				value = 0
+				Key = u"Other"
 			Seen[Stuff] = 0
-			Color[value] = not(Color[value])			
-			if Color[value]:
-				Buffer[value] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
+			Color[Key] = not(Color[Key])			
+			if Color[Key]:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
 			else:
-				Buffer[value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-	HtmlBuffer = ""
-	for key, string in Buffer.iteritems():
-		if key == 0:
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % string
-		else:
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map["Legend"][key],string)
+				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
+	HtmlBuffer = u""
+	for Key,Value in Map.Order:
+                if Buffer[Key] != u"":
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
+        if Buffer["Other"] != u"":
+			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer["Other"]
 	return HtmlBuffer
 
 def MissingHtml(Map,Query):
-	Dict=Map["Dict"]
+	Dict=Map.Dict
 	Seen = {}
 	for Stuff in mw.deck.s.column0(Query):
 		Seen[Stuff] = 0
@@ -111,7 +113,7 @@ def MissingHtml(Map,Query):
 	HtmlBuffer = u""
 	for key, string in Buffer.iteritems():
 		if key != 0:
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map[u"Legend"][key],string)
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(key),string)
 	return HtmlBuffer	
 	
 User = []
