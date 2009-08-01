@@ -44,9 +44,6 @@ def ComputeCount(Dict,Query):
 	return Count
 
 def HtmlReport(Map,Query):
-        Dict = ComputeCount(Map.Dict,Query)
-        Dict['To'] = Map.To
-        Dict['From'] = Map.From
 	JStatsHTML = """
 	<table width="100%%" align="center" style="margin:0 20 0 20;">
 	<tr><td align="left"><b>%(To)s</b></td><th colspan=2 align="center"><b>%(From)s</b></th><td align="right"><b>Percent</b></td></tr>
@@ -62,6 +59,9 @@ def HtmlReport(Map,Query):
 	<tr><td align="left"><b> %(To)s/All</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InQuery)s</td><td align="right">%(PInsideInQuery).1f %%</td></tr>
 	</table>
 	""" 
+        Dict = ComputeCount(Map.Dict,Query)
+        Dict['To'] = Map.To
+        Dict['From'] = Map.From
         return JStatsHTML % Dict
 
 def SeenHtml(Map,Query):
@@ -69,51 +69,52 @@ def SeenHtml(Map,Query):
 	Seen = {}
 	Color = {u"Other":True}
 	Buffer = {u"Other":u""}
-	for (Key,Value) in Map.Order:
+	for (Key,String) in Map.Order:
 		Buffer[Key] = u""
 		Color[Key] = True	
 	for (Stuff,Id) in mw.deck.s.all(Query):
 		if Stuff not in Seen:
 			try: 
-				Key = Map.Dict[Stuff]	  
+				Value = Map.Dict[Stuff]	  
 			except KeyError:
-				Key = u"Other"
+				Value = u"Other"
 			Seen[Stuff] = 0
-			Color[Key] = not(Color[Key])			
-			if Color[Key]:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
+			Color[Value] = not(Color[Value])			
+			if Color[Value]:
+				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
 			else:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
 	HtmlBuffer = u""
 	for Key,Value in Map.Order:
                 if Buffer[Key] != u"":
 			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-        if Buffer["Other"] != u"":
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer["Other"]
+        if Buffer[u"Other"] != u"":
+			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
 	return HtmlBuffer
 
 def MissingHtml(Map,Query):
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
 	Dict=Map.Dict
 	Seen = {}
 	for Stuff in mw.deck.s.column0(Query):
 		Seen[Stuff] = 0
 		
-	Color = {0:True}
-	Buffer = {0:""}
-	for value in Dict.values():
-		Buffer[value] = u""
-		Color[value] = True	
-	for Stuff,Note in Dict.iteritems():
-		if Stuff not in Seen:
-			Color[Note] = not(Color[Note])			
-			if Color[Note]:
-				Buffer[Note] += u"""<a style="text-decoration:none;color:black;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
+	Color = {}
+	Buffer = {}
+	for (Key,String) in Map.Order:
+		Buffer[Key] = u""
+		Color[Key] = True	
+	for (Key,Value) in Map.Dict.iteritems():
+		if Key not in Seen:
+			Color[Value] = not(Color[Value])			
+			if Color[Value]:
+				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Key}
 			else:
-				Buffer[Note] += u"""<a style="text-decoration:none;color:blue;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Stuff}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Key}
 	HtmlBuffer = u""
-	for key, string in Buffer.iteritems():
-		if key != 0:
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(key),string)
+	for (Key,String) in Map.Order:
+                if Buffer[Key] !=u"":
+                        HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
 	return HtmlBuffer	
 	
 User = []
