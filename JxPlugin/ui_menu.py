@@ -323,7 +323,7 @@ class Jx__Entry_Source_Target(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User", "JxTable.txt")
+		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin", "JxTable.txt")
 		self.InitTables()
 		if len(self.Table)>0:
 			self.Entry = 0
