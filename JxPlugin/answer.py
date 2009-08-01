@@ -179,12 +179,13 @@ def append_JxPlugin(Answer,Card):
 #			if Append:
 #				AnswerBuffer += """${K2Words}"""
 		else:
-			pass			
-
-    if False:
-	    return Template(Answer+AnswerBuffer).safe_substitute(JxAnswerDict)
-    else:
-	    return Template(JxAnswer).safe_substitute(JxAnswerDict)
+			JxAnswerDict[u"K2Words"] = u""			
+                        
+    from ui_menu import JxSettings
+    if JxSettings.Mode == "Append": return Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
+    elif JxSettings.Mode == "Prepend": return Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
+    elif JxSettings.Mode == "Bypass": return Answer
+    else : return Template(JxAnswer).safe_substitute(JxAnswerDict)
 
 
 

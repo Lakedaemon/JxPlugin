@@ -215,9 +215,28 @@ def JxTools():
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
-<STYLE> textarea.sample { BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } </STYLE>
+        
+        <!-- Black text area-->
+        
 
+	<h3 style="text-align:center;">SETTINGS</h3>
+        <form name="FormMode">
+        <center>
+
+        <select id="Mode" name="Mode" onChange="
+		var Index = document.forms.FormMode.Mode.options.selectedIndex;
+		JxSettings.Mode = document.forms.FormMode.Mode.options[Index].text;">
+                  <option name="Override" selected="selected">Override</option>    
+                  <option name="Prepend">Prepend</option> 
+                  <option name="Append">Append</option> 
+                  <option name="Bypass">Bypass</option>
+         </select>
+         </form>
+         </center>
+         
 	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
+        <STYLE> textarea.sample { BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } </STYLE>
+        
 	<form name="Translator"> 
 	
 	<center><textarea  class="sample" name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
@@ -229,6 +248,8 @@ def JxTools():
 <script type="text/javascript">
 $(document).ready(function(){
 		$('select#Entry').selectmenu({width:200});
+                  $('select#Mode').selectmenu({width:150});
+                
 });
 </script>
 	<br />
@@ -275,6 +296,7 @@ $(document).ready(function(){
 	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)
 	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
@@ -301,22 +323,34 @@ def JxReadFile(File):
 
 
 
-JxBase=QObject()
+JxBase = QObject()
 
 
 
 
 	
 
+class Jx__Settings(QObject):
+	"""Data class for the settings of the JxPlugin"""
+	def __init__(self,name="JxSettings",parent=JxBase):
+		QObject.__init__(self,parent)
+		self.setObjectName(name)
+                self._Mode = "Override"
 
+        @Jx__Prop
+        def Mode(): pass
 
+	@QtCore.pyqtSlot(result=str)	
+	def GetModeForm(self):
+		return u"""<select id="Mode" name="Mode" onchange="
+		JxSettings.Mode = document.forms.Mode.Mode.options.selectedIndex;">
+                  <option value="Ovevride">Override</option>    
+                  <option value="Prepend">Prepend</option> 
+                  <option value="Append">Append</option> 
+                  <option value="Bypass">Bypass</option>
+                  </select>"""
 
-
-
-
-
-
-
+JxSettings = Jx__Settings()
 
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
@@ -823,7 +857,8 @@ def Rah():
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
-        
+	JxSettings = JxBase.findChild(Jx__Settings,'JxSettings')	
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)        
         
         
         
