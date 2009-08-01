@@ -176,6 +176,7 @@ ul#navlist li#active {
 QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
 		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
 		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 order by firstAnswered"""
+
 QueryKanjib = """select fields.value,cards.id from facts,cards,fields,fieldModels, models where 
 		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
 		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 group by fields.value order by firstAnswered """

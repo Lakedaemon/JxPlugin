@@ -81,9 +81,9 @@ def SeenHtml(Map,Query):
 			Seen[Stuff] = 0
 			Color[Value] = not(Color[Value])			
 			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxAddo(u"%(Stuff)s",u"%(Id)s")>%(Stuff)s</a>""" % {u"Stuff":Stuff,u"Id":Id}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 	HtmlBuffer = u""
 	for Key,Value in Map.Order:
                 if Buffer[Key] != u"":
@@ -91,10 +91,11 @@ def SeenHtml(Map,Query):
         if Buffer[u"Other"] != u"":
 			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
 	return HtmlBuffer
-
+def Escape(string):
+        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
+        
 def MissingHtml(Map,Query):
         """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Dict=Map.Dict
 	Seen = {}
 	for Stuff in mw.deck.s.column0(Query):
 		Seen[Stuff] = 0
@@ -108,9 +109,9 @@ def MissingHtml(Map,Query):
 		if Key not in Seen:
 			Color[Value] = not(Color[Value])			
 			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Key}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
 			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href=py:JxDoNothing(u"%(Stuff)s")>%(Stuff)s</a>""" % {"Stuff":Key}
+				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
 	HtmlBuffer = u""
 	for (Key,String) in Map.Order:
                 if Buffer[Key] !=u"":
@@ -140,7 +141,7 @@ def JxShow():
 	<center><a href=py:Clear>Clear</a>&nbsp;&nbsp;<a href=py:Export2csv>Export (.csv)</a>&nbsp;&nbsp;<a href=py:Export2Anki>Export (.anki)</a></center>
 	<ol>"""	
 	for (Entry,Id) in User:
-		JxHtml += u"""<li style="display:inline;"><a style="color:black;text-decoration:none;"  href=Jx:JxRemove(u'%(Entry)s',u'%(Id)s')>%(Entry)s</a></li>""" % {"Entry":Entry,"Id":Id}
+		JxHtml += u"""<li style="display:inline;"><a style="color:black;text-decoration:none;"  href=Jx:JxRemove(u'%(Entry)s','%(Id)s')>%(Entry)s</a></li>""" % {"Entry":Entry,"Id":Id}
 	JxHtml += u"""</ol>"""
 	py = {u"Export2csv":JxExport2csv,u"Export2Anki":JxExport2Anki,u"Clear":JxClear}
 	mw.help.showText(JxHtml,py)
