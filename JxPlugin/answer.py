@@ -29,6 +29,9 @@ JxLink = {
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
 KanjiRange=[c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
+JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
+JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
+JxPonctuation.remove(u'々')
 
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -45,16 +48,14 @@ def JxDefaultAnswer(Buffer,String,Dict):
 		return String
 	else: 
 		return Buffer + String
-JxType = {}
+                
 JxTypeJapanese = [u"japanese",u"Japanese",u"JAPANESE",u"日本語",u"にほんご"]
-JxType[u'Kanji'] = [u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]
-JxType[u'Word'] = [u"word",u"Word",u"WORD",u"単語",u"たんご",u"言葉",u"ことば"]
-JxType[u'Sentence'] = [u"sentence",u"Sentence",u"SENTENCE",u"文",u"ぶん"]
-JxType[u'Grammar'] = [u"grammar",u"Grammar",u"GRAMMAR",u"文法",u"ぶんぽう"]
-JxTypeOrderCheck = [u'Kanji',u'Word',u'Sentence',u'Grammar']
+JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),(u'Word',[u"word",u"Word",u"WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
+(u'Sentence',[u"sentence",u"Sentence",u"SENTENCE",u"文",u"ぶん"]),(u'Grammar',[u"grammar",u"Grammar",u"GRAMMAR",u"文法",u"ぶんぽう"])]
 
 
-def JxMagicalGuess(Card):       
+
+def JxMagicalGuess(Card):  
         # for version 1, we are only going to investigate the tags of the Fact & Models, the names of the Model and the Fields.
         
         # first check the facts of the Fact, in case they have only one tag among "Kanji", "Word", "Sentence", "Grammar".
@@ -66,50 +67,133 @@ def JxMagicalGuess(Card):
         JxFactTags = set(Card.fact.tags.split(" "))
         for (Key,List) in JxType:
                 if len(JxFactTags.intersection(List))>0:
-                        Types.update(Key)
+                        Types.update([Key])
         # Types countains the numerous possible type of the card
         # 0 -> usuall case (no restriction) we know nothing. Parse further ! Later, we might check for the Japanese Tag.
-        # 1 -> we found the type, now find the related field
-        # 2 & 3 & 4 -> the user is (posibly wrongly) telling that he wants this card to be considered of those types (what to do now ?). 
+        # 1 -> we found the type, now affect the related field
+        # 2 & 3 & 4 -> the user is (posibly wrongly) telling that he wants this card to be considered of those types (what to do now ? affecting the fields). 
         
         if len(Types)>=1:
-                JxFindField(Card,Types)
+                return JxAffectFields(Card,Types)
                 # needed for stats and graphs. We need to know on what field we are working. 
                 # -> Expression if japanese model
         else:
-                JxParseModelTags(Card)
+                return JxParseModelTags(Card)
                 # Tex-Like programmation, to avoid nested ifs
-
+                
+def JxAffectFields(Card,Types):
+        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)
+        List=[]
+        for (Type,TypeList) in JxType:
+                if Type in Types:
+                        for Field in Card.fact.model.fieldModels:
+                                if Field.name in TypeList:
+                                        List.append((Type,Field.name)) #possibly put the content of the field in there too
+                                        break
+                                             
+        if len(List)<len(Types):
+                # there are still missing fields for the types, we could try the "Expression" field next and update the List
+                if len(List)>0:
+                        (Done,Field) = zip(*List)
+                else : 
+                        Done=[]
+                Index = 0 
+                for (Type,TypeList) in JxType:
+                        if Type in Types and Type in Done:
+                                Index += 1
+                        elif Type in Types:
+                                for Field in Card.fact.model.fieldModels:
+                                        if Field.name == u"Expression":
+                                                List[Index:]=[(Type,Field.name)] + List[Index:] #possibly put the content of the field in there too
+                                                break 
+                                                
+        if len(List)<len(Types):
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
+                pass
+   
+        return List
+                
 def JxParseModelTags(Card):
- 
+
         # Secondly : parse the model tags (most of the hope is there : it would catch my kanji model, 
         # but do "nothing" for the japanese model except saying that it is a japanese deck)
         Types = set()
         JxModelTags = set(Card.fact.model.tags.split(" "))
         for (Key,List) in JxType:
                 if len(JxModelTags.intersection(List))>0:
-                        Types.update(Key)      
+                        Types.update([Key])  
+
         # Types countains the numerous possible type of the card as before, yet in a slightly different context
         # 0 -> unusuall case (no type) we still know nothing. Parse further ! Later, we might check for the Japanese Tag...our only hope left resisdes in the name of the model, 
         # of the fields and the contents of the fields (but who knows what the owner put there). Maybee I shouldn't look further than the names (for speed).
         # 1 -> we found the type, now find the related field
         # 2 & 3 & 4 & 5 -> the user is telling what kind of facts he has in this model. We still have to parse further to know exactly how this card is supposed to be displayed
         # (user might want cards in this model to participate to different kind of stats too ?). But we know that we are in the Japanese case. 
-        
+
 
         if len(Types) == 1:
-                # great, we found the type, now find the field. 
-                JxFindField(Card,Types)
+                # great, we found the type, now affect the field. 
+                return JxAffectFields(Card,Types)
 
-        elif len(Type) >1:
-                # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help there because it opposes the model's tags purpose)
-                pass #JxParseNames(Card,Types)
-        else:
-                JxParseModelName(Card)
-                # we will now parse the name of the model, and the names of the fields..and later the content, to reduce the possibilities (for display)
-                # we will do the same, except that we don't want to reduce the possibilities, we want to find at least one !
+        elif len(Types) >1:
+                # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
+                #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
+                return JxFindTypeAndField(Card,Types)
+
+        # we will now parse the name of the model, and the names of the fields..and later the content, to reduce the possibilities (for display)
+        # we will do the same, except that we don't want to reduce the possibilities, we want to find at least one !
+        return JxParseModelName(Card)
+
+  
+
+def JxFindTypeAndField(Card,Types):
+        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
+        
+        List=[]
+        for (Type,TypeList) in JxType:
+                if Type in Types:
+                        for Field in Card.fact.model.fieldModels:
+                                if Field.name in TypeList:
+                                        List.append((Type,Field.name)) #possibly put the content of the field in there too
+                                        break
+                                             
+        if len(List)<len(Types):
+                # for the still missing fields, we try to find an "Expression" field next and update the List
+                if len(List) > 0:
+                        (Done,Field) = zip(*List)
+                else : 
+                        Done = []
+                Index = 0 
+                for (Type,TypeList) in JxType:
+                        if Type in Types and Type in Done:
+                                Index += 1
+                        elif Type in Types:
+                                for Field in Card.fact.model.fieldModels:
+                                        if Field.name == u"Expression" and Type in GuessType(Card.fact["Expression"]):
+                                                List[Index:]=[(Type,Field.name)] + List[Index:] #possibly put the content of the field in there too
+                                                #break 
+        if len(List)<len(Types):
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
                 pass
+        
+        return List
+        
+def GuessType(String):
 
+        if len(set(unicode(c) for c in String).intersection(JxPonctuation))>0:
+                #if  String has ponctuations marks, it is a sentence
+                return set([u"Sentence"])
+        elif unicode(String) in JxKanjiRange:
+                #if  String has one Kanji, it is a Kanji (or a Word)
+                return set([u"Kanji",u"Word"])                        
+        else:              
+                #in other cases, it is a word (still don't know what to do with grammar)    
+                return set([u"Word"])
+        
+
+        
 
 def JxParseModelName(Card):
         # thirdly : parse the name of the model
@@ -117,15 +201,15 @@ def JxParseModelName(Card):
         Types = set()
         for (Key,List) in JxType:
                 if Card.fact.model.name in List:
-                        Types.update(Key)
-                        break; # no need to parse further
+                        Types.update([Key])
+                        break # no need to parse further
         
         if len(Types) == 1:
                 # great, we found the type, now find the field. 
-                JxFindField(Card,Types)
-        else:
-                #Next, we'll parse the names of the fields
-                JxParseFieldsName(Card)
+                return JxAffectFields(Card,Types)
+
+        #Next, we'll parse the names of the fields
+        return JxParseFieldsName(Card)
 
 def JxParseFieldsName(Card):
         # tries to find a field with a relevant name and checks for the japanese model last.
@@ -134,54 +218,54 @@ def JxParseFieldsName(Card):
         for Field in Card.fact.model.fieldModels:
                 for (Key,List) in JxType:
                         if Field.name in List:
-                                Types.update(Key)
-                                break; # no need to parse this Field further
+                                Types.update([Key])
+                                break # no need to parse this Field further
         # same cases than for JxParseModelTags()
         
-        if len(Types) == 1:
+        if len(Types) ==1:
                 # great, we found the type, now find the field. 
-                JxFindField(Card,Types)
+                return JxAffectFields(Card,Types)
 
-        elif len(Type) >1:
+        elif len(Types) >1:
                 # we must now find the relevant field to guess the type of the card 
-                pass
-        else:
-                # this should be the usual case for the Japanese model, we'll now check if this is a deck related to Japanese
-                JxParseForJapanese(Card)
+                 return JxAffectFields(Card,Types)               
+
+        # this should be the usual case for the Japanese model, we'll now check if this is a deck related to Japanese
+        return JxParseForJapanese(Card)
    
 def JxParseForJapanese(Card):             
         # try to find a Japanese Tag/Name
         Set = set(Card.fact.tags.split(" "))
         Set.update(Card.fact.model.tags.split(" "))
-        Set.update(Card.fact.model.name)
+        Set.update([Card.fact.model.name])
         for Field in Card.fact.model.fieldModels:   
-                Set.update(Field.name)
+                Set.update([Field.name])
         if len(Set.intersection(JxTypeJapanese))>0:
                 #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
-                JxFindField(Card,set(u'Kanji',u'Word',u'Sentence',u'Grammar'))
-        else:
-                # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
-                # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
-                # I expect that anybody wantng to learn japanese will want to display kana readings)
-                JxParseForJapaneseCharacters(Card)
+                return JxFindTypeAndField(Card,set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
+
+        # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
+        # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
+        # I expect that anybody wantng to learn japanese will want to display kana readings)
+        return JxParseForJapaneseCharacters(Card)
                 
                 
 def JxParseForJapaneseCharacters(Card):
         # try to find Kana inside Fields
         
+        Set=set()
         for Field in Card.fact.model.fieldModels:   
-                Set.update(Field.value)
-        if len(Set.intersection([c for c in range(ord(u'ぁ'),ord(u'ゔ'))] + [c for c in range(ord(u'ァ'),ord(u'ヺ'))]))>0:
+                Set.update([Field.value])
+        if len(Set.intersection(JxPonctuation))>0:
                 #it holds Kana, this is related to Japanese, now go and try to find Fields
-                pass
-        else:
-                # There is no way this card could be related to Japanese
-                return None
+                return "gah"
+
+        # There is no way this card could be related to Japanese
+        return "boh"
                         
                 
 
-def JxFindFieldSet(Card,Types):
-        pass
+
 
 
 #     class Fact(object):  
@@ -220,7 +304,7 @@ def append_JxPlugin(Answer,Card):
     # Well, this difficult problem requires human intelligence and japanese knowledge to solve it correctly, so i'm going for a simple/generally working solution 
     # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
 
-    JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
+    mw.help.showText(str(JxMagicalGuess(Card))) # that's it. Chose the right name for the right job. This should always work now, lol...
 
     
     for key in [u"Expression",u"単語",u"言葉"]:
