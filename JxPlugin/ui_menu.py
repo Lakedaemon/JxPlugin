@@ -342,7 +342,8 @@ class Jx__Settings(QObject):
         @Jx__Prop
         def Mode(): pass
 
-	@QtCore.pyqtSlot(result=str)	
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("", result="QString")	
 	def GetModeForm(self):
 		return u"""<select id="Mode" name="Mode" onchange="
 		JxSettings.Mode = document.forms.Mode.Mode.options.selectedIndex;">
@@ -425,7 +426,8 @@ class Jx__Entry_Source_Target(QObject):
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
 
-	@QtCore.pyqtSlot(result=str)	
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")		
 	def GetForm(self):
 		Form = u"""<select id="Entry" name="Entry" onchange="
 		JxTemplateOverride.Entry = document.forms.Translator.Entry.options.selectedIndex;
@@ -451,7 +453,8 @@ class Jx__Entry_Source_Target(QObject):
                            $('select#Entry').selectmenu({width:200});
                         ">New Entry</button>"""
 		
-	@QtCore.pyqtSlot(str,int,result=str)	
+	#@QtCore.pyqtSlot(str,int,result=str) doesn't work with OS X 
+        @pyqtSignature("str,int",result="QString")
 	def MakeUnique(self,value,Int):
 		"""Make sure to return a unique field"""
 		String = str(value)
@@ -464,7 +467,8 @@ class Jx__Entry_Source_Target(QObject):
 			JxUnicityBuffer = u" %s" % a	
 			a += 1
 		return String + JxUnicityBuffer
-	@QtCore.pyqtSlot(result=str)	
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")	
 	def ReduceForm(self):
 		if len(self.Table)>0:
 			del JxLink[self._Source]
@@ -526,11 +530,13 @@ class Jx__Model_CardModel_String(QObject):
 	@Jx__Prop
 	def DisplayString():pass
 	
-	@QtCore.pyqtSlot(result=str)
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")
 	def GetModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Models],u",") + u",'selected':'"  + self.Model + u"'}"
 		
-	@QtCore.pyqtSlot(result=str)
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")
 	def GetFormModels(self):		
 		Form = u"""<form id ="FormModel"><select id="Model" name="Model" onChange="
 		var index = document.forms.FormModel.Model.options.selectedIndex;
@@ -545,7 +551,8 @@ class Jx__Model_CardModel_String(QObject):
 				Select = u"selected"
 			Form += u"""<option value="%(Entry)s" %(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
 		return Form + u"""</select></form>"""
-	@QtCore.pyqtSlot(result=str)
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")
 	def GetFormCardModels(self):		
 		Form = u"""<form id="FormCardModel"><select  id="CardModel" name="CardModel" onChange="
 		var index = document.forms.FormCardModel.CardModel.options.selectedIndex;
@@ -563,7 +570,8 @@ class Jx__Model_CardModel_String(QObject):
 			
 		
 	
-	@QtCore.pyqtSlot(result=str)
+	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+        @pyqtSignature("",result="QString")
 	def GetCardModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
 	def UpdateModels(self):
