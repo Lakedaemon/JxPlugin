@@ -9,7 +9,7 @@ from string import upper
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtWebKit import QWebPage, QWebView
 
-from ankiqt import mw, ui
+from ankiqt import mw
 
 from loaddata import *
 from answer import *
@@ -17,6 +17,7 @@ from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
+import default
 
 
 JxMenu = """ 
@@ -291,10 +292,13 @@ import itertools
 def JxReadFile(File):
 	"""Reads a tab separated file text and returns a list of tupples."""
 	List = []
-	File = codecs.open(File, "r", "utf8")
-	for Line in File:
-		List.append(tuple(Line.strip('\n').split('\t')))
-	f.close()
+	try:
+        	File = codecs.open(File, "rb", "utf8")
+        	for Line in File:
+        		List.append(tuple(Line.strip('\n').split('\t')))
+        	f.close()
+	except:
+                pass
 	return List
 
 
@@ -341,7 +345,7 @@ class Jx__Entry_Source_Target(QObject):
 			(self._Name,self._Source,self._Target) = (self.MakeUnique(u"New Entry",0), self.MakeUnique(u"""Add Source
 				(must be unique)""",1), u"Add Target")
 			self.Table.append((self._Name,self._Source,self._Target))
-			JxLink[self._Source]=self._Target
+			default.JxLink[self._Source]=self._Target
 			
 			
 	@Jx__Prop
@@ -362,8 +366,8 @@ class Jx__Entry_Source_Target(QObject):
 		if self._Source != OldSource:
 			self.Table[self._Entry]=(OldName,self._Source,OldTarget)
 			self.SaveTable()
-			del JxLink[OldSource]
-			JxLink[self._Source]=self._Target
+			del default.JxLink[OldSource]
+			default.JxLink[self._Source]=self._Target
 	@Jx__Prop
 	def Source():return {'fset': lambda self,value:self.Jx__Source_fset(value)}
 		
@@ -373,7 +377,7 @@ class Jx__Entry_Source_Target(QObject):
 		if self._Target != OldTarget:
 			self.Table[self._Entry]=(OldName,OldSource,self._Target)
 			self.SaveTable()
-			JxLink[OldSource]=self._Target
+			default.JxLink[OldSource]=self._Target
 	@Jx__Prop
 	def Target():return {'fset': lambda self,value:self.Jx__Target_fset(value)}
 
@@ -419,7 +423,7 @@ class Jx__Entry_Source_Target(QObject):
 	@QtCore.pyqtSlot(result=str)	
 	def ReduceForm(self):
 		if len(self.Table)>0:
-			del JxLink[self._Source]
+			del default.JxLink[self._Source]
 			self.Table.pop(self._Entry)
 			self.SaveTable()
 
@@ -438,17 +442,15 @@ class Jx__Entry_Source_Target(QObject):
 			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
 		File.close()
 	def InitTables(self):
-		if os.path.exists(self.File):
+                if os.path.exists(self.File):
 			self.Table = JxReadFile(self.File)
 		else : 
 			from default import Jx__Entry_Source_Target__Default
 			self.Table = Jx__Entry_Source_Target__Default
 			self.SaveTable()
-		JxLink = {}
+		default.JxLink = {}
 		for (Name, Source,Target) in self.Table:
-			JxLink[Source] = Target
-
-
+			default.JxLink[Source] = Target
 
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
 
@@ -538,8 +540,8 @@ class Jx__Model_CardModel_String(QObject):
 		models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
 		""" % {'Model':self._Model,'CardModel':self._CardModel}
 		s=mw.deck.s.scalar(Query)
-		if s in JxLink:
-			so=JxLink[s]
+		if s in default.JxLink:
+			so=default.JxLink[s]
 			s=so
 #		s = s.replace("<", "&lt;")
 #		s = s.replace(">", "&gt;")
