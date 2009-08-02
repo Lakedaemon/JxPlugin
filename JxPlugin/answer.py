@@ -9,19 +9,8 @@ from math import log
 from string import Template
 
 from loaddata import *
+import default
 
-JxLink = {
-"""%(Reading)s""":
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:500%">${Expression}</font><br /><font style="font-size:300%">${Reading}</font></center></div>""",
-"""%(Reading)s<br>%(Meaning)s""":
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:300%">${Reading}<br \>${Meaning}</font></center></div>""",
-"""%(Kanji)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
-"""%(Meaning)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:300%">${Meaning}</font></center><center>${K2Words}</center>""",
-"""%(OnYomi)s<br>%(KunYomi)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:500%">${OnYomi}<br />${KunYomi}</font></center><center>${K2Words}</center>"""
-}
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -52,7 +41,7 @@ def append_JxPlugin(Answer,Card):
     
     # First, get and translate the CardModel Template
     try:
-	    JxAnswer = JxLink[Card.cardModel.aformat]
+	    JxAnswer = default.JxLink[Card.cardModel.aformat]
     except KeyError:
 	    JxAnswer = Card.cardModel.aformat
 
