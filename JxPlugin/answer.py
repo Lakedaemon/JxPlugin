@@ -29,9 +29,7 @@ JxLink = {
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
 KanjiRange=[c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
-JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
-JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
-JxPonctuation.remove(u'々')
+
 
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -49,12 +47,30 @@ def JxDefaultAnswer(Buffer,String,Dict):
 	else: 
 		return Buffer + String
                 
+
+
+
+###################################################################################################################################################################################
+    # try to guess if this is a Tango card or a Kanji card and fill the appropriate data Tango & Expression (for stroke order of tango) or Kanji 
+
+    # Given a card (-> a model & a fact), I have to guess whether it is a Kanji/Word/Sentence/Grammar card so that I can use the correct card template
+    # for the "foolish" people who like to put different stuff in the same container and who expect dumb machine code to make the difference
+    #
+    ## I could display the same card template whether it's a Word/kanji/... (that's probably what they do anyway) but then, they would complain, whine and pester me...
+    #
+    ## Besides, for stats and Graph, I will have to guess whether a card advances a Kanji/Word/Grammara/Sentence stats...(and guess on which field it applies...sigh...)...
+    #
+    #
+    # Well, this difficult problem requires human intelligence and japanese knowledge to solve it correctly, so i'm going for a simple/generally working solution 
+    # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
+    
 JxTypeJapanese = [u"japanese",u"Japanese",u"JAPANESE",u"日本語",u"にほんご"]
 JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),(u'Word',[u"word",u"Word",u"WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
-(u'Sentence',[u"sentence",u"Sentence",u"SENTENCE",u"文",u"ぶん"]),(u'Grammar',[u"grammar",u"Grammar",u"GRAMMAR",u"文法",u"ぶんぽう"])]
-
-
-
+(u'Sentence',[u"sentence",u"Sentence",u"SENTENCE",u"文",u"ぶん"]),(u'Grammar',[u"grammar",u"Grammar",u"GRAMMAR",u"文法",u"ぶんぽう"])]    
+JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
+JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
+JxPonctuation.remove(u'々')    
+    
 def JxMagicalGuess(Card):  
         # for version 1, we are only going to investigate the tags of the Fact & Models, the names of the Model and the Fields.
         
@@ -170,7 +186,7 @@ def JxFindTypeAndField(Card,Types):
                                 Index += 1
                         elif Type in Types:
                                 for Field in Card.fact.model.fieldModels:
-                                        if Field.name == u"Expression" and Type in GuessType(Card.fact["Expression"]):
+                                        if Field.name == u"Expression" and Type in GuessType(Card.fact[u"Expression"]):
                                                 List[Index:]=[(Type,Field.name)] + List[Index:] #possibly put the content of the field in there too
                                                 #break 
         if len(List)<len(Types):
@@ -265,50 +281,39 @@ def JxParseForJapaneseCharacters(Card):
         # There is no way this card could be related to Japanese
         return []
                         
-                
+################################################################################################################################################               
+JxAbbrev = {u'Kanji':u'K',u'Word':u'W',u'Sentence':u'S',u'Grammar':u'G'}
 
-
-
-
-#     class Fact(object):  
-#        self.tags
-
-
-
-
-
-#     class Model(object):  
-#        self.name = name
-#        self.id = genID()
-#        self.modified = time.time()
-#        self.fieldModels.append(field)
-#        self.cardModels.append(card)
-#        self.tags
-
-           
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
-    #mw.help.showText("Card : " + str(Card.id) +"Fact :" + str(Card.fact) + "CardModel : " + str(Card.cardModel.aformat))
+
+
+    JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
     
 
-#    Append = re.search(u"\${.*?}",Answer) == None
-################################################################################################################################################
-    # try to guess if this is a Tango card or a Kanji card and fill the appropriate data Tango & Expression (for stroke order of tango) or Kanji 
+    JxPrefix = u''
+    for (Type,Field) in JxGuessedList:
+           JxPrefix += JxAbbrev[Type]
+    # Get and translate the new CardModel Template
+    try:
+	    JxAnswer = JxLink[JxPrefix + u':' + Card.cardModel.aformat]
+    except KeyError:
+            mw.help.showText(JxPrefix + u"rah"+str(JxGuessedList))
+            try:
+                    JxAnswer = JxLink[Card.cardModel.aformat]     # this is so that we can call the default (Word) template with "Template" instead of "W:Template"          
+            except KeyError: 
+	            JxAnswer = Card.cardModel.aformat
 
-    # Given a card (-> a model & a fact), I have to guess whether it is a Kanji/Word/Sentence/Grammar card so that I can use the correct card template
-    # for the "foolish" people who like to put different stuff in the same container and who expect dumb machine code to make the difference
-    #
-    ## I could display the same card template whether it's a Word/kanji/... (that's probably what they do anyway) but then, they would complain, whine and pester me...
-    #
-    ## Besides, for stats and Graph, I will have to guess whether a card advances a Kanji/Word/Grammara/Sentence stats...(and guess on which field it applies...sigh...)...
-    #
-    #
-    # Well, this difficult problem requires human intelligence and japanese knowledge to solve it correctly, so i'm going for a simple/generally working solution 
-    # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
 
-    mw.help.showText(str(JxMagicalGuess(Card))) # that's it. Chose the right name for the right job. This should always work now, lol...
+    # First, get and translate the CardModel Template
+    try:
+	    JxAnswer = JxLink[Card.cardModel.aformat]
+    except KeyError:
+	    JxAnswer = Card.cardModel.aformat
 
+    ################################################ maybee I should update this code to make it consistent with the magical function
     
+        # Then create a dictionnary for all data replacement strings...
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -324,15 +329,8 @@ def append_JxPlugin(Answer,Card):
 		break
 	    except KeyError:
 		Kanji = None	
-################################################################################################################################################
 
-    # First, get and translate the CardModel Template
-    try:
-	    JxAnswer = JxLink[Card.cardModel.aformat]
-    except KeyError:
-	    JxAnswer = Card.cardModel.aformat
-
-    # Then create a dictionnary for all data replacement strings...
+    ################################################
 
 
     JxAnswerDict = {}
@@ -357,59 +355,42 @@ def append_JxPlugin(Answer,Card):
     .LDKanjiStroke  { font-family: KanjiStrokeOrders; font-size: 10em;}
     td { padding: 2px 15px 2px 15px;}
     </style>"""
-
-
-#    if Append:
-#	    AnswerBuffer = u"""${Css}"""		
+	
     
     # Word2JLPT
     try:
         JxAnswerDict[u"T2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Word2Data[Tango]]
-#	if Append:
-#		AnswerBuffer += u""" <div class="JLPT">${T2JLPT}</div>"""
     except KeyError:
 	    JxAnswerDict[u"T2JLPT"] =  u""
 
     # Word2Frequency
     try:
 		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Word2Frequency[Tango]+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100) 
-#		if Append:
-#			AnswerBuffer += """ <div class="Frequency">${T2Freq}</div>"""
     except KeyError:
 		JxAnswerDict[u"T2Freq"] = u""
 
     if Kanji != None:
-		
-		# Stroke Order
-#		if Append:
-#			AnswerBuffer += u"""<div style="float:left;">${Stroke}</div>"""
 			
 		# Kanji2JLPT
 		try:
 			JxAnswerDict[u"K2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Kanji2JLPT[Kanji]]
-#			if Append:
-#				AnswerBuffer += u""" <div class="JLPT">${K2JLPT}</div>"""
 		except KeyError:
 			JxAnswerDict[u"K2JLPT"] =  u""
 	
 		# Kanji2Jouyou	
 		try:
 			JxAnswerDict[u"K2Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji["Legend"][Kanji2JLPT[Kanji]]
-#			if Append:
-#				AnswerBuffer += u""" <div class="Jouyou">${K2Jouyou}</div>"""
 		except KeyError:
 			JxAnswerDict[u"K2Jouyou"] =  u""
 
 		# Word2Frequency
 		try:    
 			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Kanji2Frequency[Kanji]+1,2)-log(MaxFrequency+1,2))*10+100)
-#			if Append:
-#				AnswerBuffer += """ <div class="Frequency">${K2Freq}</div>"""
 		except KeyError:
 			JxAnswerDict[u"K2Freq"] = u""	
 				
 		# Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning 
-		# limit hardcoded to 6
+		
 		query = """select expression.value, reading.value, meaning.value from 
 		fields as expression, fields as reading, fields as meaning, 
 		fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
@@ -417,6 +398,8 @@ def append_JxPlugin(Answer,Card):
 		reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
 		meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
 		expression.value like "%%%s%%" """ % Kanji
+                
+# implement a control to limit the number of words displayed 
 
 		# HTML Buffer 
 		info = "" 
@@ -428,8 +411,6 @@ def append_JxPlugin(Answer,Card):
 		# if there Html Buffer isn't empty, adds it to the card info
 		if len(info):
 			JxAnswerDict[u"K2Words"] = """<table style="text-align:center;" align="center">%s</table>""" % info
-#			if Append:
-#				AnswerBuffer += """${K2Words}"""
 		else:
 			JxAnswerDict[u"K2Words"] = u""			
                         
