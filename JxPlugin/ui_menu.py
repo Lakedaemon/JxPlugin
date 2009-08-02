@@ -226,7 +226,7 @@ def JxTools():
         <select id="Mode" name="Mode" onChange="
 		var Index = document.forms.FormMode.Mode.options.selectedIndex;
 		JxSettings.Mode = document.forms.FormMode.Mode.options[Index].text;">
-                  <option name="Override" selected="selected">Override</option>    
+                  <option name="Override">Override</option>    
                   <option name="Prepend">Prepend</option> 
                   <option name="Append">Append</option> 
                   <option name="Bypass">Bypass</option>
@@ -335,7 +335,9 @@ class Jx__Settings(QObject):
 	def __init__(self,name="JxSettings",parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-                self._Mode = "Override"
+                self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin", "Settings.pickle")
+                self.Load()
+
 
         @Jx__Prop
         def Mode(): pass
@@ -344,11 +346,23 @@ class Jx__Settings(QObject):
 	def GetModeForm(self):
 		return u"""<select id="Mode" name="Mode" onchange="
 		JxSettings.Mode = document.forms.Mode.Mode.options.selectedIndex;">
-                  <option value="Ovevride">Override</option>    
+                  <option value="Override">Override</option>    
                   <option value="Prepend">Prepend</option> 
                   <option value="Append">Append</option> 
                   <option value="Bypass">Bypass</option>
                   </select>"""
+        def Load(self):
+                if os.path.exists(self.File):
+                          File = open(self.File, 'rb')
+                          self._Mode = cPickle.load(File)
+                          File.close()
+                else:
+                          self._Mode = "Override"
+                          self.Update()
+        def Update(self):
+                File = open(self.File, 'wb')
+                cPickle.dump(self._Mode, File, cPickle.HIGHEST_PROTOCOL)
+                File.close()
 
 JxSettings = Jx__Settings()
 
