@@ -11,6 +11,9 @@ from string import Template
 from loaddata import *
 import default
 
+from anki.hooks import *
+from anki.utils import hexifyID
+
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -38,7 +41,7 @@ def JxDefaultAnswer(Buffer,String,Dict):
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
     #mw.help.showText("Card : " + str(Card.id) +"Fact :" + str(Card.fact) + "CardModel : " + str(Card.cardModel.aformat))
-    
+
     # First, get and translate the CardModel Template
     try:
 	    JxAnswer = default.JxLink[Card.cardModel.aformat]
@@ -76,7 +79,8 @@ def append_JxPlugin(Answer,Card):
     
     # first fill in the fact information
     for FieldModel in Card.fact.model.fieldModels:
-	    JxAnswerDict[FieldModel.name] = Card.fact[FieldModel.name]     #(FieldModel.id, FieldModel.fact[FieldModel.name])
+	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
+                hexifyID(FieldModel.id), Card.fact[FieldModel.name])     #(FieldModel.id, FieldModel.fact[FieldModel.name])
     
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
@@ -173,7 +177,10 @@ def append_JxPlugin(Answer,Card):
     if False:
 	    return Template(Answer+AnswerBuffer).safe_substitute(JxAnswerDict)
     else:
-	    return Template(JxAnswer).safe_substitute(JxAnswerDict)
+            removeHook("drawAnswer",append_JxPlugin)
+            JxAnswer=runFilter("drawAnswer", Template(JxAnswer).safe_substitute(JxAnswerDict), Card)
+            addHook("drawAnswer",append_JxPlugin)
+	    return JxAnswer
 
 
 
