@@ -9,19 +9,11 @@ from math import log
 from string import Template
 
 from loaddata import *
+import default
 
-JxLink = {
-"""%(Reading)s""":
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:500%">${Expression}</font><br /><font style="font-size:300%">${Reading}</font></center></div>""",
-"""%(Reading)s<br>%(Meaning)s""":
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:300%">${Reading}<br \>${Meaning}</font></center></div>""",
-"""%(Kanji)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
-"""%(Meaning)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:300%">${Meaning}</font></center><center>${K2Words}</center>""",
-"""%(OnYomi)s<br>%(KunYomi)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:500%">${OnYomi}<br />${KunYomi}</font></center><center>${K2Words}</center>"""
-}
+from anki.hooks import *
+from anki.utils import hexifyID
+
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -49,10 +41,10 @@ def JxDefaultAnswer(Buffer,String,Dict):
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
     #mw.help.showText("Card : " + str(Card.id) +"Fact :" + str(Card.fact) + "CardModel : " + str(Card.cardModel.aformat))
-    
+
     # First, get and translate the CardModel Template
     try:
-	    JxAnswer = JxLink[Card.cardModel.aformat]
+	    JxAnswer = default.JxLink[Card.cardModel.aformat]
     except KeyError:
 	    JxAnswer = Card.cardModel.aformat
 
@@ -87,7 +79,8 @@ def append_JxPlugin(Answer,Card):
     
     # first fill in the fact information
     for FieldModel in Card.fact.model.fieldModels:
-	    JxAnswerDict[FieldModel.name] = Card.fact[FieldModel.name]     #(FieldModel.id, FieldModel.fact[FieldModel.name])
+	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
+                hexifyID(FieldModel.id), Card.fact[FieldModel.name])     #(FieldModel.id, FieldModel.fact[FieldModel.name])
     
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
@@ -184,7 +177,10 @@ def append_JxPlugin(Answer,Card):
     if False:
 	    return Template(Answer+AnswerBuffer).safe_substitute(JxAnswerDict)
     else:
-	    return Template(JxAnswer).safe_substitute(JxAnswerDict)
+            removeHook("drawAnswer",append_JxPlugin)
+            JxAnswer=runFilter("drawAnswer", Template(JxAnswer).safe_substitute(JxAnswerDict), Card)
+            addHook("drawAnswer",append_JxPlugin)
+	    return JxAnswer
 
 
 
