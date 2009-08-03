@@ -46,7 +46,7 @@ def append_JxPlugin(Answer,Card):
     try:
 	    JxAnswer = default.JxLink[Card.cardModel.aformat]
     except KeyError:
-	    JxAnswer = Card.cardModel.aformat
+	    JxAnswer = Answer
 
     # Then create a dictionnary for all data replacement strings...
     
