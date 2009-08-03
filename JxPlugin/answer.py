@@ -10,6 +10,8 @@ from string import Template
 
 from loaddata import *
 from default import JxLink
+from anki.hooks import *
+from anki.utils import hexifyID
 
 ###############################################################################################################
 #
@@ -277,6 +279,7 @@ def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
 
+
     JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
     
 
@@ -294,6 +297,7 @@ def append_JxPlugin(Answer,Card):
             except KeyError: 
 	            JxAnswer = Card.cardModel.aformat
                     JxAnswerOk = False
+
 
     ################################################ maybee I should update this code to make it consistent with the magical function
     
@@ -326,7 +330,8 @@ def append_JxPlugin(Answer,Card):
     
     # first fill in the fact information
     for FieldModel in Card.fact.model.fieldModels:
-	    JxAnswerDict[FieldModel.name] = Card.fact[FieldModel.name]     #(FieldModel.id, FieldModel.fact[FieldModel.name])
+	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
+                hexifyID(FieldModel.id), Card.fact[FieldModel.name])     #(FieldModel.id, FieldModel.fact[FieldModel.name])
     
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
@@ -404,10 +409,16 @@ def append_JxPlugin(Answer,Card):
 			JxAnswerDict[u"K2Words"] = u""			
                         
     from ui_menu import JxSettings
-    if JxSettings.Mode == "Append" and JxAnswerOk: return Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
-    elif JxSettings.Mode == "Prepend" and JxAnswerOk: return Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
-    elif JxSettings.Mode == "Override" and JxAnswerOk: return Template(JxAnswer).safe_substitute(JxAnswerDict)
-    else : return Answer
+    if JxSettings.Mode == "Append" and JxAnswerOk: JxAnswer = Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
+    elif JxSettings.Mode == "Prepend" and JxAnswerOk: JxAnswer =  Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
+    elif JxSettings.Mode == "Override" and JxAnswerOk: JxAnswer = Template(JxAnswer).safe_substitute(JxAnswerDict)
+    else : JxAnswer =  Answer
+
+    removeHook("drawAnswer",append_JxPlugin)
+    JxAnswer = runFilter("drawAnswer",JxAnswer, Card)
+    addHook("drawAnswer",append_JxPlugin)
+    return JxAnswer
+
 
 
 

@@ -17,3 +17,4 @@ Jx__Entry_Source_Target__Default = [
 (u"Kanji meanings","""K:%(Meaning)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${Meaning}</center><center>${K2Words}</center>"""),
 (u"Kanji readings","""K:%(OnYomi)s<br>%(KunYomi)s""","""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${OnYomi}<br />${KunYomi}</center><center>${K2Words}</center>""")]
 JxLink = {}
+

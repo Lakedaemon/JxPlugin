@@ -9,7 +9,7 @@ from string import upper
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtWebKit import QWebPage, QWebView
 
-from ankiqt import mw, ui
+from ankiqt import mw
 
 from loaddata import *
 from answer import *
@@ -17,7 +17,8 @@ from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
-from default import JxLink
+from default import JxLink #*
+
 
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
@@ -313,10 +314,13 @@ import itertools
 def JxReadFile(File):
 	"""Reads a tab separated file text and returns a list of tupples."""
 	List = []
-	File = codecs.open(File, "r", "utf8")
-	for Line in File:
-		List.append(tuple(Line.strip('\n').split('\t')))
-	f.close()
+	try:
+        	File = codecs.open(File, "rb", "utf8")
+        	for Line in File:
+        		List.append(tuple(Line.strip('\n').split('\t')))
+        	f.close()
+	except:
+                pass
 	return List
 
 
@@ -490,7 +494,7 @@ class Jx__Entry_Source_Target(QObject):
 			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
 		File.close()
 	def InitTables(self):
-                global JxLink
+#                global JxLink
 		if os.path.exists(self.File):
 			self.Table = JxReadFile(self.File)
 		else : 
@@ -499,8 +503,6 @@ class Jx__Entry_Source_Target(QObject):
 			self.SaveTable()
 		for (Name, Source,Target) in self.Table:
 			JxLink[Source] = Target
-
-
 
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
 
