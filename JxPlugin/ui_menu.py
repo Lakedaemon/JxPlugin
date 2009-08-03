@@ -17,7 +17,7 @@ from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
-
+from default import JxLink
 
 JxMenu = """ 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
@@ -490,13 +490,13 @@ class Jx__Entry_Source_Target(QObject):
 			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
 		File.close()
 	def InitTables(self):
+                global JxLink
 		if os.path.exists(self.File):
 			self.Table = JxReadFile(self.File)
 		else : 
 			from default import Jx__Entry_Source_Target__Default
 			self.Table = Jx__Entry_Source_Target__Default
 			self.SaveTable()
-		JxLink = {}
 		for (Name, Source,Target) in self.Table:
 			JxLink[Source] = Target
 

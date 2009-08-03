@@ -9,19 +9,8 @@ from math import log
 from string import Template
 
 from loaddata import *
+from default import JxLink
 
-JxLink = {
-"""%(Reading)s""":
-	"""${Css}<div style="float:left"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:500%">${Expression}</font><br /><font style="font-size:300%">${Reading}</font></center></div>""",
-"""%(Reading)s<br>%(Meaning)s""":
-	"""${Css}<div style="float:left;"><div>${T2JLPT}</div><div>${T2Freq}</div></div><div><center><font style="font-size:300%">${Reading}<br \>${Meaning}</font></center></div>""",
-"""%(Kanji)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center>${K2Words}</center>""",
-"""%(Meaning)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:300%">${Meaning}</font></center><center>${K2Words}</center>""",
-"""%(OnYomi)s<br>%(KunYomi)s""":
-	"""${Css}<div style="float:left">${Stroke}<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div><center><font style="font-size:500%">${OnYomi}<br />${KunYomi}</font></center><center>${K2Words}</center>"""
-}
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -198,7 +187,7 @@ def JxFindTypeAndField(Card,Types):
         
 def GuessType(String):
 
-        if len(set(unicode(c) for c in String).intersection(JxPonctuation))>0:
+        if len(set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation))>0:
                 #if  String has ponctuations marks, it is a sentence
                 return set([u"Sentence"])
         elif unicode(String) in JxKanjiRange:
@@ -297,23 +286,23 @@ def append_JxPlugin(Answer,Card):
     # Get and translate the new CardModel Template
     try:
 	    JxAnswer = JxLink[JxPrefix + u':' + Card.cardModel.aformat]
+            JxAnswerOk= True
     except KeyError:
-            mw.help.showText(JxPrefix + u"rah"+str(JxGuessedList))
             try:
-                    JxAnswer = JxLink[Card.cardModel.aformat]     # this is so that we can call the default (Word) template with "Template" instead of "W:Template"          
+                    JxAnswer = JxLink[Card.cardModel.aformat]     # this is so that we can call the default (Word) template with "Template" instead of "W:Template"  
+                    JxAnswerOk = True
             except KeyError: 
 	            JxAnswer = Card.cardModel.aformat
-
-
-    # First, get and translate the CardModel Template
-    try:
-	    JxAnswer = JxLink[Card.cardModel.aformat]
-    except KeyError:
-	    JxAnswer = Card.cardModel.aformat
+                    JxAnswerOk = False
 
     ################################################ maybee I should update this code to make it consistent with the magical function
     
-        # Then create a dictionnary for all data replacement strings...
+    # Then create a dictionnary for all data replacement strings...
+    
+    JxAnswerDict = {}        
+    JxAnswerDict[u"TypeList"] = str(JxGuessedList)    
+    mw.help.showText(JxAnswerDict[u"TypeList"])    
+        
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -333,7 +322,7 @@ def append_JxPlugin(Answer,Card):
     ################################################
 
 
-    JxAnswerDict = {}
+
     
     # first fill in the fact information
     for FieldModel in Card.fact.model.fieldModels:
@@ -415,10 +404,10 @@ def append_JxPlugin(Answer,Card):
 			JxAnswerDict[u"K2Words"] = u""			
                         
     from ui_menu import JxSettings
-    if JxSettings.Mode == "Append": return Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
-    elif JxSettings.Mode == "Prepend": return Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
-    elif JxSettings.Mode == "Bypass": return Answer
-    else : return Template(JxAnswer).safe_substitute(JxAnswerDict)
+    if JxSettings.Mode == "Append" and JxAnswerOk: return Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
+    elif JxSettings.Mode == "Prepend" and JxAnswerOk: return Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
+    elif JxSettings.Mode == "Override" and JxAnswerOk: return Template(JxAnswer).safe_substitute(JxAnswerDict)
+    else : return Answer
 
 
 
