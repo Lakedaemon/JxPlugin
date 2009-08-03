@@ -11,13 +11,14 @@ from PyQt4.QtWebKit import QWebPage, QWebView
 
 from ankiqt import mw
 
+import globalobjects
 from loaddata import *
 from answer import *
 from stats import *
 from ui_graphs import *
 from tools import *
 from metacode import *
-from default import JxLink #*
+
 
 
 JxMenu = """ 
@@ -261,6 +262,14 @@ $(document).ready(function(){
 	
 
 <center><div class="ui-buttonset-small">
+        <a class="ui-button" href = "javascript:void(0)" onclick="
+        JxTemplateOverride.ResetTables();
+        JxTemplateOverride.Entry = 0;
+        $('.Entry').html(JxTemplateOverride.GetForm());
+        $('select#Entry').selectmenu({width:200});
+        document.forms.Translator.Target.value=JxTemplateOverride.Target;
+        document.forms.Translator.Source.value=JxTemplateOverride.Source;   
+        ">Reset</a>
         <a class="ui-button" href = "javascript:void(0)" onClick="
                 $('.Entry').html(JxTemplateOverride.ReduceForm());
                 $('select#Entry').selectmenu({width:200});
@@ -268,8 +277,8 @@ $(document).ready(function(){
                 document.forms.Translator.Target.value=JxTemplateOverride.Target;
                 document.forms.Translator.Source.value=JxTemplateOverride.Source;"
         >Delete</a>
-        <a class="ui-button" href="py:JxBrowse()">Preview</a>
         <a class="ui-button" href = "javascript:void(0)" onclick="Rename()">Rename</a>
+        <a class="ui-button" href="py:JxBrowse()">Preview</a>
         <a class="ui-button" href="py:JxHelp()">Help</a></div>
 </center>
 	
@@ -376,8 +385,12 @@ class Jx__Entry_Source_Target(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin", "JxTable.txt")
-		self.InitTables()
+		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User","JxTable.txt")
+                try:
+                        self.Table = JxReadFile(self.File)
+                        self.ResetJxLink()
+                except: 
+                        self.ResetTables()
 		if len(self.Table)>0:
 			self.Entry = 0
 		else:
@@ -487,22 +500,25 @@ class Jx__Entry_Source_Target(QObject):
 			self._Source = u""
 			self._Target = u""
 		return self.GetForm()
+        @pyqtSignature("")
+        def ResetTables(self):
+                from default import Jx__Entry_Source_Target__Default
+                mw.help.showText(str(Jx__Entry_Source_Target__Default))
+		self.Table = Jx__Entry_Source_Target__Default[:]
+		self.SaveTable()
+                self.ResetJxLink()
 		
 	def SaveTable(self):
 		File = codecs.open(self.File, "wb", "utf8")  
 		for (Name,Source,Target) in self.Table:
 			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
 		File.close()
-	def InitTables(self):
-#                global JxLink
-		if os.path.exists(self.File):
-			self.Table = JxReadFile(self.File)
-		else : 
-			from default import Jx__Entry_Source_Target__Default
-			self.Table = Jx__Entry_Source_Target__Default
-			self.SaveTable()
-		for (Name, Source,Target) in self.Table:
-			JxLink[Source] = Target
+
+        def ResetJxLink(self):
+                Jxlink={}
+                for (Name, Source,Target) in self.Table:
+                        JxLink[Source] = Target                                  
+        
 
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
 

@@ -9,7 +9,7 @@ from math import log
 from string import Template
 
 from loaddata import *
-from default import JxLink
+from globalobjects import JxLink
 from anki.hooks import *
 from anki.utils import hexifyID
 
@@ -95,7 +95,7 @@ def JxAffectFields(Card,Types):
                 if Type in Types:
                         for Field in Card.fact.model.fieldModels:
                                 if Field.name in TypeList:
-                                        List.append((Type,Field.name)) #possibly put the content of the field in there too
+                                        List.append((Type,Field.name,Card.fact[Field.name])) 
                                         break
                                              
         if len(List)<len(Types):
@@ -104,15 +104,16 @@ def JxAffectFields(Card,Types):
                         (Done,Field) = zip(*List)
                 else : 
                         Done=[]
-                Index = 0 
+                TempList=[]
                 for (Type,TypeList) in JxType:
                         if Type in Types and Type in Done:
-                                Index += 1
+                                TempList.append(List.pop(0))
                         elif Type in Types:
                                 for Field in Card.fact.model.fieldModels:
                                         if Field.name == u"Expression":
-                                                List[Index:]=[(Type,Field.name)] + List[Index:] #possibly put the content of the field in there too
+                                                TempList.append((Type,Field.name,Card.fact[Field.name])) 
                                                 break 
+                List = TempList
                                                 
         if len(List)<len(Types):
                 # field names and "Expression" have failed, we could still try to guess with the fields content
@@ -120,7 +121,43 @@ def JxAffectFields(Card,Types):
                 pass
    
         return List
+        
+# The following function is nearly the same appart from the  and Type in GuessType(Card.fact[u"Expression"]) condition !!!!!
+def JxFindTypeAndField(Card,Types):
+        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
+        
+        List=[]
+        for (Type,TypeList) in JxType:
+                if Type in Types:
+                        for Field in Card.fact.model.fieldModels:
+                                if Field.name in TypeList:
+                                        List.append((Type,Field.name,Card.fact[Field.name]))
+                                        break
+                                             
+        if len(List)<len(Types):
+                # for the still missing fields, we try to find an "Expression" field next and update the List
+                if len(List) > 0:
+                        (Done,Field) = zip(*List)
+                else : 
+                        Done = []
+                TempList=[]
+                for (Type,TypeList) in JxType:
+                        if Type in Types and Type in Done:
+                                TempList.append(List.pop(0))
+                        elif Type in Types:
+                                for Field in Card.fact.model.fieldModels:
+                                        if Field.name == u"Expression" and Type in GuessType(Card.fact[u"Expression"]):
+                                                TempList.append((Type,Field.name,Card.fact[Field.name])) 
+                                                break 
+                List=TempList
                 
+        if len(List)<len(Types):
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
+                pass
+        
+        return List
+
 def JxParseModelTags(Card):
 
         # Secondly : parse the model tags (most of the hope is there : it would catch my kanji model, 
@@ -154,38 +191,7 @@ def JxParseModelTags(Card):
 
   
 
-def JxFindTypeAndField(Card,Types):
-        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
-        
-        List=[]
-        for (Type,TypeList) in JxType:
-                if Type in Types:
-                        for Field in Card.fact.model.fieldModels:
-                                if Field.name in TypeList:
-                                        List.append((Type,Field.name)) #possibly put the content of the field in there too
-                                        break
-                                             
-        if len(List)<len(Types):
-                # for the still missing fields, we try to find an "Expression" field next and update the List
-                if len(List) > 0:
-                        (Done,Field) = zip(*List)
-                else : 
-                        Done = []
-                Index = 0 
-                for (Type,TypeList) in JxType:
-                        if Type in Types and Type in Done:
-                                Index += 1
-                        elif Type in Types:
-                                for Field in Card.fact.model.fieldModels:
-                                        if Field.name == u"Expression" and Type in GuessType(Card.fact[u"Expression"]):
-                                                List[Index:]=[(Type,Field.name)] + List[Index:] #possibly put the content of the field in there too
-                                                #break 
-        if len(List)<len(Types):
-                # field names and "Expression" have failed, we could still try to guess with the fields content
-                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
-                pass
-        
-        return List
+
         
 def GuessType(String):
 
@@ -275,38 +281,107 @@ def JxParseForJapaneseCharacters(Card):
 ################################################################################################################################################               
 JxAbbrev = {u'Kanji':u'K',u'Word':u'W',u'Sentence':u'S',u'Grammar':u'G'}
 
+JxFieldsDoc = [
+(u'F:Types',u'displays a list of triplets (Type,Field,Content) of possible Types for the Fact of this card, associated to the relevant Field, that holds Content'),
+(u'K:',u'displays the Kanji of the Card, if it has a Kanji fact'), 
+(u'W:',u'displays the (guessed) Word of the Card, if it has a Word fact'),
+(u'S:',u'displays the (guessed) Sentence of the Card, if it has a Sentence fact'),
+(u'G:',u'displays the Grammar point of the Card, if it has a Gramar fact'),
+(u'F:',u'displays the content of the relevant field of the Fact, if it has one guessed type'),
+(u'<Field>',u'displays the content of the <Field> of the Fact')]
+def JxDoc(Field,Code,DocString):
+        """adds DocString as documentation for ${Field}"""
+        pass
+
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
 
-
+    # Guess the type(s) and the relevant content(s) of the Fact
     JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
     
-
-    JxPrefix = u''
-    for (Type,Field) in JxGuessedList:
-           JxPrefix += JxAbbrev[Type]
     # Get and translate the new CardModel Template
+    JxPrefix = u''
+    for (Type,Field,Content) in JxGuessedList:
+           JxPrefix += JxAbbrev[Type]
     try:
 	    JxAnswer = JxLink[JxPrefix + u':' + Card.cardModel.aformat]
             JxAnswerOk= True
     except KeyError:
             try:
-                    JxAnswer = JxLink[Card.cardModel.aformat]     # this is so that we can call the default (Word) template with "Template" instead of "W:Template"  
+                    JxAnswer = JxLink["D:"+Card.cardModel.aformat]     # in case the right template hasn't been set, we try with the default template "D:"
                     JxAnswerOk = True
             except KeyError: 
 	            JxAnswer = Card.cardModel.aformat
                     JxAnswerOk = False
 
 
-    ################################################ maybee I should update this code to make it consistent with the magical function
+
     
     # Then create a dictionnary for all data replacement strings...
     
-    JxAnswerDict = {}        
-    JxAnswerDict[u"TypeList"] = str(JxGuessedList)    
-    mw.help.showText(JxAnswerDict[u"TypeList"])    
-        
+    JxAnswerDict = {}    
+    
+    # ${F:Types}
+    JxAnswerDict[u"F:Types"] = str(JxGuessedList)    
+ 
+    # ${K:}, ${W:}, ${S:}, ${G:}
+    for (Type,TypeList) in JxType:
+            JxAnswerDict[JxAbbrev[Type] + u':'] = u""            
+    for (Type,Field,Content) in JxGuessedList:
+            JxAnswerDict[JxAbbrev[Type] + u':'] = Content
+    
+
+    # ${F:}, ${F:Stroke}
+    if len(JxGuessedList)>0: 
+            Temp = JxGuessedList[0][0]
+            Tempa = u"""<span class="KanjiStrokeOrder">%s</span>""" % Temp
+    else:
+            Temp = u''
+            Tempa = u""
+    JxAnswerDict[u'F:'] = Temp
+    JxAnswerDict[u'F:Stroke'] = Tempa
+    
+    # ${K:Stroke}, ${W:Stroke}, ${S:Stroke}, ${G:Stroke}
+    for (Type,TypeList) in JxType:
+            if JxAnswerDict[JxAbbrev[Type]+ u':'] != u"":
+                    Temp =  u"""<span class="KanjiStrokeOrder">%s</span>""" % JxAnswerDict[JxAbbrev[Type] + u':']
+            else:
+                    Temp =  u""
+            JxAnswerDict[JxAbbrev[Type] + u":Stroke"] = Temp
+            
+    # ${W:JLPT}
+    try:
+            JxAnswerDict[u"W:JLPT"] =  u"""<span class="JLPT">%s</span>""" % MapJLPTTango.String(JxAnswerDict[u'W:'])
+    except KeyError:
+	    JxAnswerDict[u"W:JLPT"] =  u""
+            
+    # ${W:Freq}
+    try:
+            JxAnswerDict[u"W:Freq"] =  u"""<span class="Frequency">LFreq %s</span>"""  % MapFreqTango.Value(JxAnswerDict[u'W:'], lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
+    except KeyError:
+	    JxAnswerDict[u"W:Freq"] =  u""
+            
+    
+    JxAnswerDict[u"F:Css"] = """<style> 
+    .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
+    .Kana { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.8em; }
+    .Romaji { font-family: Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.5em;}
+    .JLPT,.Jouyou,.Frequency,.Kanken { font-family: Arial,sans-serif; font-weight: normal; font-size:1.2em;}
+    .KanjiStrokeOrder  { font-family: KanjiStrokeOrders; font-size: 10em;}
+    td { padding: 2px 15px 2px 15px;}
+    </style>"""
+    
+    # ${<Field>}
+    for FieldModel in Card.fact.model.fieldModels:
+	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
+                hexifyID(FieldModel.id), Card.fact[FieldModel.name])
+    
+    mw.help.showText(JxAnswerDict[u"F:Types"])   
+    
+    
+    
+    ################################################ maybee I should update this code to make it consistent with the magical function        
     for key in [u"Expression",u"単語",u"言葉"]:
 	    try:
 		Tango = Tango2Dic(Card.fact[key])
@@ -328,34 +403,13 @@ def append_JxPlugin(Answer,Card):
 
 
     
-    # first fill in the fact information
-    for FieldModel in Card.fact.model.fieldModels:
-	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
-                hexifyID(FieldModel.id), Card.fact[FieldModel.name])     #(FieldModel.id, FieldModel.fact[FieldModel.name])
-    
+
+            
+    # ${T2JLPT},${T2Freq}, ${Stroke}, ${K2JLPT}, ${K2Jouyou},${K2Freq},${K2Words}
     for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
 	    JxAnswerDict[key] = u""
-
-    JxAnswerDict[u"Stroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Kanji
-    if Kanji==None and Expression != None: 
-	    JxAnswerDict[u"WStroke"] =  """<span class="LDKanjiStroke">%s</span>""" % Expression
-    else:
-           JxAnswerDict[u"WStroke"] = u"" 	    
-    JxAnswerDict[u"Css"] = """<style> 
-    .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
-    .Kana { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.8em; }
-    .Romaji { font-family: Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.5em;}
-    .JLPT,.Jouyou,.Frequency { font-family: Arial,sans-serif; font-weight: normal; font-size:1.2em;}
-    .LDKanjiStroke  { font-family: KanjiStrokeOrders; font-size: 10em;}
-    td { padding: 2px 15px 2px 15px;}
-    </style>"""
-	
-    
-    # Word2JLPT
-    try:
-        JxAnswerDict[u"T2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Word2Data[Tango]]
-    except KeyError:
-	    JxAnswerDict[u"T2JLPT"] =  u""
+                	
+  
 
     # Word2Frequency
     try:

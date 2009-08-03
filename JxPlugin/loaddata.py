@@ -230,21 +230,36 @@ for (key,value) in Word2Frequency.iteritems():
 		Word2Zone[key] = 5
 
 class FileList(dict):
-        def __init__(self,From,To,Dict,Order):
+        def __init__(self,From,To,Dict,Order,Tidy = lambda x:x):
                 self.From = From
                 self.To = To
                 self.Dict = Dict
-                self.LegendDict = dict(Order)
                 self.Order = Order
+                self.LegendDict = dict(Order)
+                self.Tidy = Tidy
                 self.Rank = [Value for Key,Value in Order]
-        def Legend(self,key):
-                return self.LegendDict[key]
-                
-MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")])
-MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
+        def Legend(self,Key):
+                return self.LegendDict[Key]
+        def String(self,Stuff):
+                return self.LegendDict[self.Dict[self.Tidy(Stuff)]]
+        def Value(self,Stuff,Process = lambda x:x):        
+                return Process(self.LegendDict[self.Dict[self.Tidy(Stuff)]])
+  
+def Tango2Dic(string):
+	String = string.strip(u" ")
+	if String.endswith(u"する") and len(String)>2:
+		return String[0:-2]
+	elif (String.endswith(u"な") or String.endswith(u"の") or String.endswith(u"に")) and len(String)>1: #python24 fix for OS X                  
+#	elif String.endswith((u"な",u"の",u"に")) and len(String)>1:    #python25
+		return String[0:-1]
+	else:
+		return String
+               
+MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")],Tidy=Tango2Dic)
+MapFreqTango = FileList("Tango","Occurences",Word2Frequency,[],Tidy=Tango2Dic)
+MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")],Tidy=Tango2Dic)
 MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")])
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
 MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"Grade 1"),(2,"Grade 2"),(3,"Grade 3"),(4,"Grade 4"),(5,"Grade 5"),(6,"Grade 6"),("HS","H.School")])
-MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),
-        ('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])
+MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])
 
