@@ -255,10 +255,11 @@ def Tango2Dic(string):
 	else:
 		return String
                
-MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")],Tidy=Tango2Dic)
+MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")],Tidy=Tango2Dic)
 MapFreqTango = FileList("Tango","Occurences",Word2Frequency,[],Tidy=Tango2Dic)
 MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")],Tidy=Tango2Dic)
-MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,"Lvl 4"),(3,"Lvl 3"),(2,"Lvl 2"),(1,"Lvl 1")])
+MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")])
+MapFreqKanji = FileList("Tango","Occurences",Kanji2Frequency,[],Tidy=Tango2Dic)
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
 MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"Grade 1"),(2,"Grade 2"),(3,"Grade 3"),(4,"Grade 4"),(5,"Grade 5"),(6,"Grade 6"),("HS","H.School")])
 MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])

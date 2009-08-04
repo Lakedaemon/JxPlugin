@@ -335,7 +335,7 @@ def append_JxPlugin(Answer,Card):
     # ${F:}, ${F:Stroke}
     if len(JxGuessedList)>0: 
             Temp = JxGuessedList[0][0]
-            Tempa = u"""<span class="KanjiStrokeOrder">%s</span>""" % Temp
+            Tempa = u"""<span class="KanjiStrokeOrder">%s</span>""" % ''.join([c for c in Temp.strip() if ord(c) in KanjiRange])
     else:
             Temp = u''
             Tempa = u""
@@ -345,7 +345,7 @@ def append_JxPlugin(Answer,Card):
     # ${K:Stroke}, ${W:Stroke}, ${S:Stroke}, ${G:Stroke}
     for (Type,TypeList) in JxType:
             if JxAnswerDict[JxAbbrev[Type]+ u':'] != u"":
-                    Temp =  u"""<span class="KanjiStrokeOrder">%s</span>""" % JxAnswerDict[JxAbbrev[Type] + u':']
+                    Temp =  u"""<span class="KanjiStrokeOrder">%s</span>""" % ''.join([c for c in JxAnswerDict[JxAbbrev[Type] + u':'].strip() if ord(c) in KanjiRange])
             else:
                     Temp =  u""
             JxAnswerDict[JxAbbrev[Type] + u":Stroke"] = Temp
@@ -362,14 +362,65 @@ def append_JxPlugin(Answer,Card):
     except KeyError:
 	    JxAnswerDict[u"W:Freq"] =  u""
             
-    
-    JxAnswerDict[u"F:Css"] = """<style> 
-    .Kanji { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:2.5em;}
-    .Kana { font-family: Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.8em; }
-    .Romaji { font-family: Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:1.5em;}
-    .JLPT,.Jouyou,.Frequency,.Kanken { font-family: Arial,sans-serif; font-weight: normal; font-size:1.2em;}
+ 
+    # ${K:JLPT}
+    try:
+            JxAnswerDict[u"K:JLPT"] =  u"""<span class="JLPT">%s</span>""" % MapJLPTKanji.String(JxAnswerDict[u'K:'])
+    except KeyError:
+            JxAnswerDict[u"K:JLPT"] =  u""
+            
+	
+    # ${K:Jouyou}	
+    try:
+            JxAnswerDict[u"K:Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji.String(JxAnswerDict[u'K:'])
+    except KeyError:
+            JxAnswerDict[u"K:Jouyou"] =  u""
+
+    # ${K:Freq}
+    try:    
+            JxAnswerDict[u"K:Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % MapFreqKanji.Value(JxAnswerDict[u'K:'], lambda x:int((log(x+1,2)-log(MaxFrequency+1,2))*10+100))
+    except KeyError:
+            JxAnswerDict[u"K:Freq"] = u""	
+            
+    try : # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
+            query = """select expression.value, reading.value, meaning.value from 
+            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
+            expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
+            reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
+            meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
+            expression.value like "%%%s%%" """ % JxAnswerDict[u'K:']
+                
+            # implement a control to limit the number of words displayed 
+
+            # HTML Buffer 
+            JxHtmlBuffer = u"" 
+            Boolean = True
+            # Adds the words to the HTML Buffer 
+            for (u,v,w) in mw.deck.s.all(query):
+                    if Boolean:
+                            JxHtmlBuffer += u""" <tr class="odd Words"><td ><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
+			        """ % (u"Kanji",u.strip(),u"Romaji" ,w.strip(),u"Kana",v.strip())
+                    else:
+                            JxHtmlBuffer += u""" <tr class="even Words"><td><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
+			        """ % (u"Kanji",u.strip(),u"Romaji" ,w.strip(),u"Kana",v.strip())     
+                    Boolean = not(Boolean)
+            # if there Html Buffer isn't empty, adds it to the card info
+            if len(JxHtmlBuffer):
+                    JxAnswerDict[u"K:Words"] = u"""<table style="text-align:center;" cellspacing="0px" cellpadding="0px" border="0px" align="center">%s</table>""" % JxHtmlBuffer
+    except KeyError:
+                    JxAnswerDict[u"K:Words"] = u""	
+ 
+    JxAnswerDict[u"Css"] = u"""<style> 
+    .even {background-color:none;}
+    .odd {background-color:#ddedfc;}
+    .K {top:40%;position:absolute;background-color:#ddedfc;}
+    .Words {font-size:20px;line-height:28px;}
+    .Kanji {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
+    .Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
+    .Romaji { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
+    .JLPT,.Jouyou,.Frequency,.Kanken { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; font-size:16px;}
     .KanjiStrokeOrder  { font-family: KanjiStrokeOrders; font-size: 10em;}
-    td { padding: 2px 15px 2px 15px;}
+    td { padding: 0px 15px 0px 15px;}
     </style>"""
     
     # ${<Field>}
@@ -379,89 +430,15 @@ def append_JxPlugin(Answer,Card):
     
     mw.help.showText(JxAnswerDict[u"F:Types"])   
     
+    def JxReplace(String):
+            try:
+                    return JxAnswerDict[String.group(1)]
+            except KeyError:
+                    return String.group(0)
+                    
+    JxAnswer = re.sub("\$\{(.*?)\}",JxReplace,JxAnswer)
     
-    
-    ################################################ maybee I should update this code to make it consistent with the magical function        
-    for key in [u"Expression",u"単語",u"言葉"]:
-	    try:
-		Tango = Tango2Dic(Card.fact[key])
-		Expression = ''.join([c for c in Card.fact[key].strip() if ord(c) in KanjiRange])
-		break
-	    except KeyError:
-                Tango = None	
-                Expression = None	
-		
-    for key in [u"Kanji",u"漢字"]:
-	    try:
-		Kanji = Card.fact[key].strip()
-		break
-	    except KeyError:
-		Kanji = None	
-
-    ################################################
-
-
-
-    
-
-            
-    # ${T2JLPT},${T2Freq}, ${Stroke}, ${K2JLPT}, ${K2Jouyou},${K2Freq},${K2Words}
-    for key in [u"T2JLPT",u"T2Freq",u"Stroke",u"K2JLPT",u"K2Jouyou",u"K2Freq",u"K2Words"]:
-	    JxAnswerDict[key] = u""
-                	
-  
-
-    # Word2Frequency
-    try:
-		JxAnswerDict[u"T2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Word2Frequency[Tango]+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100) 
-    except KeyError:
-		JxAnswerDict[u"T2Freq"] = u""
-
-    if Kanji != None:
-			
-		# Kanji2JLPT
-		try:
-			JxAnswerDict[u"K2JLPT"] =  u"""<span class="JLPT">%s</span>""" % Map[Kanji2JLPT[Kanji]]
-		except KeyError:
-			JxAnswerDict[u"K2JLPT"] =  u""
-	
-		# Kanji2Jouyou	
-		try:
-			JxAnswerDict[u"K2Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji["Legend"][Kanji2JLPT[Kanji]]
-		except KeyError:
-			JxAnswerDict[u"K2Jouyou"] =  u""
-
-		# Word2Frequency
-		try:    
-			JxAnswerDict[u"K2Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % int((log(Kanji2Frequency[Kanji]+1,2)-log(MaxFrequency+1,2))*10+100)
-		except KeyError:
-			JxAnswerDict[u"K2Freq"] = u""	
-				
-		# Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning 
-		
-		query = """select expression.value, reading.value, meaning.value from 
-		fields as expression, fields as reading, fields as meaning, 
-		fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
-		expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-		reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
-		meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-		expression.value like "%%%s%%" """ % Kanji
-                
-# implement a control to limit the number of words displayed 
-
-		# HTML Buffer 
-		info = "" 
-		# Adds the words to the HTML Buffer 
-		for (u,v,w) in mw.deck.s.all(query):
-			info += """ <tr><td><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
-			""" % ("Kanji",u.strip(),"Romaji" ,w.strip(),"Kana",v.strip())
-
-		# if there Html Buffer isn't empty, adds it to the card info
-		if len(info):
-			JxAnswerDict[u"K2Words"] = """<table style="text-align:center;" align="center">%s</table>""" % info
-		else:
-			JxAnswerDict[u"K2Words"] = u""			
-                        
+                      
     from ui_menu import JxSettings
     if JxSettings.Mode == "Append" and JxAnswerOk: JxAnswer = Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
     elif JxSettings.Mode == "Prepend" and JxAnswerOk: JxAnswer =  Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
