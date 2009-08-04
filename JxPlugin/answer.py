@@ -23,23 +23,24 @@ from anki.utils import hexifyID
 
 
 def JxReplace(String,Dict):
-        try: 
-                Tail = String.group(1).split(u",")
-                Head = Tail.pop(0)
-                if len(Tail)>0 and Tail[0].find(u"=")==False:
-                        Container = Tail.pop(0)
-                else:
-                        Container=u"span"
-                Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + Dict[Head] + u"</" + Container + u'span>'                     
-                for Item in Tail:
-                        if u"=" in Item:
-                                (Container,Class)=tuple(Item.split(u"="))
-                                Head = u"<" + Container + u' class=">' + Class + u'">' + Head + u"</" + Container + u">" 
-                        else:
-                                Head = u"<" + Item + u">" + Head + u"</" + Item + u">" 
-                return Head
+
+        Tail = String.group(1).split(u",")
+        Head = Tail.pop(0)
+        if len(Tail)>0 and Tail[0].find(u"=")==False:
+                Container = Tail.pop(0)
+        else:
+                Container=u"span"
+        try:      
+                Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + Dict[Head] + u"</" + Container + u'>'
         except KeyError:
-                return String.group(0)
+                Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + u'${'+Head+u'}' + u"</" + Container + u'>'               
+        for Item in Tail:
+                if u"=" in Item:
+                        (Container,Class)=tuple(Item.split(u"="))
+                        Head = u"<" + Container + u' class=">' + Class + u'">' + Head + u"</" + Container + u">" 
+                else:
+                        Head = u"<" + Item + u">" + Head + u"</" + Item + u">" 
+        return Head
 
 
 ###############################################################################################################
@@ -364,7 +365,7 @@ def append_JxPlugin(Answer,Card):
     # ${F:}, ${F:Stroke}
     if len(JxGuessedList)>0: 
             Temp = JxGuessedList[0][0]
-            Tempa = u"""<span class="KanjiStrokeOrder">%s</span>""" % ''.join([c for c in Temp.strip() if ord(c) in KanjiRange])
+            Tempa = u"""%s""" % ''.join([c for c in Temp.strip() if ord(c) in KanjiRange])
     else:
             Temp = u''
             Tempa = u""
@@ -374,40 +375,40 @@ def append_JxPlugin(Answer,Card):
     # ${K:Stroke}, ${W:Stroke}, ${S:Stroke}, ${G:Stroke}
     for (Type,TypeList) in JxType:
             if JxAnswerDict[JxAbbrev[Type]+ u':'] != u"":
-                    Temp =  u"""<span class="KanjiStrokeOrder">%s</span>""" % ''.join([c for c in JxAnswerDict[JxAbbrev[Type] + u':'].strip() if ord(c) in KanjiRange])
+                    Temp =  u"""%s""" % ''.join([c for c in JxAnswerDict[JxAbbrev[Type] + u':'].strip() if ord(c) in KanjiRange])
             else:
                     Temp =  u""
             JxAnswerDict[JxAbbrev[Type] + u":Stroke"] = Temp
             
     # ${W:JLPT}
     try:
-            JxAnswerDict[u"W:JLPT"] =  u"""<span class="JLPT">%s</span>""" % MapJLPTTango.String(JxAnswerDict[u'W:'])
+            JxAnswerDict[u"W:JLPT"] =  u"""%s""" % MapJLPTTango.String(JxAnswerDict[u'W:'])
     except KeyError:
 	    JxAnswerDict[u"W:JLPT"] =  u""
             
     # ${W:Freq}
     try:
-            JxAnswerDict[u"W:Freq"] =  u"""<span class="Frequency">LFreq %s</span>"""  % MapFreqTango.Value(JxAnswerDict[u'W:'], lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
+            JxAnswerDict[u"W:Freq"] =  u"""%s"""  % MapFreqTango.Value(JxAnswerDict[u'W:'], lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
     except KeyError:
 	    JxAnswerDict[u"W:Freq"] =  u""
             
  
     # ${K:JLPT}
     try:
-            JxAnswerDict[u"K:JLPT"] =  u"""<span class="JLPT">%s</span>""" % MapJLPTKanji.String(JxAnswerDict[u'K:'])
+            JxAnswerDict[u"K:JLPT"] =  u"""%s""" % MapJLPTKanji.String(JxAnswerDict[u'K:'])
     except KeyError:
             JxAnswerDict[u"K:JLPT"] =  u""
             
 	
     # ${K:Jouyou}	
     try:
-            JxAnswerDict[u"K:Jouyou"] =  """<span class="Jouyou">%s</span>""" % MapJouyouKanji.String(JxAnswerDict[u'K:'])
+            JxAnswerDict[u"K:Jouyou"] =  """%s""" % MapJouyouKanji.String(JxAnswerDict[u'K:'])
     except KeyError:
             JxAnswerDict[u"K:Jouyou"] =  u""
 
     # ${K:Freq}
     try:    
-            JxAnswerDict[u"K:Freq"] = u"""<span class="Frequency">LFreq %s</span>"""  % MapFreqKanji.Value(JxAnswerDict[u'K:'], lambda x:int((log(x+1,2)-log(MaxFrequency+1,2))*10+100))
+            JxAnswerDict[u"K:Freq"] = u"""%s"""  % MapFreqKanji.Value(JxAnswerDict[u'K:'], lambda x:int((log(x+1,2)-log(MaxKanjiOccurences+1,2))*10+100))
     except KeyError:
             JxAnswerDict[u"K:Freq"] = u""	
             

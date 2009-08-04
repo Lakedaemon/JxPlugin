@@ -169,11 +169,11 @@ def read_Frequency(file):
 	f.close()
 
 read_Frequency(file)
-MaxFrequency = max(Kanji2Frequency.values())
-AccumultedKanjiFrequency = sum(Kanji2Frequency.values())
+MaxKanjiOccurences = max(Kanji2Frequency.values())
+SumKanjiOccurences = sum(Kanji2Frequency.values())
 Kanji2Zone ={}
 for (key,value) in Kanji2Frequency.iteritems():
-	a= (log(value+1,2)-log(MaxFrequency+1,2))*10+100
+	a= (log(value+1,2)-log(MaxKanjiOccurences+1,2))*10+100
 	if a > 62.26: #1/2
 		Kanji2Zone[key] = 1
 	elif a > 45: #1/5
@@ -243,7 +243,7 @@ class FileList(dict):
         def String(self,Stuff):
                 return self.LegendDict[self.Dict[self.Tidy(Stuff)]]
         def Value(self,Stuff,Process = lambda x:x):        
-                return Process(self.LegendDict[self.Dict[self.Tidy(Stuff)]])
+                return Process(self.Dict[self.Tidy(Stuff)])
   
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -259,8 +259,8 @@ MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,u"4級"),(3,u"3級"),(2,u"2
 MapFreqTango = FileList("Tango","Occurences",Word2Frequency,[],Tidy=Tango2Dic)
 MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")],Tidy=Tango2Dic)
 MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")])
-MapFreqKanji = FileList("Tango","Occurences",Kanji2Frequency,[],Tidy=Tango2Dic)
+MapFreqKanji = FileList("Tango","Occurences",Kanji2Frequency,[])
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
-MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"Grade 1"),(2,"Grade 2"),(3,"Grade 3"),(4,"Grade 4"),(5,"Grade 5"),(6,"Grade 6"),("HS","H.School")])
+MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"G1"),(2,"G2"),(3,"G3"),(4,"G4"),(5,"G5"),(6,"G6"),("HS","HS")])
 MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])
 
