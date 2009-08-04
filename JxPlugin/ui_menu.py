@@ -549,28 +549,36 @@ class Jx__Model_CardModel_String(QObject):
 
 	def Jx__CardModel_fset(self,value):
 		self._CardModel = str(value)
-		self.UpdateDisplayString()
+		self.UpdatePrefix()
 	@Jx__Prop
 	def CardModel():return {'fset': lambda self,value:self.Jx__CardModel_fset(value)}
-	
+
+	def Jx__Prefix_fset(self,value):
+		self._Prefix = u"%s" % value
+		self.UpdateDisplayString()
+	@Jx__Prop
+	def Prefix():return {'fset': lambda self,value:self.Jx__Prefix_fset(value)}
+
 	# to do : implement writing display string in the database if it's different
 	@Jx__Prop
 	def DisplayString():pass
 	
-	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+
         @pyqtSignature("",result="QString")
 	def GetModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.Models],u",") + u",'selected':'"  + self.Model + u"'}"
 		
-	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+
         @pyqtSignature("",result="QString")
 	def GetFormModels(self):		
 		Form = u"""<form id ="FormModel"><select id="Model" name="Model" onChange="
 		var index = document.forms.FormModel.Model.options.selectedIndex;
 		JxAnswerSettings.Model = document.forms.FormModel.Model.options[index].text;
 		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+                  $('select#CardModel').selectmenu();
+                  $('.Prefix').html(JxAnswerSettings.GetFormPrefix());
+                  $('select#Prefix').selectmenu();                  
 	       	$('.Answer').html(JxAnswerSettings.DisplayString);
-		$('select#CardModel').selectmenu({style:'dropdown'});
 		">"""
 		for Stuff in self.Models:
 			Select = u""	
@@ -578,12 +586,15 @@ class Jx__Model_CardModel_String(QObject):
 				Select = u"selected"
 			Form += u"""<option value="%(Entry)s" %(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
 		return Form + u"""</select></form>"""
-	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
+
         @pyqtSignature("",result="QString")
 	def GetFormCardModels(self):		
 		Form = u"""<form id="FormCardModel"><select  id="CardModel" name="CardModel" onChange="
 		var index = document.forms.FormCardModel.CardModel.options.selectedIndex;
 		JxAnswerSettings.CardModel = document.forms.FormCardModel.CardModel.options[index].text;
+                  //$('select#CardModel').selectmenu();
+                  $('.Prefix').html(JxAnswerSettings.GetFormPrefix());
+                  $('select#Prefix').selectmenu();   
 		$('.Answer').html(JxAnswerSettings.DisplayString);	
 		">"""
 		for Stuff in self.CardModels:
@@ -600,17 +611,24 @@ class Jx__Model_CardModel_String(QObject):
 		""" % {'Model':self._Model,'CardModel':self._CardModel}
 		Template = mw.deck.s.scalar(Query)		
 		Form = u""
-                Select = u"selected"
                 L = len(Template)
                 for Key in JxLink.keys():
                         K = len(Key)
                         if K > L and Key[K-L:] == Template:
-                                Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Key[0:K-L], u'Text':Key[0:K-L], u'Selected':Select}
                                 Select = u""
+                                if Key[0:K-L] == self._Prefix:
+                                        Select = u"selected"
+                                Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Key[0:K-L], u'Text':Key[0:K-L], u'Selected':Select}
+                Select = u""
+                if self._Prefix == u"Bypass":
+                        Select = u"selected"
                 Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':'Bypass', u'Text':'Bypass', u'Selected':Select}
-		return u"""<form id="FormPrefix"><select id="Prefix" name="Prefix" onChange="">"""+ Form + u"""</select></form>"""                
+		return u"""<form id="FormPrefix"><select id="Prefix" name="Prefix" onChange="
+                var index = document.forms.FormPrefix.Prefix.options.selectedIndex;
+                JxAnswerSettings.Prefix = document.forms.FormPrefix.Prefix.options[index].text;
+                $('.Answer').html(JxAnswerSettings.DisplayString);
+                ">"""+ Form + u"""</select></form>"""                
 			
-	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
         @pyqtSignature("",result="QString")
 	def GetCardModels(self):
 		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
@@ -629,20 +647,31 @@ class Jx__Model_CardModel_String(QObject):
 			self.CardModel = u""
 		else:
 			self.CardModel = self.CardModels[0]
+	def UpdatePrefix(self):
+		Query = u"""select cardModels.aformat from cardModels,models where 
+                models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s" 
+                """ % {'Model':self._Model,'CardModel':self._CardModel}
+		Template = mw.deck.s.scalar(Query)	
+		L = len(Template)
+		Select = True
+		for Key in JxLink.keys():
+                        K = len(Key)
+                        if K > L and Key[K-L:] == Template:
+                                self.Prefix = Key[0:K-L]
+                                Select = False
+                                break
+		if Select:
+                        self.Prefix = u"Bypass"
 	def UpdateDisplayString(self):
 		Query = u"""select cardModels.aformat from cardModels,models where 
-		models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
-		""" % {'Model':self._Model,'CardModel':self._CardModel}
-		s=mw.deck.s.scalar(Query)
-		if s in JxLink:
-			so=JxLink[s]
-			s=so
-#		s = s.replace("<", "&lt;")
-#		s = s.replace(">", "&gt;")
-		self.DisplayString = s
-			
-			
-			
+                models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
+                """ % {'Model':self._Model,'CardModel':self._CardModel}
+		String = mw.deck.s.scalar(Query)
+                if self._Prefix != u"Bypass" and self._Prefix + String in JxLink: 
+                        self.DisplayString = JxLink[self._Prefix + String]
+                else:
+                        self.DisplayString = String
+	
 		
 
 JxJavaScript = u"""
