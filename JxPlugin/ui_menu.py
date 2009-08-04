@@ -358,11 +358,11 @@ class Jx__Settings(QObject):
          
         @pyqtSignature("QString", result="QString")	
 	def Get(self,Key):
-                return self.Dict[str(Key)]
+                return self.Dict[u"%s" % Key]
                 
         @pyqtSignature("QString, QString")	
 	def Set(self,Key,Value):
-                self.Dict[str(Key)] = str(Value)
+                self.Dict[u"%s" % Key] = Value
                 self.Update()
                   
         def Load(self):
@@ -787,16 +787,22 @@ $(document).ready(function(){
 		$('.Answer').html(JxAnswerSettings.DisplayString);	
 		$('select#Model').selectmenu({style:'dropdown'});
 		$('select#CardModel').selectmenu({style:'dropdown'});
+ 		$('.Css').html('<textarea name="Css" id="Css" onChange="JxSettings.Set(' + "'Css'" + ',document.forms.FormCss.Css.value)">'+ JxSettings.Get('Css')  + '</textarea>');               
 });
 
 </script>
-
+<STYLE> textarea#Css { 
+width:100%;
+height:300px;
+BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; 
+SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } 
+</STYLE>
 </head><body>
 
 
-<div><table align="center" width="80%"><tr>
-<td style="text-align:center;"><span class="Model">&nbsp;</span></td>
-<td style="text-align:center;"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
+<div><form name="FormCss"><div class="Css"></div></form><table align="center" width="80%"><tr>
+<td><span class="Model" align="center">&nbsp;</span></td>
+<td align="center"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
 <div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
 </body></html>""",JxResourcesUrl)
 	JxPreview.show()
@@ -897,7 +903,8 @@ def Rah():
 	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
 	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
 	JxSettings = JxBase.findChild(Jx__Settings,'JxSettings')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)        
+	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
+	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
         
         
         
