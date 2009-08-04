@@ -170,7 +170,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 		OLDay = int((OLtime-t) / 86400.0)+1
 		OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
 		Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
-		 
+	     
             OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
             Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}	    
             self.stats['Time2JLPT4Words'] = OLKnown 
@@ -299,7 +299,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	    _("Lowest")], loc='upper left')
 	
         graph.set_xlim(xmin = -days, xmax = 0)
-        graph.set_ylim(ymax= 105)
+        graph.set_ylim(ymax= max (a for a in JOL[1])*1.1 )
         return fig
 
 
@@ -342,6 +342,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 
     def graphTime2Frequency4Words(self, days=30):
         self.calcStats()
+       
         fig = Figure(figsize=(self.width, self.height), dpi=self.dpi)
         graph = fig.add_subplot(111)
 
@@ -353,14 +354,15 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         # have to sort the dictionnary
         keys = OLK.keys()
         keys.sort()
-	
 	for a in keys:
+                sumJOL=0.0
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
-                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
+                   value=sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedWordFrequency
+                   JOL[9-2 * c].append(value)
         Arg =[JOL[k] for k in range(0,10)]
         self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
-	
+
         cheat = fig.add_subplot(111)
         b0 = cheat.bar(-1, 0, color = colorFreq[1])
         b1 = cheat.bar(-2, 0, color = colorFreq[2])
@@ -375,7 +377,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	    _("Lowest")], loc='upper left')
 	
         graph.set_xlim(xmin = -days, xmax = 0)
-        graph.set_ylim(ymax= 105)
+        graph.set_ylim(ymax= max (a for a in JOL[1])*1.1)
         return fig
 
 

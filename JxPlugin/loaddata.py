@@ -215,6 +215,7 @@ def read_Frequency(file,Dict):
 Word2Frequency = read_Frequency(file,{})
 MaxWordFrequency = max(Word2Frequency.values())
 MinWordFrequency = min(Word2Frequency.values())
+AccumultedWordFrequency = sum(Word2Frequency.values())
 Word2Zone ={}
 for (key,value) in Word2Frequency.iteritems():
 	a= (log(value+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100
