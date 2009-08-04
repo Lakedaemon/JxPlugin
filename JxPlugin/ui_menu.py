@@ -282,7 +282,7 @@ $(document).ready(function(){
                 document.forms.Translator.Target.value=JxTemplateOverride.Target;
                 document.forms.Translator.Source.value=JxTemplateOverride.Source;"
         >Delete</a>
-        <a class="ui-button" href = "javascript:void(0)" onclick="Rename()">Rename</a>
+        <a class="ui-button" href = "javascript:void(0)" onClick="Rename()">Rename</a>
         <a class="ui-button" href="py:JxBrowse()">Preview</a>
         <a class="ui-button" href="py:JxHelp()">Help</a></div>
 </center>
@@ -539,6 +539,7 @@ class Jx__Model_CardModel_String(QObject):
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
+                self.Sample={}
 		self.UpdateModels()
 
 	def Jx__Model_fset(self,value):
@@ -627,11 +628,22 @@ class Jx__Model_CardModel_String(QObject):
                 var index = document.forms.FormPrefix.Prefix.options.selectedIndex;
                 JxAnswerSettings.Prefix = document.forms.FormPrefix.Prefix.options[index].text;
                 $('.Answer').html(JxAnswerSettings.DisplayString);
-                ">"""+ Form + u"""</select></form>"""                
-			
-        @pyqtSignature("",result="QString")
-	def GetCardModels(self):
-		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
+                ">"""+ Form + u"""</select></form>""" 
+
+        @pyqtSignature("")
+	def Toggle(self):
+                if len(self.Sample)>1:
+                        self.Sample = {}
+                else:
+                        from default import Jx__Sample__Default
+                        self.Sample = Jx__Sample__Default
+                self.Sample[u'Css']=u"""<style>%s</style>""" % JxSettings.Get(u'Css')
+
+		self.UpdateDisplayString()
+                
+#        @pyqtSignature("",result="QString")
+#	def GetCardModels(self):
+#		return u"{" + string.join([u"'" + Stuff + u"':'" + Stuff  + u"'" for Stuff in self.CardModels],u",") + u",'selected':'"  + self.CardModel + u"'}"
 	def UpdateModels(self):
 		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
 		if len(self.Models) == 0:
@@ -668,9 +680,10 @@ class Jx__Model_CardModel_String(QObject):
                 """ % {'Model':self._Model,'CardModel':self._CardModel}
 		String = mw.deck.s.scalar(Query)
                 if self._Prefix != u"Bypass" and self._Prefix + String in JxLink: 
-                        self.DisplayString = JxLink[self._Prefix + String]
+                        Template = JxLink[self._Prefix + String]
                 else:
-                        self.DisplayString = String
+                        Template = String
+                self.DisplayString = re.sub("\$\{(.*?)\}",lambda x:JxReplace(x,self.Sample),Template)
 	
 		
 
@@ -826,7 +839,16 @@ def JxBrowse():
 <script type="text/javascript"> $(function(){ $('<div style="position: absolute; top: 20px; right: 10px;" />').appendTo('body').themeswitcher(); }); </script> 
 -->
 
+<!--                  Buttons                          -->
 
+
+
+
+
+<script src="ui.button/ui.classnameoptions.js"></script> 
+<script src="ui.button/ui.button.js"></script> 
+<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+<script src="ui.button/ui.buttonset.js"></script> 
 
 
 
@@ -843,6 +865,7 @@ $(document).ready(function(){
                 	$('select#Prefix').selectmenu();
                   var Temp = JxSettings.Get('Css'); 
                   document.forms.FormCss.Css.value = Temp; 
+                  $('.ui-button').button();
               
 });
 
@@ -861,7 +884,9 @@ SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSH
 <div><form name="FormCss"><textarea name="Css" id="Css" onChange="JxSettings.Set('Css',document.forms.FormCss.Css.value)"></textarea></form><table align="center" width="80%"><tr>
 <td align="center"><span class="Model">&nbsp;</span></td>
 <td align="center"><span class="CardModel">&nbsp;</span></td>
-<td align="center"><span class="Prefix">&nbsp;</span></td></tr></table></div><hr />
+<td align="center"><span class="Prefix">&nbsp;</span></td>
+<td align="center"><a class="Toggle ui-button ui-button-toggle-small" href = "javascript:void(0)"onClick="JxAnswerSettings.Toggle();                $('.Answer').html(JxAnswerSettings.DisplayString);">Toggle View</a></td>
+</tr></table></div><hr />
 <div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
 </body></html>""",JxResourcesUrl)
 	JxPreview.show()

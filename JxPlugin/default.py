@@ -21,9 +21,9 @@ Jx__Entry_Source_Target__Default = [
 Jx__Css__Default = u"""
 .even {background-color:none;}
 .odd {background-color:#ddedfc;}
-.K-Words {top:40%;position:absolute;background-color:#ddedfc;}
+.K-Words ;background-color:#ddedfc;}
 .K-Words, .T-{background-color:#00ff00;}
-.K {top:20%;position:absolute;background-color:#ddedfc;}
+.K {background-color:#ddedfc;}
 .Words {font-size:20px;line-height:28px;}
 .Kanji {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
 .Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
@@ -31,5 +31,12 @@ Jx__Css__Default = u"""
 .JLPT,.Jouyou,.Frequency,.Kanken { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; font-size:16px;}
 .KanjiStrokeOrder  { font-family: KanjiStrokeOrders; font-size: 10em;}
 td { padding: 0px 15px 0px 15px;}"""
-
-
+Jx__Sample__Default = {u'K:':u'広',u'W:':u'悪魔',u'S':u'',u'G':u'',u'Meaning':u'Wide,Spacious',u'OnReading':u'コウ',u'KunReading':u'ひろーい',
+u'K:JLPT':u'2級',u'K:Jouyou':u'Grade 2',u'K:Stroke':u'広'}
+"""広場	a square	 ひろば
+広告	an advertisement	 こうこく
+広島	Hiroshima	 ひろしま
+求人広告	a help wanted advertisement	 きゅうじんこうこく
+広告	an advertisement	 こうこく
+広い	wide; big	 ひろい
+広さ	width	 ひろさ"""
