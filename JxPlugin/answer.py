@@ -413,7 +413,9 @@ def append_JxPlugin(Answer,Card):
     JxAnswerDict[u"Css"] = u"""<style> 
     .even {background-color:none;}
     .odd {background-color:#ddedfc;}
-    .K {top:40%;position:absolute;background-color:#ddedfc;}
+    .K-Words {top:40%;position:absolute;background-color:#ddedfc;}
+    .K-Words, .T-{background-color:#00ff00;}
+    .K {top:20%;position:absolute;background-color:#ddedfc;}
     .Words {font-size:20px;line-height:28px;}
     .Kanji {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
     .Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
@@ -431,8 +433,17 @@ def append_JxPlugin(Answer,Card):
     mw.help.showText(JxAnswerDict[u"F:Types"])   
     
     def JxReplace(String):
-            try:
-                    return JxAnswerDict[String.group(1)]
+            try: 
+                    Tail = String.group(1).split(u",")
+                    Head = Tail.pop(0)
+                    Head = u'<span class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + JxAnswerDict[Head] + u"</span>" 
+                    for Item in Tail:
+                            if u"=" in Item:
+                                    (Container,Class)=tuple(Item.split(u"="))
+                                    Head = u"<" + Container + u' class=">' + Class + u'">' + Head + u"</" + Container + u">" 
+                            else:
+                                    Head = u"<" + Item + u">" + Head + u"</" + Item + u">" 
+                    return Head
             except KeyError:
                     return String.group(0)
                     
