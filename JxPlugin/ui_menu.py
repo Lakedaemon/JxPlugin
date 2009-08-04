@@ -381,6 +381,16 @@ class Jx__Settings(QObject):
 
 JxSettings = Jx__Settings()
 
+
+
+
+
+
+
+
+
+
+
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
 	def __init__(self,name,parent=JxBase):
@@ -582,11 +592,24 @@ class Jx__Model_CardModel_String(QObject):
 				Select = u" selected"
 			Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Stuff, u'Text':Stuff , u'Selected':Select} 
 		return Form + u"""</select></form>"""
+                
+        @pyqtSignature("",result="QString")
+	def GetFormPrefix(self):
+		Query = u"""select cardModels.aformat from cardModels,models where 
+		models.id = cardModels.modelId and models.name="%(Model)s" and cardModels.name="%(CardModel)s"
+		""" % {'Model':self._Model,'CardModel':self._CardModel}
+		Template = mw.deck.s.scalar(Query)		
+		Form = u""
+                Select = u"selected"
+                L = len(Template)
+                for Key in JxLink.keys():
+                        K = len(Key)
+                        if K > L and Key[K-L:] == Template:
+                                Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Key[0:K-L], u'Text':Key[0:K-L], u'Selected':Select}
+                                Select = u""
+                Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':'Bypass', u'Text':'Bypass', u'Selected':Select}
+		return u"""<form id="FormPrefix"><select id="Prefix" name="Prefix" onChange="">"""+ Form + u"""</select></form>"""                
 			
-			
-			
-		
-	
 	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
         @pyqtSignature("",result="QString")
 	def GetCardModels(self):
@@ -784,10 +807,12 @@ def JxBrowse():
 $(document).ready(function(){
 		$('.Model').html(JxAnswerSettings.GetFormModels());
 		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
+                	$('.Prefix').html(JxAnswerSettings.GetFormPrefix());
 		$('.Answer').html(JxAnswerSettings.DisplayString);	
-		$('select#Model').selectmenu({style:'dropdown'});
-		$('select#CardModel').selectmenu({style:'dropdown'});
-                 var Temp = JxSettings.Get('Css'); 
+		$('select#Model').selectmenu();
+		$('select#CardModel').selectmenu();
+                	$('select#Prefix').selectmenu();
+                  var Temp = JxSettings.Get('Css'); 
                   document.forms.FormCss.Css.value = Temp; 
               
 });
@@ -805,8 +830,9 @@ SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSH
 </head><body>
 
 <div><form name="FormCss"><textarea name="Css" id="Css" onChange="JxSettings.Set('Css',document.forms.FormCss.Css.value)"></textarea></form><table align="center" width="80%"><tr>
-<td><span class="Model" align="center">&nbsp;</span></td>
-<td align="center"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
+<td align="center"><span class="Model">&nbsp;</span></td>
+<td align="center"><span class="CardModel">&nbsp;</span></td>
+<td align="center"><span class="Prefix">&nbsp;</span></td></tr></table></div><hr />
 <div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
 </body></html>""",JxResourcesUrl)
 	JxPreview.show()
