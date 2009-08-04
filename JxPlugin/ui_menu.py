@@ -755,7 +755,7 @@ def JxBrowse():
 	JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	mw.connect( JxPreview.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
-	JxPreview.setWindowTitle(u"Answer Template Browser")
+	JxPreview.setWindowTitle(u"Css and Template Browser")
 	JxPreview.setHtml(u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
 <head>
@@ -787,20 +787,24 @@ $(document).ready(function(){
 		$('.Answer').html(JxAnswerSettings.DisplayString);	
 		$('select#Model').selectmenu({style:'dropdown'});
 		$('select#CardModel').selectmenu({style:'dropdown'});
- 		$('.Css').html('<textarea name="Css" id="Css" onChange="JxSettings.Set(' + "'Css'" + ',document.forms.FormCss.Css.value)">'+ JxSettings.Get('Css')  + '</textarea>');               
+                 var Temp = JxSettings.Get('Css'); 
+                  document.forms.FormCss.Css.value = Temp; 
+              
 });
 
 </script>
 <STYLE> textarea#Css { 
-width:100%;
-height:300px;
+	resize: vertical;
+         min-width: 100%;
+         max-width:100%;
+         min-height: 300px;
+	max-height: 800px;
 BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; 
 SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } 
 </STYLE>
 </head><body>
 
-
-<div><form name="FormCss"><div class="Css"></div></form><table align="center" width="80%"><tr>
+<div><form name="FormCss"><textarea name="Css" id="Css" onChange="JxSettings.Set('Css',document.forms.FormCss.Css.value)"></textarea></form><table align="center" width="80%"><tr>
 <td><span class="Model" align="center">&nbsp;</span></td>
 <td align="center"><span class="CardModel">&nbsp;</span></td></tr></table></div><hr />
 <div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
