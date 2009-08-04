@@ -227,7 +227,7 @@ def JxTools():
 
         <select id="Mode" name="Mode" onChange="
 		var Index = document.forms.FormMode.Mode.options.selectedIndex;
-		JxSettings.Mode = document.forms.FormMode.Mode.options[Index].text;">
+		JxSettings.Set('Mode',document.forms.FormMode.Mode.options[Index].text);">
                   <option name="Override">Override</option>    
                   <option name="Prepend">Prepend</option> 
                   <option name="Append">Append</option> 
@@ -250,7 +250,12 @@ def JxTools():
 <script type="text/javascript">
 $(document).ready(function(){
 		$('select#Entry').selectmenu({width:200});
+                  var temp = JxSettings.Get('Mode')
+                  for(i=0; i<document.forms.FormMode.Mode.length; i++)
+                        if(document.forms.FormMode.Mode.options[i].text == temp)
+                           document.forms.FormMode.Mode.options.selectedIndex = i;
                   $('select#Mode').selectmenu({width:150});
+                  
                 
 });
 </script>
@@ -350,32 +355,28 @@ class Jx__Settings(QObject):
 		self.setObjectName(name)
                 self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin", "Settings.pickle")
                 self.Load()
-
-
-        @Jx__Prop
-        def Mode(): pass
-
-	#@QtCore.pyqtSlot(result=str) doesn't work with OS X 
-        @pyqtSignature("", result="QString")	
-	def GetModeForm(self):
-		return u"""<select id="Mode" name="Mode" onchange="
-		JxSettings.Mode = document.forms.Mode.Mode.options.selectedIndex;">
-                  <option value="Override">Override</option>    
-                  <option value="Prepend">Prepend</option> 
-                  <option value="Append">Append</option> 
-                  <option value="Bypass">Bypass</option>
-                  </select>"""
+         
+        @pyqtSignature("QString", result="QString")	
+	def Get(self,Key):
+                return self.Dict[str(Key)]
+                
+        @pyqtSignature("QString, QString")	
+	def Set(self,Key,Value):
+                self.Dict[str(Key)] = str(Value)
+                self.Update()
+                  
         def Load(self):
                 if os.path.exists(self.File):
                           File = open(self.File, 'rb')
-                          self._Mode = cPickle.load(File)
+                          self.Dict = cPickle.load(File)
                           File.close()
                 else:
-                          self._Mode = "Override"
+                          from default import  Jx__Css__Default
+                          self.Dict={"Mode":"Override","Css":Jx__Css__Default}
                           self.Update()
         def Update(self):
                 File = open(self.File, 'wb')
-                cPickle.dump(self._Mode, File, cPickle.HIGHEST_PROTOCOL)
+                cPickle.dump(self.Dict, File, cPickle.HIGHEST_PROTOCOL)
                 File.close()
 
 JxSettings = Jx__Settings()
@@ -521,8 +522,6 @@ class Jx__Entry_Source_Target(QObject):
         
 
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")
-
-
 
 
 class Jx__Model_CardModel_String(QObject):

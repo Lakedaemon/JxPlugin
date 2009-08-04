@@ -436,7 +436,11 @@ def append_JxPlugin(Answer,Card):
             try: 
                     Tail = String.group(1).split(u",")
                     Head = Tail.pop(0)
-                    Head = u'<span class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + JxAnswerDict[Head] + u"</span>" 
+                    if len(Tail)>0 and Tail[0].find(u"=")==False:
+                            Container = Tail.pop(0)
+                    else:
+                            Container=u"span"
+                    Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + JxAnswerDict[Head] + u"</" + Container + u'span>' 
                     for Item in Tail:
                             if u"=" in Item:
                                     (Container,Class)=tuple(Item.split(u"="))
@@ -451,9 +455,10 @@ def append_JxPlugin(Answer,Card):
     
                       
     from ui_menu import JxSettings
-    if JxSettings.Mode == "Append" and JxAnswerOk: JxAnswer = Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
-    elif JxSettings.Mode == "Prepend" and JxAnswerOk: JxAnswer =  Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
-    elif JxSettings.Mode == "Override" and JxAnswerOk: JxAnswer = Template(JxAnswer).safe_substitute(JxAnswerDict)
+    Mode=JxSettings.Get(u'Mode')
+    if Mode == "Append" and JxAnswerOk: JxAnswer = Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
+    elif Mode == "Prepend" and JxAnswerOk: JxAnswer =  Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
+    elif Mode == "Override" and JxAnswerOk: JxAnswer = Template(JxAnswer).safe_substitute(JxAnswerDict)
     else : JxAnswer =  Answer
 
     removeHook("drawAnswer",append_JxPlugin)
