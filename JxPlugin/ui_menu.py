@@ -266,7 +266,7 @@ $(document).ready(function(){
 	<br />
 	
 
-<center><div class="ui-buttonset-small">
+<center><div class="ui-buttonset-tiny">
         <a class="ui-button" href = "javascript:void(0)" onclick="
         JxTemplateOverride.ResetTables();
         JxTemplateOverride.Entry = 0;
@@ -885,7 +885,7 @@ SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSH
 <td align="center"><span class="Model">&nbsp;</span></td>
 <td align="center"><span class="CardModel">&nbsp;</span></td>
 <td align="center"><span class="Prefix">&nbsp;</span></td>
-<td align="center"><a class="Toggle ui-button ui-button-toggle-small" href = "javascript:void(0)"onClick="JxAnswerSettings.Toggle();                $('.Answer').html(JxAnswerSettings.DisplayString);">Toggle View</a></td>
+<td align="center"><a class="Toggle ui-button ui-button-toggle-tiny" href = "javascript:void(0)"onClick="JxAnswerSettings.Toggle();                $('.Answer').html(JxAnswerSettings.DisplayString);">Toggle View</a></td>
 </tr></table></div><hr />
 <div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
 </body></html>""",JxResourcesUrl)

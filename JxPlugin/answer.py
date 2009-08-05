@@ -42,7 +42,39 @@ def JxReplace(String,Dict):
                         Head = u"<" + Item + u">" + Head + u"</" + Item + u">" 
         return Head
 
+def JxIntReplace(Match):
+        Char = Match.group(0)
+        if Char=="0": return"zero"
+        elif Char=="1": return"one"
+        elif Char=="2": return"two"
+        elif Char=="3": return"three"
+        elif Char=="4": return"four"
+        elif Char=="5": return"five"
+        elif Char=="6": return"six"
+        elif Char=="7": return"seven"
+        elif Char=="8": return"height"
+        elif Char=="9": return"nine"
+        
+def JxInt2Name(Int):
+        return re.sub(u".",JxIntReplace,str(Int))
 
+def JxTableDisplay(TupleList,Class):
+        JxHtmlBuffer = u"" 
+        Boolean = True 
+        for Tuple in TupleList:
+                if Boolean:
+                            JxHtmlBuffer += u"""<tr class="odd">"""
+                else:
+                            JxHtmlBuffer += u"""<tr class="even">"""
+                Boolean = not(Boolean)
+                for Index in range(len(Tuple)):
+                        JxHtmlBuffer += u'<td class="td-' + JxInt2Name(Index) + u'">' + Tuple[Index].strip() + u'</td>'
+                JxHtmlBuffer += u"</tr>"
+
+        if len(JxHtmlBuffer):
+                return u'<table class="' + Class + u'">%s</table>' % JxHtmlBuffer
+        else:
+                return u""
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -413,32 +445,16 @@ def append_JxPlugin(Answer,Card):
             JxAnswerDict[u"K:Freq"] = u""	
             
     try : # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
-            query = """select expression.value, reading.value, meaning.value from 
+            Query = """select expression.value, meaning.value, reading.value from 
             fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
             expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
             reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
             meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
             expression.value like "%%%s%%" """ % JxAnswerDict[u'K:']
-                
-            # implement a control to limit the number of words displayed 
-
-            # HTML Buffer 
-            JxHtmlBuffer = u"" 
-            Boolean = True
-            # Adds the words to the HTML Buffer 
-            for (u,v,w) in mw.deck.s.all(query):
-                    if Boolean:
-                            JxHtmlBuffer += u""" <tr class="odd Words"><td ><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
-			        """ % (u"Kanji",u.strip(),u"Romaji" ,w.strip(),u"Kana",v.strip())
-                    else:
-                            JxHtmlBuffer += u""" <tr class="even Words"><td><span class="%s">%s </span></td><td><span class="%s">%s</span></td><td><span class="%s"> %s</td></tr>
-			        """ % (u"Kanji",u.strip(),u"Romaji" ,w.strip(),u"Kana",v.strip())     
-                    Boolean = not(Boolean)
-            # if there Html Buffer isn't empty, adds it to the card info
-            if len(JxHtmlBuffer):
-                    JxAnswerDict[u"K:Words"] = u"""<table style="text-align:center;" cellspacing="0px" cellpadding="0px" border="0px" align="center">%s</table>""" % JxHtmlBuffer
+            JxAnswerDict[u"K:Words"] = JxTableDisplay(mw.deck.s.all(Query),u"K-Words")    
     except KeyError:
-                    JxAnswerDict[u"K:Words"] = u""	
+            JxAnswerDict[u"K:Words"] = u""
+    
     from ui_menu import JxSettings
     JxAnswerDict[u"Css"] = """<style>%s</style>""" % JxSettings.Get(u'Css')
     

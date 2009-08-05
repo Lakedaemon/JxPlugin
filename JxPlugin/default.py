@@ -15,19 +15,16 @@ Jx__Entry_Source_Target__Default = [
 (u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""<center>${Reading}<br \>${Meaning}</center>"""),
 (u"Grammar recall",u"""G:%(Reading)s""",u"""${Expression}<br />${Reading}</center>"""),
 (u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""<center>${Reading}<br \>${Meaning}</center>"""),
-(u"Kanji character",u"""K:%(Kanji)s""",u"""${Css}${K:JLPT,div}${K:Jouyou,div}${K:Freq,div}${K:Stroke,div}<center>${K:Words,div}</center>"""),
+(u"Kanji character",u"""K:%(Kanji)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${K:Words}</center>"""),
 (u"Kanji meanings",u"""K:%(Meaning)s""",u"""${Css}${K:JLPT,div}${K:Jouyou,div}${K:Freq,div}${K:Stroke,div}<center>${Meaning,div}<br /><br />${K:Words,div}</center>"""),
 (u"Kanji readings",u"""K:%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K:JLPT,div}${K:Jouyou,div}${K:Freq,div}${K:Stroke,div}<center>${OnYomi}<br />${KunYomi}<br /><br />${K:Words,div}</center>""")]
 Jx__Css__Default = u"""
-.even {background-color:none;}
-.odd {background-color:#ddedfc;}
-
 .Kanji {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
 .Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
 .Romaji { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
-.even {background-color:none;}
-.odd {background-color:#ddedfc;}
-.K-Words {font-size:20px;line-height:28px;}
+
+
+
 .K {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
 .Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
 .Romaji { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
@@ -36,9 +33,13 @@ Jx__Css__Default = u"""
 .K-Jouyou{width:54px;}
 .K-Freq {border-right:1px solid black;}
 .K-Stroke  {float:left; font-family: KanjiStrokeOrders; font-size: 150px;line-height:150px;clear:both;border: 1px solid black;}
-.K-Words {font-size:20px;line-height:28px;}
-"""
 
+.even {background-color:none;}
+.odd {background-color:#ddedfc;}
+.K-Words {font-size:20px;line-height:28px;text-align:center;cellspacing:0px;cellpadding:0px;border:0px;align:center;}
+.td-one{padding:5px;}
+"""
+from answer import JxTableDisplay
 Jx__Sample__Default = {
 u'K:':u'次',
 u'W:':u'悪魔',
@@ -50,11 +51,5 @@ u'KunYomi':u'つーぐ, つぎ',
 u'K:JLPT':u'2級',
 u'K:Jouyou':u'G3',
 u'K:Freq':u'62',
-u'K:Stroke':u'次'}
-"""次第に	gradually	 しだいに
-次回	next time	 じかい
-次ぐ	to be next	 つぐ
-次	next	 つぎ
-第二次	the second	 だいにじ
-目次	a table of contents	 もくじ
-目次	a table of contents	 もくじ"""
+u'K:Stroke':u'次',
+u'K:Words':JxTableDisplay([(u"次第に",u"gradually",u"しだいに"),(u"次回",u"next time",u"じかい"),(u"次ぐ",u"to be next",u"つぐ"),(u"次",u"next",u"つぎ"),(u"第二次",u"the second",u"だいにじ"),(u"目次",u"a table of contents",u"もくじ")],u"K-Words")}
