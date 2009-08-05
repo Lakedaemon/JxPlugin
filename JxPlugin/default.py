@@ -12,9 +12,9 @@ Jx__Entry_Source_Target__Default = [
 (u"Kanji/Word recall",u"""KW:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
 (u"Kanji/Word recognition",u"""KW:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
 (u"Sentence recall",u"""S:%(Reading)s""",u"""${Css}${W:Stroke}${Expression}<br />${Reading}"""),
-(u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""${Css}${Reading}<br />${Meaning}"""),
-(u"Grammar recall",u"""G:%(Reading)s""",u"""${Css}${Expression}<br />${Reading}"""),
-(u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""${Css}${Reading}<br />${Meaning}"""),
+(u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:Stroke}${Reading}<br />${Meaning}"""),
+(u"Grammar recall",u"""G:%(Reading)s""",u"""${Css}${W:Stroke}${Expression}<br />${Reading}"""),
+(u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:Stroke}${Reading}<br />${Meaning}"""),
 (u"Kanji character",u"""K:%(Kanji)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${K:Words}"""),
 (u"Kanji meanings",u"""K:%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${Meaning}<br /><br />${K:Words}"""),
 (u"Kanji readings",u"""K:%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${OnYomi}<br />${KunYomi}<br /><br />${K:Words}""")]
@@ -43,7 +43,7 @@ Jx__Css__Default = u"""
         margin:0 auto;
 }
 
-/* Words Info */
+/* W:JLPT, W:Freq info about the Word */
 
 .W-JLPT { 
         font-family: Osaka,Arial,Helvetica,sans-serif; 
@@ -68,8 +68,24 @@ Jx__Css__Default = u"""
         margin-left:54px;
         margin-top:-1px;
         float:left;
+clear:right;
 }
-/* Kanji Left Box */
+
+/* W-Stroke Order for Words */
+
+.W-Stroke {
+        float:left; 
+        font-family: KanjiStrokeOrders; 
+        font-size: 150px;
+        line-height:150px;
+        clear:both;
+        display:block;
+        width: 166px;
+        border: 1px solid black;
+        margin-top:-1px;
+}
+
+/* K:JLPT, K:Jouyou,K:Freq Info about the Kanji */
 
 .K-JLPT,.K-Jouyou,.K-Freq,.K-Kanken {
         font-family: Osaka,Arial,Helvetica,sans-serif; 
@@ -90,16 +106,20 @@ Jx__Css__Default = u"""
         border-right:1px solid black;
 }
 
-.K-Stroke,W-Stroke {
+/* K:Stroke Order for the Kanji */
+
+.K-Stroke {
         float:left; 
         font-family: KanjiStrokeOrders; 
         font-size: 150px;
         line-height:150px;
         clear:both;
+        display:block;
+        width: 166px;
         border: 1px solid black;
 }
 
-/* K-Words Table */
+/* K-Words related to the Kanji Table */
 
 .Tr-Even {
         background-color:none;
@@ -131,6 +151,7 @@ Jx__Sample__Default = {
 u'K:':u'次',
 u'W:':u'説明する',
 u'Expression':u'説明する',
+u'W:Stroke':u'説明',
 u'Reading':u'せつめいする',
 u'Meaning':u'to explain',
 u'W:JLPT':u'3級',
