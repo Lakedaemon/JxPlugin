@@ -98,9 +98,7 @@ def JxDefaultAnswer(Buffer,String,Dict):
 	if re.search(u"\${.*?}",Buffer):
 		return String
 	else: 
-		return Buffer + String
-                
-
+		return Buffer + String            
 
 
 ###################################################################################################################################################################################
