@@ -5,19 +5,19 @@
 # This file is a plugin for the "anki" flashcard application http://repose.cx/anki/
 # ---------------------------------------------------------------------------
 Jx__Entry_Source_Target__Default = [
-(u"Word recall",u"""D:%(Reading)s""",u"""${Css}${W:JLPT}${W:Freq}${W:Stroke}${Expression}<br />${Reading}"""),
-(u"Word recognition",u"""D:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:JLPT}${W:Freq}${W:Stroke}${Reading}<br />${Meaning}"""),
-(u"Kanji recall",u"""K:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${Reading}<br />${Meaning}<br /><br />${K:Words}"""),
-(u"Kanji recognition",u"""K:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${K:Words}"""),
-(u"Kanji/Word recall",u"""KW:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
-(u"Kanji/Word recognition",u"""KW:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
-(u"Sentence recall",u"""S:%(Reading)s""",u"""${Css}${W:Stroke}${Expression}<br />${Reading}"""),
-(u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:Stroke}${Reading}<br />${Meaning}"""),
-(u"Grammar recall",u"""G:%(Reading)s""",u"""${Css}${W:Stroke}${Expression}<br />${Reading}"""),
-(u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:Stroke}${Reading}<br />${Meaning}"""),
-(u"Kanji character",u"""K:%(Kanji)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${K:Words}"""),
-(u"Kanji meanings",u"""K:%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${Meaning}<br /><br />${K:Words}"""),
-(u"Kanji readings",u"""K:%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${OnYomi}<br />${KunYomi}<br /><br />${K:Words}""")]
+(u"Word recall",u"""D-%(Reading)s""",u"""${Css}${W-JLPT}${W-Freq}${W-Stroke}${Expression}<br />${Reading}"""),
+(u"Word recognition",u"""D-%(Reading)s<br>%(Meaning)s""",u"""${Css}${W-JLPT}${W-Freq}${W-Stroke}${Reading}<br />${Meaning}"""),
+(u"Kanji recall",u"""K-%(Reading)s""",u"""${Css}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${Reading}<br />${Meaning}<br /><br />${K-Words}"""),
+(u"Kanji recognition",u"""K-%(Reading)s<br>%(Meaning)s""",u"""${Css}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${K-Words}"""),
+(u"Kanji/Word recall",u"""KW-%(Reading)s""",u"""${Css}${W-JLPT}${W-Freq}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${Expression}${Reading}<br />${Meaning}<br />${K-Words}"""),
+(u"Kanji/Word recognition",u"""KW-%(Reading)s<br>%(Meaning)s""",u"""${Css}${W-JLPT}${W-Freq}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${Expression}${Reading}<br />${Meaning}<br />${K-Words}"""),
+(u"Sentence recall",u"""S-%(Reading)s""",u"""${Css}${S-Stroke}${Expression}<br />${Reading}"""),
+(u"Sentence recognition",u"""S-%(Reading)s<br>%(Meaning)s""",u"""${Css}${S-Stroke}${Reading}<br />${Meaning}"""),
+(u"Grammar recall",u"""G-%(Reading)s""",u"""${Css}${G-Stroke}${Expression}<br />${Reading}"""),
+(u"Grammar recognition",u"""G-%(Reading)s<br>%(Meaning)s""",u"""${Css}${G-Stroke}${Reading}<br />${Meaning}"""),
+(u"Kanji character",u"""K-%(Kanji)s""",u"""${Css}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${K-Words}"""),
+(u"Kanji meanings",u"""K-%(Meaning)s""",u"""${Css}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${Meaning}<br /><br />${K-Words}"""),
+(u"Kanji readings",u"""K-%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K-Stroke}${K-JLPT}${K-Jouyou}${K-Freq}${OnYomi}<br />${KunYomi}<br /><br />${K-Words}""")]
 Jx__Css__Default = u"""
 /* Romaji */
 
@@ -53,9 +53,9 @@ Jx__Css__Default = u"""
         border :1px solid black;
         width:55px;
         display:block;
-        margin-top:-1px;
         float:left;
         clear:left;
+        margin-bottom:-1px;
 }
 .W-Freq { 
         font-family: Osaka,Arial,Helvetica,sans-serif; 
@@ -66,14 +66,14 @@ Jx__Css__Default = u"""
         width:55px;
         display:block;
         margin-left:54px;
-        margin-top:-1px;
         float:left;
+        margin-bottom:-1px;
 clear:right;
 }
 
 /* W-Stroke Order for Words */
 
-.W-Stroke {
+.W-Stroke, .G-Stroke,.S-Stroke,.F-Stroke {
         float:left; 
         font-family: KanjiStrokeOrders; 
         font-size: 150px;
@@ -82,28 +82,27 @@ clear:right;
         display:block;
         width: 166px;
         border: 1px solid black;
-        margin-top:-1px;
 }
 
 /* K:JLPT, K:Jouyou,K:Freq Info about the Kanji */
 
+.K-JLPT{
+        clear:left;
+}
 .K-JLPT,.K-Jouyou,.K-Freq,.K-Kanken {
         font-family: Osaka,Arial,Helvetica,sans-serif; 
         font-weight: normal; 
         font-size:18px;
         border :1px solid black;
-        border-bottom:0px solid black;
-        border-right:0px solid black;
         width:55px;
         float:left;
         text-align:center;
-        clear:all;
+        margin-top:-1px;
+        margin-right:-1px;
+        display:block;
 }
 .K-Jouyou {
         width:54px;
-}
-.K-Freq {
-        border-right:1px solid black;
 }
 
 /* K:Stroke Order for the Kanji */
@@ -148,20 +147,24 @@ table.K-Words .Td-One {
 """
 from answer import JxTableDisplay
 Jx__Sample__Default = {
-u'K:':u'次',
-u'W:':u'説明する',
+u'K':u'次',
+u'W':u'説明する',
+u'S':u'長文んがあるといいな。',
+u'G':u'文法ではないね。',
+u'F':u'事実です。',
+u'S-Stroke':u'長文',
+u'G-Stroke':u'文法',
+u'F-Stroke':u'事実',
 u'Expression':u'説明する',
-u'W:Stroke':u'説明',
+u'W-Stroke':u'説明',
 u'Reading':u'せつめいする',
 u'Meaning':u'to explain',
-u'W:JLPT':u'3級',
-u'W:Freq':u"47",
-u'S':u'',
-u'G':u'',
+u'W-JLPT':u'3級',
+u'W-Freq':u"47",
 u'OnYomi':u'ジ',
 u'KunYomi':u'つーぐ, つぎ',
-u'K:JLPT':u'2級',
-u'K:Jouyou':u'G3',
-u'K:Freq':u'62',
-u'K:Stroke':u'次',
-u'K:Words':JxTableDisplay([(u"次第に",u"gradually",u"しだいに"),(u"次回",u"next time",u"じかい"),(u"次ぐ",u"to be next",u"つぐ"),(u"次",u"next",u"つぎ"),(u"第二次",u"the second",u"だいにじ"),(u"目次",u"a table of contents",u"もくじ")],u"K-Words")}
+u'K-JLPT':u'2級',
+u'K-Jouyou':u'G3',
+u'K-Freq':u'62',
+u'K-Stroke':u'次',
+u'K-Words':JxTableDisplay([(u"次第に",u"gradually",u"しだいに"),(u"次回",u"next time",u"じかい"),(u"次ぐ",u"to be next",u"つぐ"),(u"次",u"next",u"つぎ"),(u"第二次",u"the second",u"だいにじ"),(u"目次",u"a table of contents",u"もくじ")],u"K-Words")}

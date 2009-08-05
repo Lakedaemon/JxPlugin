@@ -272,8 +272,8 @@ $(document).ready(function(){
         JxTemplateOverride.Entry = 0;
         $('.Entry').html(JxTemplateOverride.GetForm());
         $('select#Entry').selectmenu({width:200});
-        document.forms.Translator.Target.value=JxTemplateOverride.Target;
-        document.forms.Translator.Source.value=JxTemplateOverride.Source;   
+        document.forms.Translator.Target.value = JxTemplateOverride.Target;
+        document.forms.Translator.Source.value = JxTemplateOverride.Source;   
         ">Reset</a>
         <a class="ui-button" href = "javascript:void(0)" onClick="
                 $('.Entry').html(JxTemplateOverride.ReduceForm());
@@ -397,10 +397,10 @@ class Jx__Entry_Source_Target(QObject):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
 		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User","JxTable.txt")
-                try:
+                if os.path.exists(self.File):
                         self.Table = JxReadFile(self.File)
                         self.ResetJxLink()
-                except: 
+                else:
                         self.ResetTables()
 		if len(self.Table)>0:
 			self.Entry = 0
@@ -514,7 +514,6 @@ class Jx__Entry_Source_Target(QObject):
         @pyqtSignature("")
         def ResetTables(self):
                 from default import Jx__Entry_Source_Target__Default
-                mw.help.showText(str(Jx__Entry_Source_Target__Default))
 		self.Table = Jx__Entry_Source_Target__Default[:]
 		self.SaveTable()
                 self.ResetJxLink()
@@ -615,11 +614,12 @@ class Jx__Model_CardModel_String(QObject):
                 L = len(Template)
                 for Key in JxLink.keys():
                         K = len(Key)
-                        if K > L and Key[K-L:] == Template:
-                                Select = u""
-                                if Key[0:K-L] == self._Prefix:
-                                        Select = u"selected"
-                                Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Key[0:K-L], u'Text':Key[0:K-L], u'Selected':Select}
+                        if K > L:
+                                if Key[K-L:] == Template and Key[K-L-1] == u"-" and Key[0:K-L-1].strip(u'-KWSGD') == u"":
+                                        Select = u""
+                                        if Key[0:K-L] == self._Prefix:
+                                                Select = u"selected"
+                                        Form += u"""<option value="%(Entry)s"%(Selected)s>%(Text)s</option>""" % {u'Entry':Key[0:K-L], u'Text':Key[0:K-L], u'Selected':Select}
                 Select = u""
                 if self._Prefix == u"Bypass":
                         Select = u"selected"
@@ -668,10 +668,11 @@ class Jx__Model_CardModel_String(QObject):
 		Select = True
 		for Key in JxLink.keys():
                         K = len(Key)
-                        if K > L and Key[K-L:] == Template:
-                                self.Prefix = Key[0:K-L]
-                                Select = False
-                                break
+                        if K > L:
+                                if Key[K-L:] == Template and Key[K-L-1] == u"-" and Key[0:K-L-1].strip(u'-KWSTD') == u"":
+                                        self.Prefix = Key[0:K-L]
+                                        Select = False
+                                        break
 		if Select:
                         self.Prefix = u"Bypass"
 	def UpdateDisplayString(self):
