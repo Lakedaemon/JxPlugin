@@ -5,43 +5,126 @@
 # This file is a plugin for the "anki" flashcard application http://repose.cx/anki/
 # ---------------------------------------------------------------------------
 Jx__Entry_Source_Target__Default = [
-(u"Word recall",u"""D:%(Reading)s""",u"""${Css}${W:JLPT}${W:Freq}<center>${Expression}<br />${Reading}</center></div>"""),
-(u"Word recognition",u"""D:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:JLPT}${W:Freq}<center>${Reading}<br />${Meaning}</center>"""),
-(u"Kanji recall",u"""K:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${Reading}<br />${Meaning}</center>${K:Words}"""),
+(u"Word recall",u"""D:%(Reading)s""",u"""${Css}${W:JLPT}${W:Freq}${W:Stroke}${Expression}<br />${Reading}"""),
+(u"Word recognition",u"""D:%(Reading)s<br>%(Meaning)s""",u"""${Css}${W:JLPT}${W:Freq}${W:Stroke}${Reading}<br />${Meaning}"""),
+(u"Kanji recall",u"""K:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${Reading}<br />${Meaning}<br /><br />${K:Words}"""),
 (u"Kanji recognition",u"""K:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${K:Words}"""),
-(u"Kanji/Word recall",u"""KW:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${Reading}<br />${Meaning}</center>${K:Words}"""),
-(u"Kanji/Word recognition",u"""KW:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${Reading}<br />${Meaning}</center>${K:Words}"""),
-(u"Sentence recall",u"""S:%(Reading)s""",u"""<center>${Expression}<br />${Reading}<br />${W:Stroke}</center>"""),
-(u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""<center>${Reading}<br \>${Meaning}</center>"""),
-(u"Grammar recall",u"""G:%(Reading)s""",u"""${Expression}<br />${Reading}</center>"""),
-(u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""<center>${Reading}<br \>${Meaning}</center>"""),
+(u"Kanji/Word recall",u"""KW:%(Reading)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
+(u"Kanji/Word recognition",u"""KW:%(Reading)s<br>%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${W:JLPT}${W:Freq}${Expression}${Reading}<br />${Meaning}<br />${K:Words}"""),
+(u"Sentence recall",u"""S:%(Reading)s""",u"""${Css}${W:Stroke}${Expression}<br />${Reading}"""),
+(u"Sentence recognition",u"""S:%(Reading)s<br>%(Meaning)s""",u"""${Css}${Reading}<br />${Meaning}"""),
+(u"Grammar recall",u"""G:%(Reading)s""",u"""${Css}${Expression}<br />${Reading}"""),
+(u"Grammar recognition",u"""G:%(Reading)s<br>%(Meaning)s""",u"""${Css}${Reading}<br />${Meaning}"""),
 (u"Kanji character",u"""K:%(Kanji)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${K:Words}"""),
-(u"Kanji meanings",u"""K:%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${Meanings}</center><br /><br />${K:Words}"""),
-(u"Kanji readings",u"""K:%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}<center>${OnYomi}<br />${KunYomi}</center><br /><br />${K:Words}""")]
+(u"Kanji meanings",u"""K:%(Meaning)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${Meaning}<br /><br />${K:Words}"""),
+(u"Kanji readings",u"""K:%(OnYomi)s<br>%(KunYomi)s""",u"""${Css}${K:JLPT}${K:Jouyou}${K:Freq}${K:Stroke}${OnYomi}<br />${KunYomi}<br /><br />${K:Words}""")]
 Jx__Css__Default = u"""
-.Kanji {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
-.Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
-.Romaji { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
+/* Romaji */
 
+.Meaning, .Romaji {
+        font-family: Osaka,Arial,Helvetica,sans-serif; 
+        font-weight: normal; 
+        text-decoration: none; 
+        font-size:30px;
+        text-align:center;
+        display:block;
+        margin:0 auto;
+}
 
+/* Japanese */
 
-.K {font-family: 'Hiragino Mincho Pro','ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
-.Kana { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; }
-.Romaji { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
-.Meaning{font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:30px}
-.OnYomi,.KunYomi,.Reading { font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none; font-size:35px}
-.K-JLPT,.W-JLPT,.K-Jouyou,.K-Freq,W-Freq,.K-Kanken { font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; font-size:18px;border :1px solid black;border-bottom:0px solid black;border-right:0px solid black;width:55px;float:left;text-align:center;clear:all;}
-.K-Jouyou{width:54px;}
-.K-Freq {border-right:1px solid black;}
-.K-Stroke  {float:left; font-family: KanjiStrokeOrders; font-size: 150px;line-height:150px;clear:both;border: 1px solid black;}
+.Expression,.Reading,.Kanji,.OnYomi,.KunYomi,.Readings,.Kana,.W,.K,.S,.G,.F {
+        font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; 
+        font-weight: normal; 
+        text-decoration: none; 
+        font-size:35px;
+        text-align:center;
+        display:block;
+        margin:0 auto;
+}
 
-.even {background-color:none;}
-.odd {background-color:#ddedfc;}
-table.K-Words {font-size:20px;line-height:20px;text-align:center;margin:0 auto;
-font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; font-weight: normal; text-decoration: none;}
-table.K-Words td{padding:6px 10px 6px 10px;}
-table.K-Words tr{cellspacing:0px;cellpadding:0px;border:0px;border: inset 0pt}
-table.K-Words .td-one{font-family: Osaka,Arial,Helvetica,sans-serif; font-weight: normal; text-decoration: none; font-size:16px}
+/* Words Info */
+
+.W-JLPT { 
+        font-family: Osaka,Arial,Helvetica,sans-serif; 
+        font-weight: normal; 
+        font-size:18px;
+        text-align:center;
+        border :1px solid black;
+        width:55px;
+        display:block;
+        margin-top:-1px;
+        float:left;
+        clear:left;
+}
+.W-Freq { 
+        font-family: Osaka,Arial,Helvetica,sans-serif; 
+        font-weight: normal; 
+        font-size:18px;
+        text-align:center;
+        border :1px solid black;
+        width:55px;
+        display:block;
+        margin-left:54px;
+        margin-top:-1px;
+        float:left;
+}
+/* Kanji Left Box */
+
+.K-JLPT,.K-Jouyou,.K-Freq,.K-Kanken {
+        font-family: Osaka,Arial,Helvetica,sans-serif; 
+        font-weight: normal; 
+        font-size:18px;
+        border :1px solid black;
+        border-bottom:0px solid black;
+        border-right:0px solid black;
+        width:55px;
+        float:left;
+        text-align:center;
+        clear:all;
+}
+.K-Jouyou {
+        width:54px;
+}
+.K-Freq {
+        border-right:1px solid black;
+}
+
+.K-Stroke,W-Stroke {
+        float:left; 
+        font-family: KanjiStrokeOrders; 
+        font-size: 150px;
+        line-height:150px;
+        clear:both;
+        border: 1px solid black;
+}
+
+/* K-Words Table */
+
+.Tr-Even {
+        background-color:none;
+}
+.Tr-Odd {
+        background-color:#ddedfc;
+}
+table.K-Words {
+        font-size:20px;
+        line-height:20px;
+        text-align:center;
+        margin:0 auto;
+        font-family: "Hiragino Mincho Pro",'ヒラギノ明朝 Pro W3',Meiryo,'Hiragino Kaku Gothic Pro','MS Mincho',Arial,sans-serif; 
+        font-weight: normal; 
+        text-decoration: none;
+}
+table.K-Words td{
+        padding:6px 10px 6px 10px;
+}
+table.K-Words .Td-One {
+        font-family: Osaka,Arial,Helvetica,sans-serif; 
+        font-weight: normal; 
+        text-decoration: none; 
+        font-size:16px
+}
 """
 from answer import JxTableDisplay
 Jx__Sample__Default = {
@@ -54,7 +137,6 @@ u'W:JLPT':u'3級',
 u'W:Freq':u"47",
 u'S':u'',
 u'G':u'',
-u'Meanings':u'Next',
 u'OnYomi':u'ジ',
 u'KunYomi':u'つーぐ, つぎ',
 u'K:JLPT':u'2級',

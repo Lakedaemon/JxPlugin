@@ -33,7 +33,7 @@ def JxReplace(String,Dict):
         try:      
                 Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + Dict[Head] + u"</" + Container + u'>'
         except KeyError:
-                Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + u'${'+Head+u'}' + u"</" + Container + u'>'               
+                Head = u'<'+ Container + u' class="' + re.sub(u":",u"-",Head).rstrip(u"-") + u'">' + u'${'+ Head + u'}' + u"</" + Container + u'>'               
         for Item in Tail:
                 if u"=" in Item:
                         (Container,Class)=tuple(Item.split(u"="))
@@ -44,16 +44,16 @@ def JxReplace(String,Dict):
 
 def JxIntReplace(Match):
         Char = Match.group(0)
-        if Char=="0": return"zero"
-        elif Char=="1": return"one"
-        elif Char=="2": return"two"
-        elif Char=="3": return"three"
-        elif Char=="4": return"four"
-        elif Char=="5": return"five"
-        elif Char=="6": return"six"
-        elif Char=="7": return"seven"
-        elif Char=="8": return"height"
-        elif Char=="9": return"nine"
+        if Char=="0": return"Zero"
+        elif Char=="1": return"One"
+        elif Char=="2": return"Two"
+        elif Char=="3": return"Three"
+        elif Char=="4": return"Four"
+        elif Char=="5": return"Five"
+        elif Char=="6": return"Six"
+        elif Char=="7": return"Seven"
+        elif Char=="8": return"Height"
+        elif Char=="9": return"Nine"
         
 def JxInt2Name(Int):
         return re.sub(u".",JxIntReplace,str(Int))
@@ -63,12 +63,12 @@ def JxTableDisplay(TupleList,Class):
         Boolean = True 
         for Tuple in TupleList:
                 if Boolean:
-                            JxHtmlBuffer += u"""<tr class="odd">"""
+                            JxHtmlBuffer += u"""<tr class="Tr-Odd">"""
                 else:
-                            JxHtmlBuffer += u"""<tr class="even">"""
+                            JxHtmlBuffer += u"""<tr class="Tr-Even">"""
                 Boolean = not(Boolean)
                 for Index in range(len(Tuple)):
-                        JxHtmlBuffer += u'<td class="td-' + JxInt2Name(Index) + u'">' + Tuple[Index].strip() + u'</td>'
+                        JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + Tuple[Index].strip() + u'</td>'
                 JxHtmlBuffer += u"</tr>"
 
         if len(JxHtmlBuffer):
@@ -81,7 +81,7 @@ def JxTableDisplay(TupleList,Class):
 #
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
-KanjiRange=[c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
+KanjiRange = [c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
 
 
 def Tango2Dic(string):
@@ -424,7 +424,6 @@ def append_JxPlugin(Answer,Card):
     except KeyError:
 	    JxAnswerDict[u"W:Freq"] =  u""
             
- 
     # ${K:JLPT}
     try:
             JxAnswerDict[u"K:JLPT"] =  u"""%s""" % MapJLPTKanji.String(JxAnswerDict[u'K:'])
@@ -462,8 +461,6 @@ def append_JxPlugin(Answer,Card):
     for FieldModel in Card.fact.model.fieldModels:
 	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
                 hexifyID(FieldModel.id), Card.fact[FieldModel.name])
-    
-    mw.help.showText(JxAnswerDict[u"F:Types"])   
                 
     JxAnswer = re.sub("\$\{(.*?)\}",lambda x:JxReplace(x,JxAnswerDict),JxAnswer)
     
