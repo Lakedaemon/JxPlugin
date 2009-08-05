@@ -213,6 +213,7 @@ def read_Frequency(file,Dict):
 	return Dict
 	
 Word2Frequency = read_Frequency(file,{})
+SumWordOccurences = sum(Word2Frequency.values())
 MaxWordFrequency = max(Word2Frequency.values())
 MinWordFrequency = min(Word2Frequency.values())
 Word2Zone ={}

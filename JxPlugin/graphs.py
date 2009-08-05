@@ -281,7 +281,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	for a in keys:
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
-                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
+                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/SumKanjiOccurences)
         Arg =[JOL[k] for k in range(0,10)]
         self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
 	
@@ -357,7 +357,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	for a in keys:
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
-                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/AccumultedKanjiFrequency)
+                   JOL[9-2 * c].append(sum([OLK[a][k] for k in range(1,c+2)])*100.0/SumWordOccurences)
         Arg =[JOL[k] for k in range(0,10)]
         self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
 	
