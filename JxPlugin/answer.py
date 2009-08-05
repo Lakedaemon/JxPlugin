@@ -72,7 +72,7 @@ def JxTableDisplay(TupleList,Class):
                 JxHtmlBuffer += u"</tr>"
 
         if len(JxHtmlBuffer):
-                return u'<table class="' + Class + u'">%s</table>' % JxHtmlBuffer
+                return u'<table cellspacing="0px" cellpadding="0px" class="' + Class + u'">%s</table>' % JxHtmlBuffer
         else:
                 return u""
 ###############################################################################################################
