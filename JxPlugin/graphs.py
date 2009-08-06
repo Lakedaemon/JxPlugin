@@ -68,7 +68,7 @@ def JxParseFacts4Stats():
                                 # resets the model types
                                 ModelTypes = None
         del ModelTypes
-        mw.help.showText(str(Rows))            
+        mw.help.showText(str(CardId2Types))            
                 
                 
                 
@@ -231,12 +231,7 @@ class JxDeckGraphs(object):
 
     def calcStats (self):
             
-        JxParseFacts4Stats()    
-            
-            
-            
-            
-            
+   
             
         if not self.stats:
             days = {}
@@ -435,9 +430,108 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         self.filledGraph(graph, days, [colorGrade[8-k] for k in range(0,8)], *Arg)
 	
         
+        
+        
+        
+        
+        JxParseFacts4Stats() 
+        
+        
+        
+        
+        
+        
+   
+        days = {}
+        daysYoung = {}
+        daysMature =  {}
+        months = {}
+        next = {}
+        lowestInDay = 0
+        midnightOffset = time.timezone - self.deck.utcOffset
+        now = list(time.localtime(time.time()))
+        now[3] = 23; now[4] = 59
+        self.endOfDay = time.mktime(now) - midnightOffset
+        t = time.time()
+           
+        self.stats = {}
+           
+
+        todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
+            
+
+            ######################################################################
+            #
+            #                      JLPT/Grade stats for Kanji
+            #
+            ######################################################################
+
+
+            # Selects the cards ids of the right type (say guess Kanji).   
+        JLPTReviews = self.deck.s.all("""select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
+                from reviewHistory order by reviewHistory.time""") 
+        # parse the info to build an "day -> Kanji known count" array
+        OLKnownTemp={0:0,1:0,2:0,3:0,4:0}
+        GradeKnownTemp= {1:0,2:0,3:0,4:0,5:0,6:0,'HS':0,'Other':0}
+        AccumulatedTemp = {1:0,2:0,3:0,4:0,5:0}
+        OLKnown={}
+        GradeKnown={}
+        Accumulated={}
+
+        for (CardId,OLtime,interval,nextinterval,ease) in JLPTReviews:
+          if CardId in CardId2Types:    
+           Types = CardId2Types[CardId]
+           if Types:
+              if Types[0][0]=='Kanji':
+                 OLKanji = Types[0][2]  
+                 if OLKanji in Kanji2JLPT:
+		     a = Kanji2JLPT[OLKanji]
+                 else:
+	             a = 0
+                 if OLKanji in Kanji2Grade:
+		     b = Kanji2Grade[OLKanji]
+                 else:
+	             b = 'Other'
+                 if OLKanji in Kanji2Frequency:
+		     c = Kanji2Zone[OLKanji]                   
+		     Change = Kanji2Frequency[OLKanji]
+                 else:
+	             Change = 0	
+	             c = 5		  
+                 if ease == 1 and interval > 21:
+	             OLKnownTemp[a] -= 1  
+		     GradeKnownTemp[b] -=  1  
+		     AccumulatedTemp[c] -= Change
+                 elif interval <= 21 and nextinterval>21:
+		     OLKnownTemp[a] += 1
+		     GradeKnownTemp[b] += 1
+		     AccumulatedTemp[c] += Change
+                 OLDay = int((OLtime-t) / 86400.0)+1
+                 OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
+                 GradeKnown[OLDay] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
+                 Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
+        OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
+        GradeKnown[0] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
+        Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
+ 
+        JOL = {}
+	for c in range(0,16): 
+	        JOL[c] = []
+	Translate={1:1,2:2,3:3,4:4,5:5,6:6,7:'HS',8:'Other'}
+        
+        OLK = GradeKnown
+	# have to sort the dictionnary
+	keys = OLK.keys()
+        keys.sort()
+	
+	for a in keys:
+		for c in range(0,8):	
+                   JOL[2 * c].append(a)
+	           JOL[15-2 * c].append(sum([OLK[a][Translate[k]] for k in range(1,c+2)]))
+        Arg =[JOL[k] for k in range(0,16)]     
              
         def JxSon(ListA,ListB):
-                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"               
+                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"        
         from ui_menu import JxPreview
         from ui_menu import JxResourcesUrl
         JxHtml="""
