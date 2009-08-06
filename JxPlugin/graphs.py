@@ -42,6 +42,187 @@ from answer import Tango2Dic
 colorGrade={1:"#CC9933",2:"#FF9933",3:"#FFCC33",4:"#FFFF33",5:"#CCCC99",6:"#CCFF99",7:"#CCFF33",8:"#CCCC33"}
 colorFreq={1:"#3333CC",2:"#3366CC",3:"#3399CC",4:"#33CCCC",5:"#33FFCC"}
 colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
+from answer import JxType
+CardId2Types={}
+
+def JxParseFacts4Stats():
+        global ModelTypes,Tuple,Delta
+        # We are going to use 1 select and do most of the work in python (there might be other ways, but I have no time to delve into sqllite and sql language...haven't found any good tutorial about functions out there). 
+        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value,count(distinct secondcards.id),count(distinct fieldModels.id)
+        from cards,cards as secondcards,facts,fields,fieldModels, models where 
+        cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and secondcards.factId=facts.id
+        group by models.id,facts.id,cards.id order by models.id,facts.id,fieldModels.id"""
+        Rows = mw.deck.s.all(Query)
+        Length = len(Rows)
+        ModelTypes = None
+        Index = 0
+        while Index < Length:
+                #(CardId,FactTags,ModelId,ModelTags,Model,Field,Content,CardCount,FieldCount)
+                Tau = Rows[Index][8]
+                Delta = Rows[Index][7] * Tau
+                List = JxParseFactTags4Stats(Rows,Index)
+                CardId2Types.update({Row[a][0]:List for a in range (Index,Index + Delta,Tau})
+                if Rows[Index][2] != Rows[Index + Delta][2]:
+                        # resets the model types
+                        ModelTypes = None
+                Index += Delta
+        del ModelTypes,Tuple,Delta
+        mw.help.showText(str(Rows))            
+                
+                
+                
+                
+def JxParseFactTags4Stats(Rows,Index)               
+                # first check the tags of the fact
+                Types = set()
+                JxFactTags = set(Rows[Index][1].split(" "))
+                for (Key,List) in JxType:
+                        if JxFactTags.intersection(List):
+                                Types.update([Key])
+                if Types: 
+                        return JxAffectFields4Stats([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],Types)
+                else: # Parse the model
+                        return JxParseModels4Stats(Rows,Index)
+                 
+
+def JxParseModel4Stats(Rows,Index):
+        # firs check the model types
+        if ModelTypes == None:# got to parse the model tags and maybee the model name
+                ModelTypes = set()
+                JxModelTags = set(Rows[Index][3].split(" "))
+                for (Key,List) in JxType:
+                        if JxModelTags.intersection(List):
+                                ModelTypes.update([Key]) 
+                if !ModelTypes:# model name now
+                        for (Key,List) in JxType:
+                                if Rows[Index][4] in List:
+                                        ModelTypes.update([Key])
+                                        break # no need to parse further
+                                        
+        if len(ModelTypes) == 1: 
+                return JxAffectFields4Stats([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],ModelTypes)
+
+        elif len(Types) >1:
+                # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
+                #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
+                return JxFindTypeAndField([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],ModelTypes)
+        else:
+                return JxParseFieldsName4Stats(Rows,Index)
+                
+def JxParseFieldsName4Stats(Fields):
+        # tries to find a field with a relevant name and checks for the japanese model last.
+        
+        Types = set()
+        for a in range(0,Rows[Index][8]):
+                for (Key,List) in JxType:
+                        if Rows[Index + a][7] in List:
+                                Types.update([Key])
+                                break # no need to parse this Field further
+        # same cases than for JxParseModelTags()
+        
+        if len(Types) ==1:
+                # great, we found the type, now find the field. 
+                return JxAffectFields4Stats([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],Types)
+
+        elif len(Types) >1:
+                # we must now find the relevant field to guess the type of the card 
+                 return JxAffectFields4Stats([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],Types)               
+
+        # this should be the usual case for the Japanese model, we'll now check if this is a deck related to Japanese
+        return JxParseForJapanese4Stats(Rows,Index)
+   
+def JxParseForJapanese4Stats(Rows,Index):             
+        # try to find a Japanese Tag/Name
+        Set = set(Rows[Index][1].split(" "))
+        Set.update(Rows[Index][3].split(" "))
+        Set.update([Rows[Index][4]])
+        Set.update([Rows[Index + a][8] for a in range(0,Rows[Index][8])])   
+        if Set.intersection(JxTypeJapanese):
+                #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
+                return JxFindTypeAndField4Stats([(Row[a][5],Row[a][6]) for a in range(Index,Index + Rows[Index][8])],set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
+
+        # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
+        # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
+        # I expect that anybody wantng to learn japanese will want to display kana readings)
+        return []  
+        
+        
+        
+        
+        
+        
+                
+def JxFindTypeAndField(FieldNameContentList,Types):
+        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
+        
+        List=[]
+        for (Type,TypeList) in JxType:
+                if Type in Types:
+                        for (Name,Content) in FieldNameContentList:
+                                if Name in TypeList:
+                                        List.append((Type,Name,Content))
+                                        break
+                                             
+        if len(List)<len(Types):
+                # for the still missing fields, we try to find an "Expression" field next and update the List
+                if List:
+                        (Done,Field) = zip(*List)
+                else : 
+                        Done = []
+                TempList=[]
+                for (Type,TypeList) in JxType:
+                        if Type in Types and Type in Done:
+                                TempList.append(List.pop(0))
+                        elif Type in Types:
+                                for  (Name,Content) in FieldNameContentList:
+                                        if Name == u"Expression" and Type in GuessType(Content):
+                                                TempList.append((Type,Name,Content)) 
+                                                break 
+                List=TempList
+                
+        if len(List)<len(Types):
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
+                pass
+        
+        return List                
+                
+                         
+                
+
+def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Rows and stats, maybee...but that way, it can be usd by both routines
+        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)
+        List=[]
+        for (Type,TypeList) in JxType:
+                if Type in Types:
+                        for (Name,Content) in FieldNameContentList:
+                                if Name in TypeList:
+                                        List.append((Type,Name,Content)) 
+                                        break
+                                             
+        if len(List)<len(Types):
+                # there are still missing fields for the types, we could try the "Expression" field next and update the List
+                if len(List)>0:
+                        (Done,Field) = zip(*List)
+                else : 
+                        Done=[]
+                TempList=[]
+                for (Type,TypeList) in JxType:
+                        if Type in Types and Type in Done:
+                                TempList.append(List.pop(0))
+                        elif Type in Types:
+                                for (Name,Content) in FieldNameContentList:
+                                        if Name == u"Expression":
+                                                TempList.append((Type,Name,Content)) 
+                                                break 
+                List = TempList
+                                                
+        if len(List)<len(Types):
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
+                pass
+   
+        return List
 
 class JxDeckGraphs(object):
 
@@ -53,6 +234,14 @@ class JxDeckGraphs(object):
         self.dpi = dpi
 
     def calcStats (self):
+            
+        ParseFacts()    
+            
+            
+            
+            
+            
+            
         if not self.stats:
             days = {}
             daysYoung = {}

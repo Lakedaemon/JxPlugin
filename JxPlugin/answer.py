@@ -134,7 +134,7 @@ def JxMagicalGuess(Card):
         # for version 1, we are only going to investigate the tags of the Fact & Models, the names of the Model and the Fields.
         
         # first check the facts of the Fact, in case they have only one tag among "Kanji", "Word", "Sentence", "Grammar".
-        # mw.help.showText(Card.fact.model.tags + "Fact" + Card.fact.tags)
+
         
 
         # First : parse the fact tags
@@ -243,6 +243,7 @@ def JxParseModelTags(Card):
         # 2 & 3 & 4 & 5 -> the user is telling what kind of facts he has in this model. We still have to parse further to know exactly how this card is supposed to be displayed
         # (user might want cards in this model to participate to different kind of stats too ?). But we know that we are in the Japanese case. 
 
+#### there
 
         if len(Types) == 1:
                 # great, we found the type, now affect the field. 
@@ -275,7 +276,7 @@ def GuessType(String):
         
 
         
-
+######################################### this can go in JxParsemodelTags -> there : ####
 def JxParseModelName(Card):
         # thirdly : parse the name of the model
         
