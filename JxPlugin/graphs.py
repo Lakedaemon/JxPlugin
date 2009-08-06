@@ -104,19 +104,19 @@ cardModels.name = "Kanji ?" and fieldModels.name = "Kanji" and facts.modelId in 
                  else:
 	             b = 'Other'
                  if OLKanji in Kanji2Frequency:
-		     b = Kanji2Zone[OLKanji]                   
+		     c = Kanji2Zone[OLKanji]                   
 		     Change = Kanji2Frequency[OLKanji]
                  else:
 	             Change = 0	
-	             b = 5		  
+	             c = 5		  
                  if ease == 1 and interval > 21:
 	             OLKnownTemp[a] -= 1  
 		     GradeKnownTemp[b] -=  1  
-		     AccumulatedTemp[b] -= Change
+		     AccumulatedTemp[c] -= Change
                  elif interval <= 21 and nextinterval>21:
 		     OLKnownTemp[a] += 1
 		     GradeKnownTemp[b] += 1
-		     AccumulatedTemp[b] += Change
+		     AccumulatedTemp[c] += Change
                  OLDay = int((OLtime-t) / 86400.0)+1
                  OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
                  GradeKnown[OLDay] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
@@ -124,9 +124,9 @@ cardModels.name = "Kanji ?" and fieldModels.name = "Kanji" and facts.modelId in 
             OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
             GradeKnown[0] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
             Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
-            self.stats['OL'] = OLKnown 
-            self.stats['Grade'] = GradeKnown  
-            self.stats['KAccumulated'] = Accumulated
+            self.stats['OL'] = OLKnown.copy() 
+            self.stats['Grade'] = GradeKnown.copy()  
+            self.stats['KAccumulated'] = Accumulated.copy()
 
 
             ######################################################################
@@ -162,10 +162,10 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	             Change = 0	
 	             b = 5			     
 		if ease == 1 and interval > 21:
-	             OLKnownTemp[a] = OLKnownTemp[a] - 1 
+	             OLKnownTemp[a] -=  1 
 		     AccumulatedTemp[b] -= Change		     
 		elif interval <= 21 and nextinterval>21:
-		     OLKnownTemp[a] = OLKnownTemp[a] + 1
+		     OLKnownTemp[a] +=  1
 		     AccumulatedTemp[b] += Change		     
 		OLDay = int((OLtime-t) / 86400.0)+1
 		OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
@@ -330,17 +330,9 @@ $.plot($("#placeholder"), %s , {   lines: {
           </body></html>          
                     
                     
-                    """% ("[" + ",".join([JxSon(JOL[2*k],JOL[2*k+1]) for k in [0]]) +"]")  
-        #JxPreview.setHtml(JxHtml ,JxResourcesUrl)
-        #JxPreview.show()
-        
-        
-        
-       
-        
-        
-        
-        
+                    """% ("[" + ",".join([JxSon(JOL[2*k],JOL[2*k+1]) for k in range(0,8)]) +"]")  
+        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+        JxPreview.show()  
         
         
 	cheat = fig.add_subplot(111)
@@ -457,7 +449,6 @@ $.plot($("#placeholder"), %s , {   lines: {
         keys = OLK.keys()
         keys.sort()
 	for a in keys:
-#                sumJOL=0.0
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
                    value=sum([OLK[a][k] for k in range(1,c+2)])*100.0/SumWordOccurences
