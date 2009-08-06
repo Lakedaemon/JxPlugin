@@ -316,7 +316,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	jQuery().ready(function(){
 		//var icon = "info"; 
                $('.ui-button').button({checkButtonset:true});
-$.plot($("#placeholder"), %s , {   lines: {
+$.plot($("#placeholderb"), %(JSon)s , {   lines: {
     show: true,
     fill: 1,
     fillColor: false
@@ -326,11 +326,76 @@ $.plot($("#placeholder"), %s , {   lines: {
 </head>
 <body>
 
-      <div id="placeholder" style="width:600px;height:300px"></div>
+      <div id="placeholderb" style="width:600px;height:300px"></div>
+      
+          <div id="placeholder" style="width:600px;height:300px"></div> 
+ 
+    <p>1000 kg. CO<sub>2</sub> emissions per year per capita for various countries (source: <a href="http://en.wikipedia.org/wiki/List_of_countries_by_carbon_dioxide_emissions_per_capita">Wikipedia</a>).</p> 
+ 
+    <p>Flot supports selections. You can enable
+       rectangular selection
+       or one-dimensional selection if the user should only be able to
+       select on one axis. Try left-clicking and drag on the plot above
+       where selection on the x axis is enabled.</p> 
+ 
+    <p>You selected: <span id="selection"></span></p> 
+ 
+    <p>The plot command returns a Plot object you can use to control
+       the selection. Try clicking the buttons below.</p> 
+ 
+    <p><input id="clearSelection" type="button" value="Clear selection" /> 
+       <input id="setSelection" type="button" value="Select year 1994" /></p> 
+ 
+    <p>Selections are really useful for zooming. Just replot the
+       chart with min and max values for the axes set to the values
+       in the "plotselected" event triggered. Try enabling the checkbox
+       below and select a region again.</p> 
+ 
+    <p><input id="zoom" type="checkbox">Zoom to selection.</input></p> 
+      
+      <script id="source" language="javascript" type="text/javascript"> 
+$(function () {
+    var data = %(JSon)s
+ 
+    var options = {
+        lines: { show: true },
+        points: { show: true },
+        legend: { noColumns: 2 },
+        xaxis: { tickDecimals: 0 },
+        yaxis: { min: 0 },
+        selection: { mode: "x" }
+    };
+ 
+    var placeholder = $("#placeholder");
+ 
+    placeholder.bind("plotselected", function (event, ranges) {
+        $("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
+ 
+        var zoom = $("#zoom").attr("checked");
+        if (zoom)
+            plot = $.plot(placeholder, data,
+                          $.extend(true, {}, options, {
+                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                          }));
+    });
+    
+    var plot = $.plot(placeholder, data, options);
+ 
+    $("#clearSelection").click(function () {
+        plot.clearSelection();
+    });
+ 
+    $("#setSelection").click(function () {
+        plot.setSelection({ x1: 1994, x2: 1995 });
+    });
+});
+</script> 
+      
+      
           </body></html>          
                     
                     
-                    """% ("[" + ",".join([JxSon(JOL[2*k],JOL[2*k+1]) for k in range(0,8)]) +"]")  
+                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JOL[2*k],JOL[2*k+1]) +'}' for k in range(0,8)]) +"]"}  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
         
