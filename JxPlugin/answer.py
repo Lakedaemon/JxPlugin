@@ -12,7 +12,7 @@ from loaddata import *
 from globalobjects import JxLink
 from anki.hooks import *
 from anki.utils import hexifyID
-
+import time
 
 
 
@@ -26,10 +26,10 @@ def JxReplace(String,Dict):
 
         Tail = String.group(1).split(u",")
         Head = Tail.pop(0)
-        if len(Tail)>0 and Tail[0].find(u"=")==False:
-                Container = Tail.pop(0)
-        else:
-                Container=u"span"
+        Container=u"span"
+        if Tail and Tail[0].find(u"=")==False:
+                        Container = Tail.pop(0)
+           
         try:      
                 Head = u'<'+ Container + u' class="' + Head + u'">' + Dict[Head] + u"</" + Container + u'>'
         except KeyError:
@@ -81,8 +81,16 @@ def JxTableDisplay(TupleList,Class):
 #
 ###############################################################################################################
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
-KanjiRange = [c for c in range(ord(u'一'),ord(u'龥'))] + [c for c in range(ord(u'豈'),ord(u'鶴'))]
 
+
+JxN = [ord(u'一'),ord(u'龥'),ord(u'豈'),ord(u'鶴')]
+def JxIsKanji(Char):
+        N = ord(Char)
+        if N >=JxN[0]  and N < JxN[1]:
+                return True
+        if N >=JxN[2]  and N < JxN[3]:
+                return True             
+        return False
 
 def Tango2Dic(string):
 	String = string.strip(u" ")
@@ -353,12 +361,26 @@ def JxDoc(Field,Code,DocString):
         """adds DocString as documentation for ${Field}"""
         pass
 
+Jx_Profile=[]
+def JxProfile(String):
+        Jx_Profile.append((String,time.time()))
+def JxShowProfile():
+        global Jx_Profile
+        JxHtml = ""
+        for (String,Time)in Jx_Profile:
+                JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time-Jx_Profile[0][1]) +"</td></tr>"
+        mw.help.showText("<table>" + JxHtml + "</table>")
+        Jx_Profile=[]
+        
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
-
+    JxProfile("Start")
+    
     # Guess the type(s) and the relevant content(s) of the Fact
     JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
+
+    JxProfile("Guess")
     
     # Get and translate the new CardModel Template
     JxPrefix = u''
@@ -366,91 +388,83 @@ def append_JxPlugin(Answer,Card):
            JxPrefix += JxAbbrev[Type]
     try:
 	    JxAnswer = JxLink[JxPrefix + u'-' + Card.cardModel.aformat]
-            JxAnswerOk= True
     except KeyError:
             try:
                     JxAnswer = JxLink["D-"+Card.cardModel.aformat]     # in case the right template hasn't been set, we try with the default template "D:"
-                    JxAnswerOk = True
             except KeyError: 
-	            JxAnswer = Card.cardModel.aformat
-                    JxAnswerOk = False
-
-
+                    return Answer
+                    
+    JxProfile("Get Template")
 
     
     # Then create a dictionnary for all data replacement strings...
     
-    JxAnswerDict = {}    
+    JxAnswerDict = {
+        'F':'','F-Stroke':'',
+        'K':'','W':'','S':'','G':'',
+        'K-Stroke':'','W-Stroke':'','S-Stroke':'','G-Stroke':'',
+        "W-JLPT":'','W-Freq':'',
+        'K-JLPT':'','K-Jouyou':'','K-Freq':'',
+        'K-Words':''
+        }    
     
     # ${F-Types}
     JxAnswerDict[u"F-Types"] = str(JxGuessedList)    
  
-    # ${K}, ${W}, ${S}, ${G}
-    for (Type,TypeList) in JxType:
-            JxAnswerDict[JxAbbrev[Type]] = u""            
+    # ${K}, ${W}, ${S}, ${G}  and  ${K-Stroke}, ${W-Stroke}, ${S-Stroke}, ${G-Stroke}        
     for (Type,Field,Content) in JxGuessedList:
-            JxAnswerDict[JxAbbrev[Type]] = Content
+            ShortType = JxAbbrev[Type]
+            Stripped = Content.strip()
+            JxAnswerDict[ShortType] = Stripped
+            JxAnswerDict[ShortType + "-Stroke"] = '%s' % ''.join([c for c in Stripped if JxIsKanji(c)])
+    
+    # need those for performance : every tenth second counts if you review 300+ Card a day
+    # (the first brutal implementation had sometimes between 0.5s and 2s of lag to display the answer (i.e. make the user wait).
+    
+    JxK = JxAnswerDict['K']
+    JxW = JxAnswerDict['W']
+    JxS = JxAnswerDict['S']
+    JxG = JxAnswerDict['G']    
     
 
-    # ${F}, ${F-Stroke}
-    if len(JxGuessedList)>0: 
-            Temp = JxGuessedList[0][0]
-            Tempa = u"""%s""" % ''.join([c for c in Temp.strip() if ord(c) in KanjiRange])
-    else:
-            Temp = u''
-            Tempa = u""
-    JxAnswerDict[u'F'] = Temp
-    JxAnswerDict[u'F-Stroke'] = Tempa
+    # ${F} and ${F-Stroke}
+    if JxGuessedList: 
+            JxAnswerDict['F'] = JxGuessedList[0][0].strip()
+            JxAnswerDict['F-Stroke'] = u"""%s""" % ''.join([c for c in JxGuessedList[0][0].strip() if JxIsKanji(c)])
     
-    # ${K-Stroke}, ${W-Stroke}, ${S-Stroke}, ${G-Stroke}
-    for (Type,TypeList) in JxType:
-            if JxAnswerDict[JxAbbrev[Type]] != u"":
-                    Temp =  u"""%s""" % ''.join([c for c in JxAnswerDict[JxAbbrev[Type]].strip() if ord(c) in KanjiRange])
-            else:
-                    Temp =  u""
-            JxAnswerDict[JxAbbrev[Type] + u"-Stroke"] = Temp
             
-    # ${W-JLPT}
-    try:
-            JxAnswerDict[u"W-JLPT"] =  u"""%s""" % MapJLPTTango.String(JxAnswerDict[u'W'])
-    except KeyError:
-	    JxAnswerDict[u"W-JLPT"] =  u""
-            
-    # ${W-Freq}
-    try:
-            JxAnswerDict[u"W-Freq"] =  u"""%s"""  % MapFreqTango.Value(JxAnswerDict[u'W'], lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
-    except KeyError:
-	    JxAnswerDict[u"W-Freq"] =  u""
-            
-    # ${K:JLPT}
-    try:
-            JxAnswerDict[u"K-JLPT"] =  u"""%s""" % MapJLPTKanji.String(JxAnswerDict[u'K'])
-    except KeyError:
-            JxAnswerDict[u"K-JLPT"] =  u""
-            
-	
-    # ${K:Jouyou}	
-    try:
-            JxAnswerDict[u"K-Jouyou"] =  """%s""" % MapJouyouKanji.String(JxAnswerDict[u'K'])
-    except KeyError:
-            JxAnswerDict[u"K-Jouyou"] =  u""
 
-    # ${K:Freq}
-    try:    
-            JxAnswerDict[u"K-Freq"] = u"""%s"""  % MapFreqKanji.Value(JxAnswerDict[u'K'], lambda x:int((log(x+1,2)-log(MaxKanjiOccurences+1,2))*10+100))
-    except KeyError:
-            JxAnswerDict[u"K-Freq"] = u""	
+    if JxW:
+            try:        # ${W-JLPT}
+                    JxAnswerDict['W-JLPT'] =  '%s' % MapJLPTTango.String(JxW)
+            except KeyError:pass
             
-    try : # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
-            Query = """select expression.value, meaning.value, reading.value from 
-            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where 
-            expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-            reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
-            meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-            expression.value like "%%%s%%" """ % JxAnswerDict[u'K']
-            JxAnswerDict[u"K-Words"] = JxTableDisplay(mw.deck.s.all(Query),u"K-Words")    
-    except KeyError:
-            JxAnswerDict[u"K-Words"] = u""
+            try:        # ${W-Freq}
+                    JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
+            except KeyError:pass
+            
+    if JxK:
+            try:        # ${K:JLPT}
+                    JxAnswerDict['K-JLPT'] =  '%s' % MapJLPTKanji.String(JxK)
+            except KeyError:pass
+            
+            try:        # ${K:Jouyou}
+                    JxAnswerDict['K-Jouyou'] =  '%s' % MapJouyouKanji.String(JxK)
+            except KeyError:pass
+
+            try:        # ${K:Freq}    
+                    JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(MaxKanjiOccurences+1,2))*10+100))
+            except KeyError:pass
+            	
+            
+            try : # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
+                    Query = """select expression.value, meaning.value, reading.value from 
+                    fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
+                    reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
+                    meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
+                    expression.value like "%%%s%%" """ % JxK
+                    JxAnswerDict['K-Words'] = JxTableDisplay(mw.deck.s.all(Query),'K-Words')    
+            except KeyError:pass
     
     from ui_menu import JxSettings
     JxAnswerDict[u"Css"] = """<style>%s</style>""" % JxSettings.Get(u'Css')
@@ -460,19 +474,26 @@ def append_JxPlugin(Answer,Card):
 	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
                 hexifyID(FieldModel.id), Card.fact[FieldModel.name])
                 
+    JxProfile("Fill JxCodes")
+    
     JxAnswer = re.sub("\$\{(.*?)\}",lambda x:JxReplace(x,JxAnswerDict),JxAnswer)
     
+    JxProfile("Substitutions")
                       
     from ui_menu import JxSettings
     Mode=JxSettings.Get(u'Mode')
-    if Mode == "Append" and JxAnswerOk: JxAnswer = Answer + Template(JxAnswer).safe_substitute(JxAnswerDict)
-    elif Mode == "Prepend" and JxAnswerOk: JxAnswer =  Template(JxAnswer).safe_substitute(JxAnswerDict) + Answer
-    elif Mode == "Override" and JxAnswerOk: JxAnswer = Template(JxAnswer).safe_substitute(JxAnswerDict)
-    else : JxAnswer =  Answer
+    if Mode == "Append": JxAnswer = Answer + JxAnswer
+    elif Mode == "Prepend": JxAnswer += Answer
 
+
+    JxProfile("Concatenation")    
+    
     removeHook("drawAnswer",append_JxPlugin)
     JxAnswer = runFilter("drawAnswer",JxAnswer, Card)
     addHook("drawAnswer",append_JxPlugin)
+    
+    JxProfile("Filter")
+    #JxShowProfile()
     return JxAnswer
 
 

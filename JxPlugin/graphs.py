@@ -110,12 +110,12 @@ cardModels.name = "Kanji ?" and fieldModels.name = "Kanji" and facts.modelId in 
 	             Change = 0	
 	             b = 5		  
                  if ease == 1 and interval > 21:
-	             OLKnownTemp[a] = OLKnownTemp[a] - 1  
-		     GradeKnownTemp[b] = GradeKnownTemp[b] - 1  
+	             OLKnownTemp[a] -= 1  
+		     GradeKnownTemp[b] -=  1  
 		     AccumulatedTemp[b] -= Change
                  elif interval <= 21 and nextinterval>21:
-		     OLKnownTemp[a] = OLKnownTemp[a] + 1
-		     GradeKnownTemp[b] = GradeKnownTemp[b] + 1
+		     OLKnownTemp[a] += 1
+		     GradeKnownTemp[b] += 1
 		     AccumulatedTemp[b] += Change
                  OLDay = int((OLtime-t) / 86400.0)+1
                  OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
@@ -175,6 +175,10 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
             Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}	    
             self.stats['Time2JLPT4Words'] = OLKnown 
             self.stats['TAccumulated'] = Accumulated
+            
+            
+            
+    
 	    
     ######################################################################
     #
@@ -194,11 +198,15 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
 	# have to sort the dictionnary
 	keys = OLK.keys()
         keys.sort()
+     
 	for a in keys:
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
 	           JOL[2 * c + 1].append(sum([OLK[a][k] for k in range(c,5)]))
         Arg =[JOL[k] for k in range(0,10)]
+
+        
+        
         self.filledGraph(graph, days, [colorJLPT[k] for k in range(0,5)], *Arg)
 	
 	cheat = fig.add_subplot(111)
@@ -241,6 +249,100 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         Arg =[JOL[k] for k in range(0,16)]
         self.filledGraph(graph, days, [colorGrade[8-k] for k in range(0,8)], *Arg)
 	
+        
+             
+        def JxSon(ListA,ListB):
+                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"               
+        from ui_menu import JxPreview
+        from ui_menu import JxResourcesUrl
+        JxHtml="""
+                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+
+
+<!--                  jQuery & UI                          -->
+
+
+<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+
+
+<!--                         Theme                          -->
+
+<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+
+
+<!--                  Buttons                          -->
+
+
+
+
+
+<script src="ui.button/ui.classnameoptions.js"></script> 
+<script src="ui.button/ui.button.js"></script> 
+<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+<script src="ui.button/ui.buttonset.js"></script> 
+
+
+
+	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
+
+<!--                     Selects                          -->
+
+<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
+
+
+
+
+
+<script type="text/javascript" src="jquery.flot.js"></script>
+
+
+
+
+
+
+
+<script> 
+	jQuery().ready(function(){
+		//var icon = "info"; 
+               $('.ui-button').button({checkButtonset:true});
+$.plot($("#placeholder"), %s , {   lines: {
+    show: true,
+    fill: 1,
+    fillColor: false
+  },yaxis: { max: 500 } });
+});
+</script> 
+</head>
+<body>
+
+      <div id="placeholder" style="width:600px;height:300px"></div>
+          </body></html>          
+                    
+                    
+                    """% ("[" + ",".join([JxSon(JOL[2*k],JOL[2*k+1]) for k in [0]]) +"]")  
+        #JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+        #JxPreview.show()
+        
+        
+        
+       
+        
+        
+        
+        
+        
+        
 	cheat = fig.add_subplot(111)
         b0 = cheat.bar(-1, 0, color = colorGrade[1])
         b1 = cheat.bar(-2, 0, color = colorGrade[2])
@@ -355,11 +457,12 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         keys = OLK.keys()
         keys.sort()
 	for a in keys:
-                sumJOL=0.0
+#                sumJOL=0.0
 		for c in range(0,5):	
                    JOL[2 * c].append(a)
                    value=sum([OLK[a][k] for k in range(1,c+2)])*100.0/SumWordOccurences
                    JOL[9-2 * c].append(value)
+        
         Arg =[JOL[k] for k in range(0,10)]
         self.filledGraph(graph, days, [colorFreq[5-k] for k in range(0,5)], *Arg)
 
