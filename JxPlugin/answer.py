@@ -123,9 +123,9 @@ def JxDefaultAnswer(Buffer,String,Dict):
     # Well, this difficult problem requires human intelligence and japanese knowledge to solve it correctly, so i'm going for a simple/generally working solution 
     # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
     
-JxTypeJapanese = [u"japanese",u"Japanese",u"JAPANESE",u"日本語",u"にほんご"]
-JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),(u'Word',[u"word",u"Word",u"WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
-(u'Sentence',[u"sentence",u"Sentence",u"SENTENCE",u"文",u"ぶん"]),(u'Grammar',[u"grammar",u"Grammar",u"GRAMMAR",u"文法",u"ぶんぽう"])]    
+JxTypeJapanese = ["japanese","Japanese","JAPANESE",u"日本語",u"にほんご"]
+JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
+('Sentence',["sentence","Sentence","SENTENCE",u"文",u"ぶん"]),('Grammar',["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"])]    
 JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
 JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
 JxPonctuation.remove(u'々')    
@@ -362,16 +362,24 @@ def JxDoc(Field,Code,DocString):
         """adds DocString as documentation for ${Field}"""
         pass
 
-Jx_Profile=[]
+Jx_Profile=[("Init",time.time())]
+def JxInitProfile(String):
+        global Jx_Profile
+        Jx_Profile=[(String,time.time())]
 def JxProfile(String):
+        global Jx_Profile
         Jx_Profile.append((String,time.time()))
 def JxShowProfile():
         global Jx_Profile
         JxHtml = ""
-        for (String,Time)in Jx_Profile:
-                JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time-Jx_Profile[0][1]) +"</td></tr>"
-        mw.help.showText("<table>" + JxHtml + "</table>")
-        Jx_Profile=[]
+        for a in range(len(Jx_Profile)):
+                (String,Time)=Jx_Profile[a]
+                if a==0:
+                        JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time) +"</td></tr>"
+                else:
+                        JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time-Jx_Profile[a-1][1]) +"</td></tr>"                
+        return "<table>" + JxHtml + "</table>"
+
         
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""

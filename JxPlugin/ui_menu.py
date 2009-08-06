@@ -192,7 +192,8 @@ QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldMode
 		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 group by fields.value order by firstAnswered"""
 		
 def JxGraphs():
-	ui.dialogs.get("JxGraphs", mw, mw.deck)
+        JxGraphsa()
+#	ui.dialogs.get("JxGraphs", mw, mw.deck)
 
 
 

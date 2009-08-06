@@ -42,33 +42,38 @@ from answer import Tango2Dic
 colorGrade={1:"#CC9933",2:"#FF9933",3:"#FFCC33",4:"#FFFF33",5:"#CCCC99",6:"#CCFF99",7:"#CCFF33",8:"#CCCC33"}
 colorFreq={1:"#3333CC",2:"#3366CC",3:"#3399CC",4:"#33CCCC",5:"#33FFCC"}
 colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
-from answer import JxType,JxTypeJapanese, GuessType
+from answer import JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
 CardId2Types={}
 
 def JxParseFacts4Stats():
         global ModelTypes
+        JxProfile("Before Query")
         # We are going to use 1 select and do most of the work in python (there might be other ways, but I have no time to delve into sqllite and sql language...haven't found any good tutorial about functions out there). 
         Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value,count(distinct secondcards.id),count(distinct fieldModels.id)
         from cards,cards as secondcards,facts,fields,fieldModels, models where 
         cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and secondcards.factId=facts.id
         group by models.id,facts.id,cards.id order by models.id,facts.id,fieldModels.id"""
+        JxProfile("Parse Cards start")
         Rows = mw.deck.s.all(Query)
+        mw.help.showText(str(Rows))
         Length = len(Rows)
         ModelTypes = None
         Index = 0
         while Index < Length:
-                #(CardId,FactTags,ModelId,ModelTags,Model,Field,Content,CardCount,FieldCount)
+                #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent, 7:CardCount, 8:FieldCount)
                 Tau = Rows[Index][8]
                 Delta = Rows[Index][7] * Tau
-                List = JxParseFactTags4Stats(Rows,Index)
-                CardId2Types.update(dict([(Rows[a][0],List) for a in range(Index,Index + Delta,Tau)]))
+                Listar = JxParseFactTags4Stats(Rows,Index)
+                CardId2Types.update([(Rows[Index + a][0],Listar) for a in range(0,Delta,Tau)])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Rows[Index - Delta][2]:
                                 # resets the model types
                                 ModelTypes = None
         del ModelTypes
-        mw.help.showText(str(CardId2Types))            
+        JxProfile("Card Parsng Ended")
+      
+        mw.help.showText(  JxShowProfile() + "<br>" + str(debug)+ "<br>" + str(CardId2Types))            
                 
                 
                 
@@ -81,14 +86,14 @@ def JxParseFactTags4Stats(Rows,Index):
                         if JxFactTags.intersection(List):
                                 Types.update([Key])
                 if Types: 
-                        return JxAffectFields4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],Types)
+                        return JxAffectFields4Stats([(Rows[Index + a][5],Rows[Index + a][6]) for a in range(0,Rows[Index][8])],Types)
                 else: # Parse the model
                         return JxParseModel4Stats(Rows,Index)
                  
-
+debug={}
 def JxParseModel4Stats(Rows,Index):
         global ModelTypes
-        # firs check the model types
+        # first check the model types
         if ModelTypes == None:# got to parse the model tags and maybee the model name
                 ModelTypes = set()
                 JxModelTags = set(Rows[Index][3].split(" "))
@@ -100,9 +105,11 @@ def JxParseModel4Stats(Rows,Index):
                                 if Rows[Index][4] in List:
                                         ModelTypes.update([Key])
                                         break # no need to parse further
+                debug[Rows[Index][4]] = ModelTypes
+                                        
                                         
         if len(ModelTypes) == 1: 
-                return JxAffectFields4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],ModelTypes)
+                return JxAffectFields4Stats([(Rows[Index + a][5],Rows[Index + a][6]) for a in range(0,Rows[Index][8])],ModelTypes)
 
         elif len(ModelTypes) >1:
                 # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
@@ -117,7 +124,7 @@ def JxParseFieldsName4Stats(Rows,Index):
         Types = set()
         for a in range(0,Rows[Index][8]):
                 for (Key,List) in JxType:
-                        if Rows[Index + a][7] in List:
+                        if Rows[Index + a][5] in List:
                                 Types.update([Key])
                                 break # no need to parse this Field further
         # same cases than for JxParseModelTags()
@@ -138,7 +145,7 @@ def JxParseForJapanese4Stats(Rows,Index):
         Set = set(Rows[Index][1].split(" "))
         Set.update(Rows[Index][3].split(" "))
         Set.update([Rows[Index][4]])
-        Set.update([Rows[Index + a][8] for a in range(0,Rows[Index][8])])   
+        Set.update([Rows[Index + a][5] for a in range(0,Rows[Index][8])])   
         if Set.intersection(JxTypeJapanese):
                 #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
                 return JxFindTypeAndField4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
@@ -146,7 +153,7 @@ def JxParseForJapanese4Stats(Rows,Index):
         # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
         # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
         # I expect that anybody wantng to learn japanese will want to display kana readings)
-        return []  
+        return ["ouille"]  
                 
 def JxFindTypeAndField4Stats(FieldNameContentList,Types):
         # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
@@ -171,7 +178,7 @@ def JxFindTypeAndField4Stats(FieldNameContentList,Types):
                                 TempList.append(List.pop(0))
                         elif Type in Types:
                                 for  (Name,Content) in FieldNameContentList:
-                                        if Name == u"Expression" and Type in GuessType(Content):
+                                        if Name == "Expression" and Type in GuessType(Content):
                                                 TempList.append((Type,Name,Content)) 
                                                 break 
                 List=TempList
@@ -219,6 +226,275 @@ def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Ro
                 pass
    
         return List
+
+
+
+
+
+
+
+
+
+
+
+
+def JxGraphsa():        
+        
+        
+        
+        JxParseFacts4Stats() 
+        
+        
+        
+        
+        
+        
+   
+
+        t = time.time()
+ 
+            
+
+            ######################################################################
+            #
+            #                      JLPT/Grade stats for Kanji
+            #
+            ######################################################################
+
+
+            # Selects the cards ids of the right type (say guess Kanji).   
+        JLPTReviews = mw.deck.s.all("""select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
+                from reviewHistory order by reviewHistory.time""") 
+        # parse the info to build an "day -> Kanji known count" array
+        OLKnownTemp={0:0,1:0,2:0,3:0,4:0}
+        GradeKnownTemp= {1:0,2:0,3:0,4:0,5:0,6:0,'HS':0,'Other':0}
+        AccumulatedTemp = {1:0,2:0,3:0,4:0,5:0}
+        OLKnown={}
+        GradeKnown={}
+        Accumulated={}
+
+        for (CardId,OLtime,interval,nextinterval,ease) in JLPTReviews:
+          if CardId in CardId2Types:    
+           Types = CardId2Types[CardId]
+           if Types:
+              if Types[0][0]=='Kanji':
+                 OLKanji = Types[0][2]  
+                 if OLKanji in Kanji2JLPT:
+		     a = Kanji2JLPT[OLKanji]
+                 else:
+	             a = 0
+                 if OLKanji in Kanji2Grade:
+		     b = Kanji2Grade[OLKanji]
+                 else:
+	             b = 'Other'
+                 if OLKanji in Kanji2Frequency:
+		     c = Kanji2Zone[OLKanji]                   
+		     Change = Kanji2Frequency[OLKanji]
+                 else:
+	             Change = 0	
+	             c = 5		  
+                 if ease == 1 and interval > 21:
+	             OLKnownTemp[a] -= 1  
+		     GradeKnownTemp[b] -=  1  
+		     AccumulatedTemp[c] -= Change
+                 elif interval <= 21 and nextinterval>21:
+		     OLKnownTemp[a] += 1
+		     GradeKnownTemp[b] += 1
+		     AccumulatedTemp[c] += Change
+                 OLDay = int((OLtime-t) / 86400.0)+1
+                 OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
+                 GradeKnown[OLDay] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
+                 Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
+        OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
+        GradeKnown[0] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
+        Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
+ 
+        JOL = {}
+	for c in range(0,16): 
+	        JOL[c] = []
+	Translate={1:1,2:2,3:3,4:4,5:5,6:6,7:'HS',8:'Other'}
+        
+        OLK = GradeKnown
+	# have to sort the dictionnary
+	keys = OLK.keys()
+        keys.sort()
+	
+	for a in keys:
+		for c in range(0,8):	
+                   JOL[2 * c].append(a)
+	           JOL[15-2 * c].append(sum([OLK[a][Translate[k]] for k in range(1,c+2)]))
+        Arg =[JOL[k] for k in range(0,16)]     
+             
+        def JxSon(ListA,ListB):
+                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"        
+        from ui_menu import JxPreview
+        from ui_menu import JxResourcesUrl
+        JxHtml="""
+                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+
+
+<!--                  jQuery & UI                          -->
+
+
+<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+
+
+<!--                         Theme                          -->
+
+<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+
+
+<!--                  Buttons                          -->
+
+
+
+
+
+<script src="ui.button/ui.classnameoptions.js"></script> 
+<script src="ui.button/ui.button.js"></script> 
+<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+<script src="ui.button/ui.buttonset.js"></script> 
+
+
+
+	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
+
+<!--                     Selects                          -->
+
+<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
+
+
+
+
+
+<script type="text/javascript" src="jquery.flot.js"></script>
+
+
+
+
+
+
+
+<script> 
+	jQuery().ready(function(){
+		//var icon = "info"; 
+               $('.ui-button').button({checkButtonset:true});
+$.plot($("#placeholderb"), %(JSon)s , {   lines: {
+    show: true,
+    fill: 1,
+    fillColor: false
+  },yaxis: { max: 500 } });
+});
+</script> 
+</head>
+<body>
+
+      <div id="placeholderb" style="width:600px;height:300px"></div>
+      
+          <div id="placeholder" style="width:600px;height:300px"></div> 
+ 
+    <p>1000 kg. CO<sub>2</sub> emissions per year per capita for various countries (source: <a href="http://en.wikipedia.org/wiki/List_of_countries_by_carbon_dioxide_emissions_per_capita">Wikipedia</a>).</p> 
+ 
+    <p>Flot supports selections. You can enable
+       rectangular selection
+       or one-dimensional selection if the user should only be able to
+       select on one axis. Try left-clicking and drag on the plot above
+       where selection on the x axis is enabled.</p> 
+ 
+    <p>You selected: <span id="selection"></span></p> 
+ 
+    <p>The plot command returns a Plot object you can use to control
+       the selection. Try clicking the buttons below.</p> 
+ 
+    <p><input id="clearSelection" type="button" value="Clear selection" /> 
+       <input id="setSelection" type="button" value="Select year 1994" /></p> 
+ 
+    <p>Selections are really useful for zooming. Just replot the
+       chart with min and max values for the axes set to the values
+       in the "plotselected" event triggered. Try enabling the checkbox
+       below and select a region again.</p> 
+ 
+    <p><input id="zoom" type="checkbox">Zoom to selection.</input></p> 
+      
+      <script id="source" language="javascript" type="text/javascript"> 
+$(function () {
+    var data = %(JSon)s
+ 
+    var options = {
+        lines: { show: true },
+        points: { show: true },
+        legend: { noColumns: 2 },
+        xaxis: { tickDecimals: 0 },
+        yaxis: { min: 0 },
+        selection: { mode: "x" }
+    };
+ 
+    var placeholder = $("#placeholder");
+ 
+    placeholder.bind("plotselected", function (event, ranges) {
+        $("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
+ 
+        var zoom = $("#zoom").attr("checked");
+        if (zoom)
+            plot = $.plot(placeholder, data,
+                          $.extend(true, {}, options, {
+                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                          }));
+    });
+    
+    var plot = $.plot(placeholder, data, options);
+ 
+    $("#clearSelection").click(function () {
+        plot.clearSelection();
+    });
+ 
+    $("#setSelection").click(function () {
+        plot.setSelection({ x1: 1994, x2: 1995 });
+    });
+});
+</script> 
+      
+      
+          </body></html>          
+                    
+                    
+                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JOL[2*k],JOL[2*k+1]) +'}' for k in range(0,8)]) +"]"}  
+        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+        JxPreview.show()  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class JxDeckGraphs(object):
 
@@ -430,253 +706,7 @@ cardModels.name = "Recognition" and fieldModels.name = "Expression" and facts.mo
         self.filledGraph(graph, days, [colorGrade[8-k] for k in range(0,8)], *Arg)
 	
         
-        
-        
-        
-        
-        JxParseFacts4Stats() 
-        
-        
-        
-        
-        
-        
-   
-        days = {}
-        daysYoung = {}
-        daysMature =  {}
-        months = {}
-        next = {}
-        lowestInDay = 0
-        midnightOffset = time.timezone - self.deck.utcOffset
-        now = list(time.localtime(time.time()))
-        now[3] = 23; now[4] = 59
-        self.endOfDay = time.mktime(now) - midnightOffset
-        t = time.time()
-           
-        self.stats = {}
-           
 
-        todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
-            
-
-            ######################################################################
-            #
-            #                      JLPT/Grade stats for Kanji
-            #
-            ######################################################################
-
-
-            # Selects the cards ids of the right type (say guess Kanji).   
-        JLPTReviews = self.deck.s.all("""select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-                from reviewHistory order by reviewHistory.time""") 
-        # parse the info to build an "day -> Kanji known count" array
-        OLKnownTemp={0:0,1:0,2:0,3:0,4:0}
-        GradeKnownTemp= {1:0,2:0,3:0,4:0,5:0,6:0,'HS':0,'Other':0}
-        AccumulatedTemp = {1:0,2:0,3:0,4:0,5:0}
-        OLKnown={}
-        GradeKnown={}
-        Accumulated={}
-
-        for (CardId,OLtime,interval,nextinterval,ease) in JLPTReviews:
-          if CardId in CardId2Types:    
-           Types = CardId2Types[CardId]
-           if Types:
-              if Types[0][0]=='Kanji':
-                 OLKanji = Types[0][2]  
-                 if OLKanji in Kanji2JLPT:
-		     a = Kanji2JLPT[OLKanji]
-                 else:
-	             a = 0
-                 if OLKanji in Kanji2Grade:
-		     b = Kanji2Grade[OLKanji]
-                 else:
-	             b = 'Other'
-                 if OLKanji in Kanji2Frequency:
-		     c = Kanji2Zone[OLKanji]                   
-		     Change = Kanji2Frequency[OLKanji]
-                 else:
-	             Change = 0	
-	             c = 5		  
-                 if ease == 1 and interval > 21:
-	             OLKnownTemp[a] -= 1  
-		     GradeKnownTemp[b] -=  1  
-		     AccumulatedTemp[c] -= Change
-                 elif interval <= 21 and nextinterval>21:
-		     OLKnownTemp[a] += 1
-		     GradeKnownTemp[b] += 1
-		     AccumulatedTemp[c] += Change
-                 OLDay = int((OLtime-t) / 86400.0)+1
-                 OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
-                 GradeKnown[OLDay] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
-                 Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
-        OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
-        GradeKnown[0] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
-        Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
- 
-        JOL = {}
-	for c in range(0,16): 
-	        JOL[c] = []
-	Translate={1:1,2:2,3:3,4:4,5:5,6:6,7:'HS',8:'Other'}
-        
-        OLK = GradeKnown
-	# have to sort the dictionnary
-	keys = OLK.keys()
-        keys.sort()
-	
-	for a in keys:
-		for c in range(0,8):	
-                   JOL[2 * c].append(a)
-	           JOL[15-2 * c].append(sum([OLK[a][Translate[k]] for k in range(1,c+2)]))
-        Arg =[JOL[k] for k in range(0,16)]     
-             
-        def JxSon(ListA,ListB):
-                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"        
-        from ui_menu import JxPreview
-        from ui_menu import JxResourcesUrl
-        JxHtml="""
-                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
-<html>
-<head>
-<title>JxPlugin Main Menu</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-
-
-<!--                  jQuery & UI                          -->
-
-
-<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
-
-
-<!--                         Theme                          -->
-
-<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-
-
-<!--                  Buttons                          -->
-
-
-
-
-
-<script src="ui.button/ui.classnameoptions.js"></script> 
-<script src="ui.button/ui.button.js"></script> 
-<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
-<script src="ui.button/ui.buttonset.js"></script> 
-
-
-
-	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
-
-<!--                     Selects                          -->
-
-<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-
-
-
-
-
-<script type="text/javascript" src="jquery.flot.js"></script>
-
-
-
-
-
-
-
-<script> 
-	jQuery().ready(function(){
-		//var icon = "info"; 
-               $('.ui-button').button({checkButtonset:true});
-$.plot($("#placeholderb"), %(JSon)s , {   lines: {
-    show: true,
-    fill: 1,
-    fillColor: false
-  },yaxis: { max: 500 } });
-});
-</script> 
-</head>
-<body>
-
-      <div id="placeholderb" style="width:600px;height:300px"></div>
-      
-          <div id="placeholder" style="width:600px;height:300px"></div> 
- 
-    <p>1000 kg. CO<sub>2</sub> emissions per year per capita for various countries (source: <a href="http://en.wikipedia.org/wiki/List_of_countries_by_carbon_dioxide_emissions_per_capita">Wikipedia</a>).</p> 
- 
-    <p>Flot supports selections. You can enable
-       rectangular selection
-       or one-dimensional selection if the user should only be able to
-       select on one axis. Try left-clicking and drag on the plot above
-       where selection on the x axis is enabled.</p> 
- 
-    <p>You selected: <span id="selection"></span></p> 
- 
-    <p>The plot command returns a Plot object you can use to control
-       the selection. Try clicking the buttons below.</p> 
- 
-    <p><input id="clearSelection" type="button" value="Clear selection" /> 
-       <input id="setSelection" type="button" value="Select year 1994" /></p> 
- 
-    <p>Selections are really useful for zooming. Just replot the
-       chart with min and max values for the axes set to the values
-       in the "plotselected" event triggered. Try enabling the checkbox
-       below and select a region again.</p> 
- 
-    <p><input id="zoom" type="checkbox">Zoom to selection.</input></p> 
-      
-      <script id="source" language="javascript" type="text/javascript"> 
-$(function () {
-    var data = %(JSon)s
- 
-    var options = {
-        lines: { show: true },
-        points: { show: true },
-        legend: { noColumns: 2 },
-        xaxis: { tickDecimals: 0 },
-        yaxis: { min: 0 },
-        selection: { mode: "x" }
-    };
- 
-    var placeholder = $("#placeholder");
- 
-    placeholder.bind("plotselected", function (event, ranges) {
-        $("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
- 
-        var zoom = $("#zoom").attr("checked");
-        if (zoom)
-            plot = $.plot(placeholder, data,
-                          $.extend(true, {}, options, {
-                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
-                          }));
-    });
-    
-    var plot = $.plot(placeholder, data, options);
- 
-    $("#clearSelection").click(function () {
-        plot.clearSelection();
-    });
- 
-    $("#setSelection").click(function () {
-        plot.setSelection({ x1: 1994, x2: 1995 });
-    });
-});
-</script> 
-      
-      
-          </body></html>          
-                    
-                    
-                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JOL[2*k],JOL[2*k+1]) +'}' for k in range(0,8)]) +"]"}  
-        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
-        JxPreview.show()  
         
         
 	cheat = fig.add_subplot(111)
