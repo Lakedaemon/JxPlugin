@@ -351,7 +351,7 @@ def JxGraphsa():
 	jQuery().ready(function(){
 		//var icon = "info"; 
                $('.ui-button').button({checkButtonset:true});
-$.plot($("#placeholderb"), %(JSon)s , {   lines: {
+               $.plot($("#placeholderb"), %(JSon:Kanji|2)s , {   lines: {
     show: true,
     fill: 1,
     fillColor: false
@@ -390,7 +390,7 @@ $.plot($("#placeholderb"), %(JSon)s , {   lines: {
       
       <script id="source" language="javascript" type="text/javascript"> 
 $(function () {
-    var data = %(JSon)s
+var data = %(JSon:Word|0)s
  
     var options = {
         lines: { show: true },
@@ -427,35 +427,11 @@ $(function () {
 </script> 
       
       
-          </body></html>          
+          </body></html>                 
                     
-                    
-                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", stack:true,data :'+ JxGraphsJSon['Word|0'][k] +'}' for (k,String) in (MapJLPTKanji.Order+[('Other','Other')])]) +"]"}  
+                    """% dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'", stack:true,data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (Map.Order+[('Other','Other')])]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)])  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
-        #mw.help.showText(JxGraphsJSon['Word|1'][1])
-        #mw.help.showText(debug)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class JxDeckGraphs(object):
