@@ -28,21 +28,24 @@ from PyQt4.QtCore import *
 from PyQt4 import QtGui, QtCore
 from anki.utils import ids2str
 from loaddata import *
-#from ui_graphs import *
-from answer import Tango2Dic
+from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
 
-######################################################################
-#
-#                                             Graphs
-#
-######################################################################
 
 
 #colours for graphs
 colorGrade={1:"#CC9933",2:"#FF9933",3:"#FFCC33",4:"#FFFF33",5:"#CCCC99",6:"#CCFF99",7:"#CCFF33",8:"#CCCC33"}
 colorFreq={1:"#3333CC",2:"#3366CC",3:"#3399CC",4:"#33CCCC",5:"#33FFCC"}
 colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
-from answer import JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
+
+
+
+
+
+######################################################################
+#
+#          Routines for building the Card2Type Dictionnary
+#
+######################################################################
 CardId2Types={}
 
 def JxParseFacts4Stats():
@@ -186,96 +189,7 @@ def JxParseModel4Stats(Rows,Index):
                 # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
                 pass
                 
-        return List
-                
-                        
-                        
-                        
-#################################################################################################### 
-#   Maybee we should parse the Fields Name at that point and buffer the Fields associated to a certain type                                        
-#   Maybee we should do the Japanese Model now too (to buffer it)
-
-        if len(ModelInfo[0]) == 1: 
-                return JxAffectFields4Stats(Fields,ModelInfo[0])
-
-        elif len(ModelInfo[0]) >1:
-                # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
-                #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
-                return JxFindTypeAndField4Stats(Fields,ModelInfo[0])
-        else:
-                return JxParseFieldsName4Stats(Rows,Index)
-                
-def JxParseFieldsName4Stats(Rows,Index):
-        # tries to find a field with a relevant name and checks for the japanese model last.
-        
-        Types = set()
-        for (Name,Content) in Fields:
-                for (Key,List) in JxType:
-                        if Name in List:
-                                Types.update([Key])
-                                break # no need to parse this Field further
-        # same cases than for JxParseModelTags()
-        
-        if len(Types) == 1:
-                # great, we found the type, now find the field. 
-                return JxAffectFields4Stats(Fields,Types)
-
-        elif len(Types) > 1:
-                # we must now find the relevant field to guess the type of the card 
-                 return JxAffectFields4Stats(Fields,Types)               
-
-        # this should be the usual case for the Japanese model, we'll now check if this is a deck related to Japanese
-        return JxParseForJapanese4Stats(Rows,Index)
-   
-def JxParseForJapanese4Stats(Rows,Index):             
-        # try to find a Japanese Tag/Name
-        Set = set(Tuple[1].split(" ") + Tuple[3].split(" ") + [Tuple[4]] + [Rows[a][5] for a in range(Index,Index + Tau)])   
-        if Set.intersection(JxTypeJapanese):
-                #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
-                return JxFindTypeAndField4Stats(Fields,set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
-
-        # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
-        # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
-        # I expect that anybody wantng to learn japanese will want to display kana readings)
-        return []  
-                
-def JxFindTypeAndField4Stats(FieldNameContentList,Types):
-        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
-        
-        List=[]
-        for (Type,TypeList) in JxType:
-                if Type in Types:
-                        for (Name,Content) in FieldNameContentList:
-                                if Name in TypeList:
-                                        List.append((Type,Name,Content))
-                                        break
-                                             
-        if len(List)<len(Types):
-                # for the still missing fields, we try to find an "Expression" field next and update the List
-                if List:
-                        (Done,Field) = zip(*List)
-                else : 
-                        Done = []
-                TempList=[]
-                for (Type,TypeList) in JxType:
-                        if Type in Types and Type in Done:
-                                TempList.append(List.pop(0))
-                        elif Type in Types:
-                                for (Name,Content) in FieldNameContentList:
-                                        if Name == "Expression" and Type in GuessType(Content):
-                                                TempList.append((Type,Name,Content)) 
-                                                break 
-                List=TempList
-                
-        if len(List)<len(Types):
-                # field names and "Expression" have failed, we could still try to guess with the fields content
-                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
-                pass
-        
-        return List                
-                
-                         
-                
+        return List           
 
 def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Rows and stats, maybee...but that way, it can be usd by both routines
         # we now try to affect relevant fields for each type (first try fields with the name similar to the type)
@@ -310,107 +224,57 @@ def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Ro
                 pass
    
         return List
+######################################################################
+#
+#                               Graphs
+#
+######################################################################
 
-
-
-
-
-
-
-
-
-
-
+def JxSon(CouplesList):
+        return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
 
 def JxGraphsa():        
-        
-        
-        
-        JxParseFacts4Stats() 
-        
-        
-        
-        
-        
-        
-   
-
-        t = time.time()
- 
             
-
-            ######################################################################
-            #
-            #                      JLPT/Grade stats for Kanji
-            #
-            ######################################################################
-
-
-            # Selects the cards ids of the right type (say guess Kanji).   
-        JLPTReviews = mw.deck.s.all("""select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-                from reviewHistory order by reviewHistory.time""") 
-        # parse the info to build an "day -> Kanji known count" array
-        OLKnownTemp={0:0,1:0,2:0,3:0,4:0}
-        GradeKnownTemp= {1:0,2:0,3:0,4:0,5:0,6:0,'HS':0,'Other':0}
-        AccumulatedTemp = {1:0,2:0,3:0,4:0,5:0}
-        OLKnown={}
-        GradeKnown={}
-        Accumulated={}
-
-        for (CardId,OLtime,interval,nextinterval,ease) in JLPTReviews:
-          if CardId in CardId2Types:    
-           Types = CardId2Types[CardId]
-           if Types:
-              if Types[0][0]=='Kanji':
-                 OLKanji = Types[0][2]  
-                 if OLKanji in Kanji2JLPT:
-		     a = Kanji2JLPT[OLKanji]
-                 else:
-	             a = 0
-                 if OLKanji in Kanji2Grade:
-		     b = Kanji2Grade[OLKanji]
-                 else:
-	             b = 'Other'
-                 if OLKanji in Kanji2Frequency:
-		     c = Kanji2Zone[OLKanji]                   
-		     Change = Kanji2Frequency[OLKanji]
-                 else:
-	             Change = 0	
-	             c = 5		  
-                 if ease == 1 and interval > 21:
-	             OLKnownTemp[a] -= 1  
-		     GradeKnownTemp[b] -=  1  
-		     AccumulatedTemp[c] -= Change
-                 elif interval <= 21 and nextinterval>21:
-		     OLKnownTemp[a] += 1
-		     GradeKnownTemp[b] += 1
-		     AccumulatedTemp[c] += Change
-                 OLDay = int((OLtime-t) / 86400.0)+1
-                 OLKnown[OLDay] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]} 
-                 GradeKnown[OLDay] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
-                 Accumulated[OLDay] = {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
-        OLKnown[0] = {0:OLKnownTemp[0],1:OLKnownTemp[1],2:OLKnownTemp[2],3:OLKnownTemp[3],4:OLKnownTemp[4]}
-        GradeKnown[0] = {1:GradeKnownTemp[1],2:GradeKnownTemp[2],3:GradeKnownTemp[3],4:GradeKnownTemp[4],5:GradeKnownTemp[5],6:GradeKnownTemp[6],'HS':GradeKnownTemp['HS'],'Other':GradeKnownTemp['Other']} 
-        Accumulated[0]= {1:AccumulatedTemp[1],2:AccumulatedTemp[2],3:AccumulatedTemp[3],4:AccumulatedTemp[4],5:AccumulatedTemp[5]}
- 
-        JOL = {}
-	for c in range(0,16): 
-	        JOL[c] = []
-	Translate={1:1,2:2,3:3,4:4,5:5,6:6,7:'HS',8:'Other'}
+        JxParseFacts4Stats() 
+        Rows = mw.deck.s.all("""
+                select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
+                from reviewHistory order by reviewHistory.time
+                """) 
         
-        OLK = GradeKnown
-	# have to sort the dictionnary
-	keys = OLK.keys()
-        keys.sort()
-	
-	for a in keys:
-		for c in range(0,8):	
-                   JOL[2 * c].append(a)
-	           JOL[15-2 * c].append(sum([OLK[a][Translate[k]] for k in range(1,c+2)]))
-        Arg =[JOL[k] for k in range(0,16)]     
-             
-        def JxSon(ListA,ListB):
-                return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),zip(ListA,ListB))) + "]"        
+        t = time.time()
+        
+        # Parse the info with respect to the CardId2Types dictionnary
+        JxStateArray = {}
+        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapJouyouKanji,MapKankenKanji,MapZoneKanji],'Grammar':[],'Sentence':[]}
+        Map = MapJLPTTango
+        JxState = dict([(Key,0) for (Key,String)in Map.Order] + [('Other',0)])
+        JxNowTime = time.time()
+        for (CardId,Time,Interval,NextInterval,Ease) in Rows:
+                try:
+                        for (Type,Name,Content) in CardId2Types[CardId]:
+                           if Type=="Word":
+                                try:
+                                        Value[Type] = Map.Value(Content)
+                                except KeyError:
+                                        Value[Type] = 'Other'
+                           if Ease == 1 and Interval > 21:
+                                JxState[Value[Type]] -= 1  
+                           elif Interval <= 21 and NextInterval >21:
+                                JxState[Value[Type]] += 1                                   
+                except:#  don't know what to make of this card
+                        pass
+                
+                JxDay = int((Time-JxNowTime) / 86400.0)+1
+                JxStateArray[JxDay] = dict([(Key,JxState[Key]) for (Key,String)in Map.Order] + [('Other',JxState['Other'])])
+        JxStateArray[0] = dict([(Key,JxState[Key]) for (Key,String)in Map.Order] + [('Other',JxState['Other'])])
+        
+        # Transform the results into JSon strings
+        Days = JxStateArray.keys()
+        Days.sort()
+        Graphs = [Graph for (Graph, String) in Map.Order] + ['Other']
+        JxGraphsJSon = dict([(Graph,[(Day, JxStateArray[Day][Graph]) for Day in Days]) for Graph in Graphs])
+                    
+       
         from ui_menu import JxPreview
         from ui_menu import JxResourcesUrl
         JxHtml="""
@@ -553,7 +417,7 @@ $(function () {
           </body></html>          
                     
                     
-                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JOL[2*k],JOL[2*k+1]) +'}' for k in range(0,8)]) +"]"}  
+                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JxGraphsJSon[k]) +'}' for k in Graphs]) +"]"}  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
 
