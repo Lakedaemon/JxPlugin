@@ -106,7 +106,6 @@ def JxParseModel4Stats(Rows,Index):
         # first check the model types
         if ModelInfo == None:# got to parse the model tags and maybee the model name
                 ModelInfo = (set(),[])
-                Action = JxFindTypeAndField4Stats
                 JxModelTags = set(Tuple[3].split(" "))
                 for (Key,List) in JxType:
                         if JxModelTags.intersection(List):
@@ -117,7 +116,6 @@ def JxParseModel4Stats(Rows,Index):
                                         ModelInfo[0].update([Key])
                                         break # no need to parse further
                 if not(ModelInfo[0]):# Fields name now
-                        Action = JxAffectFields4Stats
                         for (Name,Content,Ordinal) in Fields:
                                 for (Type,TypeList) in JxType:
                                         if Name in TypeList:
@@ -171,16 +169,16 @@ def JxParseModel4Stats(Rows,Index):
                 
         # now that we have ModelInfo, we can set/guess (True/False) the value of the fields and return a list of (type/name/content)
         
-        if not(ModelInfo[1]) :
+        if not(ModelInfo[0]) :
                 return []
         # use the Hint if there is one
-        mw.help.showText(str(ModelInfo))
         List = []
         for (Type,Name,Ordinal,Boolean) in ModelInfo[1]:
+                Content = Rows[Index + Ordinal][6]
                 if Boolean:
-                        List.append((Type,Name,Rows[Index + Ordinal][6]))
-                elif Type in GuessType(Rows[Index + Ordinal][6]):
-                        List.append((Type,Name,Rows[Index + Ordinal][6]))
+                        List.append((Type,Name,Content))
+                elif Type in GuessType(Content):
+                        List.append((Type,Name,Content))
                                 
         if len(List) < len(ModelInfo[0]):
                 # we need Jmdict.xml to do something sensible about that
