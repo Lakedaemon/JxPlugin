@@ -250,7 +250,7 @@ def JxGraphsa():
         t = time.time()
         from copy import deepcopy # very important or the dictionnary stays linked !!
         # Parse the info with respect to the CardId2Types dictionnary
-        debug=""
+
         JxStateArray = {}
         JxState = {}
         JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapJouyouKanji,MapKankenKanji,MapZoneKanji],'Grammar':[],'Sentence':[]}
@@ -281,8 +281,6 @@ def JxGraphsa():
         # Transform the results into JSon strings
         JxDays = JxStateArray.keys()
         JxDays.sort()
-        #for day in JxDays:
-        #        debug+= "<br><br>---" + str(day) + "---" + str(JxStateArray[day])
         
         JxGraphsJSon = {}
         for (Type,List) in JxStatsMap.iteritems():
@@ -338,11 +336,11 @@ def JxGraphsa():
 <script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
 
+<!--                     Graphs                          -->
 
 
-
-<script type="text/javascript" src="jquery.flot.js"></script>
-
+<script type="text/javascript" src="jquery.newflot.js"></script>
+<script type="text/javascript" src="jquery.flot.stack.js"></script>
 
 
 
@@ -432,7 +430,7 @@ $(function () {
           </body></html>          
                     
                     
-                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxGraphsJSon['Word|0'][k] +'}' for (k,String) in (MapJLPTKanji.Order+[('Other','Other')])]) +"]"}  
+                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", stack:true,data :'+ JxGraphsJSon['Word|0'][k] +'}' for (k,String) in (MapJLPTKanji.Order+[('Other','Other')])]) +"]"}  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
         #mw.help.showText(JxGraphsJSon['Word|1'][1])
