@@ -46,20 +46,20 @@ from answer import JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowP
 CardId2Types={}
 
 def JxParseFacts4Stats():
-        global ModelTypes,Fields,Tuple,Tau
+        global ModelInfo,Fields,Tuple,Tau
         JxProfile("Before Query")
         # We are going to use 1 select and do most of the work in python (there might be other ways, but I have no time to delve into sqllite and sql language...haven't found any good tutorial about functions out there). 
-        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value, facts.id
+        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value, facts.id, fieldModels.ordinal
         from cards,facts,fields,fieldModels, models where 
         cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id 
-        order by models.id,facts.id,cards.id,fieldModels.id"""
+        order by models.id,facts.id,cards.id,fieldModels.ordinal"""
         Rows = mw.deck.s.all(Query)
         JxProfile("Parse Cards start")
         Length = len(Rows)
-        ModelTypes = None
+        ModelInfo = None
         Index = 0
         while Index < Length:
-                #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent//, 7:CardCount, 8:FieldCount)
+                #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent, 7: FactId, 8: FieldOrdinal)
                 Tuple = Rows[Index]                
                 Tau = 1
                 while Index + Tau < Length:# For OS X users. We need python 2.5 for "short and" and "short or".  
@@ -73,17 +73,15 @@ def JxParseFacts4Stats():
                                 Delta += Tau                
                         else:
                                 break
-                #Tau = Tuple[8]
-                #Delta = Tuple[7] * Tau
-                Fields = [(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Tau)]
+                Fields = [(Rows[a][5],Rows[a][6],Rows[a][8]) for a in range(Index,Index + Tau)]# beware of unpacking 2 out of 3 values
                 List = JxParseFactTags4Stats(Rows,Index)
                 CardId2Types.update([(Rows[a][0],List) for a in range(Index,Index + Delta,Tau)])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Tuple[2]:
                                 # resets the model types
-                                ModelTypes = None
-        del ModelTypes,Fields
+                                ModelInfo = None
+        del ModelInfo,Fields,Tuple,Tau
         JxProfile("Card Parsng Ended")
       
         mw.help.showText(  JxShowProfile())         
@@ -100,34 +98,112 @@ def JxParseFactTags4Stats(Rows,Index):
                                 Types.update([Key])
                 if Types: 
                         return JxAffectFields4Stats(Fields,Types)
-                else: # Parse the model
-                        return JxParseModel4Stats(Rows,Index)
+                # no relevant Fact tags, parse the model
+                return JxParseModel4Stats(Rows,Index)
                  
 def JxParseModel4Stats(Rows,Index):
-        global ModelTypes
+        global ModelInfo
         # first check the model types
-        if ModelTypes == None:# got to parse the model tags and maybee the model name
-                ModelTypes = set()
+        if ModelInfo == None:# got to parse the model tags and maybee the model name
+                ModelInfo = (set(),[])
+                Action = JxFindTypeAndField4Stats
                 JxModelTags = set(Tuple[3].split(" "))
                 for (Key,List) in JxType:
                         if JxModelTags.intersection(List):
-                                ModelTypes.update([Key]) 
-                if not(ModelTypes):# model name now
+                                ModelInfo[0].update([Key]) 
+                if not(ModelInfo[0]):# model name now
                         for (Key,List) in JxType:
                                 if Tuple[4] in List:
-                                        ModelTypes.update([Key])
+                                        ModelInfo[0].update([Key])
                                         break # no need to parse further
+                if not(ModelInfo[0]):# Fields name now
+                        Action = JxAffectFields4Stats
+                        for (Name,Content,Ordinal) in Fields:
+                                for (Type,TypeList) in JxType:
+                                        if Name in TypeList:
+                                                ModelInfo[0].update([Type])
+                                                ModelInfo[1].append((Type,Name,Ordinal,True))
+                                                break # no need to parse this Field further
+                if not(ModelInfo[0]): # Japanese Model ?
+                        Set = set(Tuple[1].split(" ") + Tuple[3].split(" ") + [Tuple[4]] + [Rows[a][5] for a in range(Index,Index + Tau)])   
+                        if Set.intersection(JxTypeJapanese):
+                                ModelInfo[0].update(['Kanji','Word','Sentence','Grammar'])   
+                if not(ModelInfo[0]):
+                        pass 
+                        # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
+                        # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
+                        # I expect that anybody wantng to learn japanese will want to display kana readings)
+                        # Anyway, I need Jmdict.xml to do anything about this
+                        
+                # now, we got to set the action and build a Hint
+                elif not(ModelInfo[1]):
+                        # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
+                        for (Type,TypeList) in JxType:
+                                if Type in ModelInfo[0]:
+                                        for (Name,Content,Ordinal) in Fields:
+                                                if Name in TypeList:
+                                                        ModelInfo[1].append((Type,Name,Ordinal,True)) 
+                                                        break
+                        if len(ModelInfo[1]) < len(ModelInfo[0]):
+                                # for the still missing fields, we try to find an "Expression" field next and update the List
+                                if ModelInfo[1]:
+                                        (Done,Arga,Argb,Argc) = zip(*ModelInfo[1])
+                                else : 
+                                        Done = []
+                                TempList = []
+                                for (Type,TypeList) in JxType:
+                                        if Type in ModelInfo[0] and Type in Done:
+                                                TempList.append(ModelInfo[1].pop(0))
+                                        elif Type in ModelInfo[0]:
+                                                for (Name,Content,Ordinal) in Fields:
+                                                        if Name == "Expression":
+                                                                if len(ModelInfo[0])==1:
+                                                                        TempList.append((Type,"Expression",Ordinal,True))
+                                                                else:
+                                                                        TempList.append((Type,"Expression",Ordinal,False))                                                                        
+                                                                break 
+                                ModelInfo = (ModelInfo[0],TempList)
+                
+                        #if len(ModelInfo[1]) < len(ModelInfo[0]):
+                        #        # there is nothing we can do about that at the model level
+                        #        pass
+        
+                
+        # now that we have ModelInfo, we can set/guess (True/False) the value of the fields and return a list of (type/name/content)
+        
+        if not(ModelInfo[1]) :
+                return []
+        # use the Hint if there is one
+        mw.help.showText(str(ModelInfo))
+        List = []
+        for (Type,Name,Ordinal,Boolean) in ModelInfo[1]:
+                if Boolean:
+                        List.append((Type,Name,Rows[Index + Ordinal][6]))
+                elif Type in GuessType(Rows[Index + Ordinal][6]):
+                        List.append((Type,Name,Rows[Index + Ordinal][6]))
+                                
+        if len(List) < len(ModelInfo[0]):
+                # we need Jmdict.xml to do something sensible about that
+                # field names and "Expression" have failed, we could still try to guess with the fields content
+                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
+                pass
+                
+        return List
+                
+                        
+                        
+                        
 #################################################################################################### 
 #   Maybee we should parse the Fields Name at that point and buffer the Fields associated to a certain type                                        
 #   Maybee we should do the Japanese Model now too (to buffer it)
 
-        if len(ModelTypes) == 1: 
-                return JxAffectFields4Stats(Fields,ModelTypes)
+        if len(ModelInfo[0]) == 1: 
+                return JxAffectFields4Stats(Fields,ModelInfo[0])
 
-        elif len(ModelTypes) >1:
+        elif len(ModelInfo[0]) >1:
                 # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
                 #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
-                return JxFindTypeAndField4Stats(Fields,ModelTypes)
+                return JxFindTypeAndField4Stats(Fields,ModelInfo[0])
         else:
                 return JxParseFieldsName4Stats(Rows,Index)
                 
@@ -142,11 +218,11 @@ def JxParseFieldsName4Stats(Rows,Index):
                                 break # no need to parse this Field further
         # same cases than for JxParseModelTags()
         
-        if len(Types) ==1:
+        if len(Types) == 1:
                 # great, we found the type, now find the field. 
                 return JxAffectFields4Stats(Fields,Types)
 
-        elif len(Types) >1:
+        elif len(Types) > 1:
                 # we must now find the relevant field to guess the type of the card 
                  return JxAffectFields4Stats(Fields,Types)               
 
