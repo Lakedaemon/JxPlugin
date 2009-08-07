@@ -49,10 +49,11 @@ def JxParseFacts4Stats():
         global ModelTypes
         JxProfile("Before Query")
         # We are going to use 1 select and do most of the work in python (there might be other ways, but I have no time to delve into sqllite and sql language...haven't found any good tutorial about functions out there). 
-        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value,count(distinct secondcards.id),count(distinct fieldModels.id)
-        from cards,cards as secondcards,facts,fields,fieldModels, models where 
-        cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and secondcards.factId=facts.id
-        group by models.id,facts.id,cards.id order by models.id,facts.id,fieldModels.id"""
+        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value,count(distinct secondcards.id),count(distinct secondfields.id)
+        from cards,cards as secondcards,facts,fields,fieldModels,fields as secondfields, models where 
+        cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
+        secondcards.factId=facts.id and facts.id = secondfields.factId
+        group by models.id, facts.id, cards.id,fieldModels.id order by models.id,facts.id,cards.id,fieldModels.id"""
         JxProfile("Parse Cards start")
         Rows = mw.deck.s.all(Query)
         mw.help.showText(str(Rows))
