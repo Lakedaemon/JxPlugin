@@ -49,21 +49,32 @@ def JxParseFacts4Stats():
         global ModelTypes,Fields,Tuple,Tau
         JxProfile("Before Query")
         # We are going to use 1 select and do most of the work in python (there might be other ways, but I have no time to delve into sqllite and sql language...haven't found any good tutorial about functions out there). 
-        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value,count(distinct secondcards.id),count(distinct secondfields.id)
-        from cards,cards as secondcards,facts,fields,fieldModels,fields as secondfields, models where 
-        cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-        secondcards.factId=facts.id and facts.id = secondfields.factId
-        group by models.id, facts.id, cards.id,fieldModels.id order by models.id,facts.id,cards.id,fieldModels.id"""
+        Query = """select cards.id, facts.tags, models.id, models.tags, models.name, fieldModels.name, fields.value, facts.id
+        from cards,facts,fields,fieldModels, models where 
+        cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id 
+        order by models.id,facts.id,cards.id,fieldModels.id"""
         Rows = mw.deck.s.all(Query)
         JxProfile("Parse Cards start")
         Length = len(Rows)
         ModelTypes = None
         Index = 0
         while Index < Length:
-                #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent, 7:CardCount, 8:FieldCount)
-                Tuple = Rows[Index]
-                Tau = Tuple[8]
-                Delta = Tuple[7] * Tau
+                #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent//, 7:CardCount, 8:FieldCount)
+                Tuple = Rows[Index]                
+                Tau = 1
+                while Index + Tau < Length:# For OS X users. We need python 2.5 for "short and" and "short or".  
+                        if Rows[Index + Tau][0] == Tuple[0]:
+                                Tau += 1
+                        else:
+                                break
+                Delta = Tau
+                while Index + Delta< Length:
+                        if Rows[Index + Delta][7] == Tuple[7]: 
+                                Delta += Tau                
+                        else:
+                                break
+                #Tau = Tuple[8]
+                #Delta = Tuple[7] * Tau
                 Fields = [(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Tau)]
                 List = JxParseFactTags4Stats(Rows,Index)
                 CardId2Types.update([(Rows[a][0],List) for a in range(Index,Index + Delta,Tau)])
