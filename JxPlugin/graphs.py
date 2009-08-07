@@ -56,7 +56,6 @@ def JxParseFacts4Stats():
         group by models.id, facts.id, cards.id,fieldModels.id order by models.id,facts.id,cards.id,fieldModels.id"""
         JxProfile("Parse Cards start")
         Rows = mw.deck.s.all(Query)
-        mw.help.showText(str(Rows))
         Length = len(Rows)
         ModelTypes = None
         Index = 0
@@ -64,8 +63,8 @@ def JxParseFacts4Stats():
                 #(0:CardId, 1:FactTags, 2:ModelId, 3:ModelTags, 4:ModelName, 5:FieldName, 6:FieldContent, 7:CardCount, 8:FieldCount)
                 Tau = Rows[Index][8]
                 Delta = Rows[Index][7] * Tau
-                Listar = JxParseFactTags4Stats(Rows,Index)
-                CardId2Types.update([(Rows[Index + a][0],Listar) for a in range(0,Delta,Tau)])
+                List = JxParseFactTags4Stats(Rows,Index)
+                CardId2Types.update([(Rows[a][0],List) for a in range(Index,Index + Delta,Tau)])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Rows[Index - Delta][2]:
@@ -74,7 +73,7 @@ def JxParseFacts4Stats():
         del ModelTypes
         JxProfile("Card Parsng Ended")
       
-        mw.help.showText(  JxShowProfile() + "<br>" + str(debug)+ "<br>" + str(CardId2Types))            
+        mw.help.showText(  JxShowProfile())         
                 
                 
                 
@@ -87,11 +86,10 @@ def JxParseFactTags4Stats(Rows,Index):
                         if JxFactTags.intersection(List):
                                 Types.update([Key])
                 if Types: 
-                        return JxAffectFields4Stats([(Rows[Index + a][5],Rows[Index + a][6]) for a in range(0,Rows[Index][8])],Types)
+                        return JxAffectFields4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],Types)
                 else: # Parse the model
                         return JxParseModel4Stats(Rows,Index)
                  
-debug={}
 def JxParseModel4Stats(Rows,Index):
         global ModelTypes
         # first check the model types
@@ -106,16 +104,15 @@ def JxParseModel4Stats(Rows,Index):
                                 if Rows[Index][4] in List:
                                         ModelTypes.update([Key])
                                         break # no need to parse further
-                debug[Rows[Index][4]] = ModelTypes
                                         
                                         
         if len(ModelTypes) == 1: 
-                return JxAffectFields4Stats([(Rows[Index + a][5],Rows[Index + a][6]) for a in range(0,Rows[Index][8])],ModelTypes)
+                return JxAffectFields4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],ModelTypes)
 
         elif len(ModelTypes) >1:
                 # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
                 #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
-                return JxFindTypeAndField4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],ModelTypes)
+                return JxFindTypeAndField4Stats(Rows,Index,ModelTypes)
         else:
                 return JxParseFieldsName4Stats(Rows,Index)
                 
@@ -146,25 +143,25 @@ def JxParseForJapanese4Stats(Rows,Index):
         Set = set(Rows[Index][1].split(" "))
         Set.update(Rows[Index][3].split(" "))
         Set.update([Rows[Index][4]])
-        Set.update([Rows[Index + a][5] for a in range(0,Rows[Index][8])])   
+        Set.update([Rows[a][5] for a in range(Index,Index + Rows[Index][8])])   
         if Set.intersection(JxTypeJapanese):
                 #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
-                return JxFindTypeAndField4Stats([(Rows[a][5],Rows[a][6]) for a in range(Index,Index + Rows[Index][8])],set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
+                return JxFindTypeAndField4Stats(Rows,Index,set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
 
         # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
         # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
         # I expect that anybody wantng to learn japanese will want to display kana readings)
         return ["ouille"]  
                 
-def JxFindTypeAndField4Stats(FieldNameContentList,Types):
+def JxFindTypeAndField4Stats(Rows,Index,Types):
         # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
         
         List=[]
         for (Type,TypeList) in JxType:
                 if Type in Types:
-                        for (Name,Content) in FieldNameContentList:
-                                if Name in TypeList:
-                                        List.append((Type,Name,Content))
+                        for a in range(Index,Index+Rows[Index][8]):
+                                if Rows[Index][5] in TypeList:
+                                        List.append((Type,Rows[Index][5],Rows[Index][6]))
                                         break
                                              
         if len(List)<len(Types):
@@ -178,9 +175,9 @@ def JxFindTypeAndField4Stats(FieldNameContentList,Types):
                         if Type in Types and Type in Done:
                                 TempList.append(List.pop(0))
                         elif Type in Types:
-                                for  (Name,Content) in FieldNameContentList:
-                                        if Name == "Expression" and Type in GuessType(Content):
-                                                TempList.append((Type,Name,Content)) 
+                                for  a in range(Index,Index+Rows[Index][8]):
+                                        if Rows[Index][5] == "Expression" and Type in GuessType(Rows[Index][6]):
+                                                TempList.append((Type,Rows[Index][5],Rows[Index][6])) 
                                                 break 
                 List=TempList
                 
