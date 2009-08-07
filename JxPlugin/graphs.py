@@ -340,7 +340,8 @@ def JxGraphsa():
 
 
 <script type="text/javascript" src="jquery.newflot.js"></script>
-<script type="text/javascript" src="jquery.flot.stack.js"></script>
+
+<script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
 
 
 
@@ -349,29 +350,39 @@ def JxGraphsa():
 
 <script> 
 	jQuery().ready(function(){
-		//var icon = "info"; 
                $('.ui-button').button({checkButtonset:true});
-               $.plot($("#placeholderb"), %(JSon:Kanji|2)s , {   lines: {
-    show: true,
-    fill: 1,
-    fillColor: false
-  },yaxis: { max: 500 } });
+               
+               $.plot($("#KanjiJLPT"), %(JSon:Kanji|0)s , {   grid: {
+                    show: true,
+                    aboveData: true},lines:{show: true,lineWidth:5,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true }  });
+               $.plot($("#KanjiJouyou"), %(JSon:Kanji|1)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw',noColumns: 2 }, series: { stack: true } });
+              $.plot($("#KanjiKanken"), %(JSon:Kanji|2)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw',noColumns: 2}, series: { stack: true } });
+               $.plot($("#KanjiFreq"), %(JSon:Kanji|3)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });               
+               $.plot($("#WordJLPT"), %(JSon:Word|0)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });
+               $.plot($("#WordFreq"), %(JSon:Word|1)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });               
+               
+               
 });
 </script> 
 </head>
 <body>
 
-      <div id="placeholderb" style="width:600px;height:300px"></div>
+      <div id="KanjiJLPT" style="width:600px;height:300px"></div>
+     
+      <div id="KanjiJouyou" style="width:600px;height:300px"></div>
       
-          <div id="placeholder" style="width:600px;height:300px"></div> 
+       <div id="KanjiKanken" style="width:600px;height:300px"></div>
+       
+        <div id="KanjiFreq" style="width:600px;height:300px"></div>
+        
+         <div id="WordJLPT" style="width:600px;height:300px"></div>
+         
+          <div id="WordFreq" style="width:600px;height:300px"></div>
+     
  
-    <p>1000 kg. CO<sub>2</sub> emissions per year per capita for various countries (source: <a href="http://en.wikipedia.org/wiki/List_of_countries_by_carbon_dioxide_emissions_per_capita">Wikipedia</a>).</p> 
+    <div id="placeholder" style="width:600px;height:300px"></div>
  
-    <p>Flot supports selections. You can enable
-       rectangular selection
-       or one-dimensional selection if the user should only be able to
-       select on one axis. Try left-clicking and drag on the plot above
-       where selection on the x axis is enabled.</p> 
+
  
     <p>You selected: <span id="selection"></span></p> 
  
@@ -381,10 +392,6 @@ def JxGraphsa():
     <p><input id="clearSelection" type="button" value="Clear selection" /> 
        <input id="setSelection" type="button" value="Select year 1994" /></p> 
  
-    <p>Selections are really useful for zooming. Just replot the
-       chart with min and max values for the axes set to the values
-       in the "plotselected" event triggered. Try enabling the checkbox
-       below and select a region again.</p> 
  
     <p><input id="zoom" type="checkbox">Zoom to selection.</input></p> 
       
@@ -393,7 +400,8 @@ $(function () {
 var data = %(JSon:Word|0)s
  
     var options = {
-        lines: { show: true },
+    series:{stack:true},
+    lines: { show: true },
         points: { show: true },
         legend: { noColumns: 2 },
         xaxis: { tickDecimals: 0 },
@@ -429,7 +437,7 @@ var data = %(JSon:Word|0)s
       
           </body></html>                 
                     
-                    """% dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'", stack:true,data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (Map.Order+[('Other','Other')])]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)])  
+                    """% dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)])  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
 
