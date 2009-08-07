@@ -54,8 +54,8 @@ def JxParseFacts4Stats():
         cards.factId = facts.id and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
         secondcards.factId=facts.id and facts.id = secondfields.factId
         group by models.id, facts.id, cards.id,fieldModels.id order by models.id,facts.id,cards.id,fieldModels.id"""
-        JxProfile("Parse Cards start")
         Rows = mw.deck.s.all(Query)
+        JxProfile("Parse Cards start")
         Length = len(Rows)
         ModelTypes = None
         Index = 0
