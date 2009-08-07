@@ -263,13 +263,12 @@ def JxParseModelTags(Card):
 
         
 def GuessType(String):
-
-        if len(set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation))>0:
-                #if  String has ponctuations marks, it is a sentence
-                return set([u"Sentence"])
-        elif unicode(String) in JxKanjiRange:
+        if len(String)==1 and JxIsKanji(String):
                 #if  String has one Kanji, it is a Kanji (or a Word)
-                return set([u"Kanji",u"Word"])                        
+                return set([u"Kanji",u"Word"])    
+        elif set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation):
+                #if  String has ponctuations marks, it is a sentence
+                return set([u"Sentence"])             
         else:              
                 #in other cases, it is a word (still don't know what to do with grammar)    
                 return set([u"Word"])

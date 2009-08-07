@@ -117,8 +117,10 @@ def JxParseModel4Stats(Rows,Index):
                                 if Tuple[4] in List:
                                         ModelTypes.update([Key])
                                         break # no need to parse further
-                                        
-                                        
+#################################################################################################### 
+#   Maybee we should parse the Fields Name at that point and buffer the Fields associated to a certain type                                        
+#   Maybee we should do the Japanese Model now too (to buffer it)
+
         if len(ModelTypes) == 1: 
                 return JxAffectFields4Stats(Fields,ModelTypes)
 
