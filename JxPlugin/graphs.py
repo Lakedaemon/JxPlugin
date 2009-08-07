@@ -230,9 +230,15 @@ def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Ro
 #
 ######################################################################
 
-def JxSon(CouplesList):
+def JxJSon(CouplesList):
         return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
 
+def JxStatsUpdate(Key,Ease,Value):
+        if Ease == 1 and Interval > 21:
+                JxState[Value[Type + "|" + str(k)]] -= 1  
+        elif Interval <= 21 and NextInterval >21:
+                JxState[Value[Type]] += 1
+                
 def JxGraphsa():        
             
         JxParseFacts4Stats() 
@@ -245,35 +251,38 @@ def JxGraphsa():
         
         # Parse the info with respect to the CardId2Types dictionnary
         JxStateArray = {}
+        JxState = {}
         JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapJouyouKanji,MapKankenKanji,MapZoneKanji],'Grammar':[],'Sentence':[]}
-        Map = MapJLPTTango
-        JxState = dict([(Key,0) for (Key,String)in Map.Order] + [('Other',0)])
+        for (Type,List) in JxStatsMap.iteritems():
+                for (k,Map) in enumerate(List):
+                        KeyGraph = Type + "|" + str(k)
+                        JxState[KeyGraph] = dict([(Key,0) for (Key,String) in Map.Order] + [('Other',0)])
         JxNowTime = time.time()
         for (CardId,Time,Interval,NextInterval,Ease) in Rows:
-                try:
+                if CardId in CardId2Types:
                         for (Type,Name,Content) in CardId2Types[CardId]:
-                           if Type=="Word":
-                                try:
-                                        Value[Type] = Map.Value(Content)
-                                except KeyError:
-                                        Value[Type] = 'Other'
-                           if Ease == 1 and Interval > 21:
-                                JxState[Value[Type]] -= 1  
-                           elif Interval <= 21 and NextInterval >21:
-                                JxState[Value[Type]] += 1                                   
-                except:#  don't know what to make of this card
-                        pass
-                
+                                for (k, Map) in enumerate(JxStatsMap[Type]):
+                                        KeyGraph = Type + "|" + str(k)
+                                        try:
+                                                Key = Map.Value(Content)
+                                        except KeyError:
+                                                Key = 'Other'
+                                        if Ease == 1 and Interval > 21:
+                                                JxState[KeyGraph][Key] = JxState[KeyGraph][Key]-1
+                                        elif Interval <= 21 and NextInterval >21:
+                                                JxState[KeyGraph][Key] = JxState[KeyGraph][Key]+1                                   
                 JxDay = int((Time-JxNowTime) / 86400.0)+1
-                JxStateArray[JxDay] = dict([(Key,JxState[Key]) for (Key,String)in Map.Order] + [('Other',JxState['Other'])])
-        JxStateArray[0] = dict([(Key,JxState[Key]) for (Key,String)in Map.Order] + [('Other',JxState['Other'])])
-        
+                JxStateArray[JxDay] = JxState.copy()
+        JxStateArray[0] = JxState.copy()      
+                              
         # Transform the results into JSon strings
-        Days = JxStateArray.keys()
-        Days.sort()
-        Graphs = [Graph for (Graph, String) in Map.Order] + ['Other']
-        JxGraphsJSon = dict([(Graph,[(Day, JxStateArray[Day][Graph]) for Day in Days]) for Graph in Graphs])
-                    
+        JxDays = JxStateArray.keys()
+        JxDays.sort()
+        JxGraphsJSon = {}
+        for (Type,List) in JxStatsMap.iteritems():
+                for (k,Map) in enumerate(List):
+                        KeyGraph = Type + "|" + str(k)                              
+                        JxGraphsJSon[KeyGraph] = dict([(Key,JxJSon([(Day,JxStateArray[Day][KeyGraph][Key]) for Day in JxDays])) for (Key,String) in Map.Order] + [('Other',JxJSon([(Day,JxStateArray[Day][KeyGraph]['Other']) for Day in JxDays]))])           
        
         from ui_menu import JxPreview
         from ui_menu import JxResourcesUrl
@@ -417,9 +426,10 @@ $(function () {
           </body></html>          
                     
                     
-                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxSon(JxGraphsJSon[k]) +'}' for k in Graphs]) +"]"}  
+                    """% {'JSon':"[" + ",".join(['{ label: "Grade '+ str(k) +'", data :'+ JxGraphsJSon['Word|0'][k] +'}' for (k,String) in (MapJLPTKanji.Order+[('Other','Other')])]) +"]"}  
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
+        mw.help.showText(JxGraphsJSon['Word|1'][1])
 
 
 
