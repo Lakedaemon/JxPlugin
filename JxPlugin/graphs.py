@@ -88,7 +88,7 @@ def JxParseFacts4Stats():
         del ModelInfo,Fields,Tuple,Tau
         JxProfile("Card Parsng Ended")
       
-        mw.help.showText(  JxShowProfile())         
+       
                 
                 
                 
@@ -241,20 +241,21 @@ def JxStatsUpdate(Key,Ease,Value):
                 JxState[Value[Type]] += 1
                 
 def JxGraphsa():        
-            
+        JxProfile("JxGraphs()")   
         JxParseFacts4Stats() 
+        JxProfile("JxGraphs().JxParseFacts4Stats()")
         Rows = mw.deck.s.all("""
                 select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
                 from reviewHistory order by reviewHistory.time
                 """) 
-        
+        JxProfile("JxGraphs().Query History done")
         t = time.time()
         from copy import deepcopy # very important or the dictionnary stays linked !!
         # Parse the info with respect to the CardId2Types dictionnary
 
         JxStateArray = {}
         JxState = {}
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapJouyouKanji,MapKankenKanji,MapZoneKanji],'Grammar':[],'Sentence':[]}
+        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
         for (Type,List) in JxStatsMap.iteritems():
                 for (k,Map) in enumerate(List):
                         KeyGraph = Type + "|" + str(k)
@@ -262,14 +263,27 @@ def JxGraphsa():
         JxNowTime = time.time()
         for (CardId,Time,Interval,NextInterval,Ease) in Rows:
                 if CardId in CardId2Types:
-                        for (Type,Name,Content) in CardId2Types[CardId][0]:
+                        CardInfo = CardId2Types[CardId]
+                        for (Type,Name,Content) in CardInfo[0]:
                                 for (k, Map) in enumerate(JxStatsMap[Type]):
                                         KeyGraph = Type + "|" + str(k)
                                         try:
                                                 Key = Map.Value(Content)
                                         except KeyError:
                                                 Key = 'Other'
-                                        Change = 1.0/max(1,len(CardId2Types[CardId][1]))
+                                        if Map.To != 'Occurences': 
+                                                Change = 1.0/max(1,len(CardInfo[1]))
+                                        elif Map.From == 'Tango':
+                                                try:
+                                                        Change = 100.0*Word2Frequency[Content]/(SumWordOccurences * max(1.0,len(CardInfo[1])))
+                                                except KeyError:
+                                                        Change = 0
+                                        else:
+                                                try:
+                                                        Change = 100.0*Kanji2Frequency[Content]/(SumKanjiOccurences*max(1.0,len(CardInfo[1])))
+                                                except KeyError:
+                                                        Change = 0
+                                       
                                         if Ease == 1 and Interval > 21:
                                                 JxState[KeyGraph][Key] -= Change
                                         elif Interval <= 21 and NextInterval >21:
@@ -278,7 +292,7 @@ def JxGraphsa():
                 JxStateArray[JxDay] = deepcopy(JxState)
         JxStateArray[0] = deepcopy(JxState)   
         
-       
+        JxProfile("JxGraphs().Parse History done")
        
         # Transform the results into JSon strings
         JxDays = JxStateArray.keys()
@@ -290,6 +304,7 @@ def JxGraphsa():
                         KeyGraph = Type + "|" + str(k)                              
                         JxGraphsJSon[KeyGraph] = dict([(Key,JxJSon([(Day,JxStateArray[Day][KeyGraph][Key]) for Day in JxDays])) for (Key,String) in Map.Order] + [('Other',JxJSon([(Day,JxStateArray[Day][KeyGraph]['Other']) for Day in JxDays]))])           
        
+        JxProfile("JxGraphs().MakeJxSon")
         from ui_menu import JxPreview
         from ui_menu import JxResourcesUrl
         JxHtml=u"""
@@ -356,10 +371,12 @@ def JxGraphsa():
                
 $.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
 $.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
-$.plot($("#KanjiFreq"),   %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')}});               
-$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});  
-$.plot($("#KanjiJouyou"), %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+    return val.toFixed(axis.tickDecimals) +' %%'}}});               
+$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+    return val.toFixed(axis.tickDecimals) +' %%'}}});  
+$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
+$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
  
             
                
@@ -398,9 +415,12 @@ $.plot($("#KanjiKanken"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lin
           </body></html>                 
                     
                     """% (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
+        JxProfile("JxGraphs().Substitute done")
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+        JxProfile("JxGraphs().Preview.SetHtml")
         JxPreview.show()  
-
+        JxProfile("JxGraphs().Show()")
+        mw.help.showText(JxShowProfile())
 
 class JxDeckGraphs(object):
 

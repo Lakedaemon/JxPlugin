@@ -263,5 +263,5 @@ MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,u"4級"),(3,u"3級"),(2,u"
 MapFreqKanji = FileList("Tango","Occurences",Kanji2Frequency,[])
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
 MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"G1"),(2,"G2"),(3,"G3"),(4,"G4"),(5,"G5"),(6,"G6"),("HS","HS")])
-MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"half 2"),('2',"2"),('1,5',"half 1"),('1',"1")])
+MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"2.5"),('2',"2"),('1,5',"1.5"),('1',"1")])
 
