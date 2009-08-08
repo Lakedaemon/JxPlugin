@@ -71,14 +71,15 @@ def JxParseFacts4Stats():
                         else:
                                 break
                 Delta = Tau
-                while Index + Delta< Length:
+                while Index + Delta < Length:
                         if Rows[Index + Delta][7] == Tuple[7]: 
                                 Delta += Tau                
                         else:
                                 break
                 Fields = [(Rows[a][5],Rows[a][6],Rows[a][8]) for a in range(Index,Index + Tau)]# beware of unpacking 2 out of 3 values
                 List = JxParseFactTags4Stats(Rows,Index)
-                CardId2Types.update([(Rows[a][0],List) for a in range(Index,Index + Delta,Tau)])
+                CardsIds = [Rows[a][0] for a in range(Index,Index + Delta,Tau)]
+                CardId2Types.update([(Id,(List,CardsIds)) for Id in CardsIds])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Tuple[2]:
@@ -261,17 +262,18 @@ def JxGraphsa():
         JxNowTime = time.time()
         for (CardId,Time,Interval,NextInterval,Ease) in Rows:
                 if CardId in CardId2Types:
-                        for (Type,Name,Content) in CardId2Types[CardId]:
+                        for (Type,Name,Content) in CardId2Types[CardId][0]:
                                 for (k, Map) in enumerate(JxStatsMap[Type]):
                                         KeyGraph = Type + "|" + str(k)
                                         try:
                                                 Key = Map.Value(Content)
                                         except KeyError:
                                                 Key = 'Other'
+                                        Change = 1.0/max(1,len(CardId2Types[CardId][1]))
                                         if Ease == 1 and Interval > 21:
-                                                JxState[KeyGraph][Key] = JxState[KeyGraph][Key]-1
+                                                JxState[KeyGraph][Key] -= Change
                                         elif Interval <= 21 and NextInterval >21:
-                                                JxState[KeyGraph][Key] = JxState[KeyGraph][Key]+1                                   
+                                                JxState[KeyGraph][Key] += Change                              
                 JxDay = int((Time-JxNowTime) / 86400.0)+1
                 JxStateArray[JxDay] = deepcopy(JxState)
         JxStateArray[0] = deepcopy(JxState)   
