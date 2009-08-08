@@ -15,13 +15,6 @@ from anki.utils import hexifyID
 import time
 
 
-
-
-
-
-
-
-
 def JxReplace(String,Dict):
 
         Head = String.group(1)

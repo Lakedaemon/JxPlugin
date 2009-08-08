@@ -290,7 +290,7 @@ def JxGraphsa():
        
         from ui_menu import JxPreview
         from ui_menu import JxResourcesUrl
-        JxHtml="""
+        JxHtml=u"""
                     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
 <head>
@@ -352,14 +352,14 @@ def JxGraphsa():
 	jQuery().ready(function(){
                $('.ui-button').button({checkButtonset:true});
                
-               $.plot($("#KanjiJLPT"), %(JSon:Kanji|0)s , {   grid: {
-                    show: true,
-                    aboveData: true},lines:{show: true,lineWidth:5,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true }  });
-               $.plot($("#KanjiJouyou"), %(JSon:Kanji|1)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw',noColumns: 2 }, series: { stack: true } });
-              $.plot($("#KanjiKanken"), %(JSon:Kanji|2)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw',noColumns: 2}, series: { stack: true } });
-               $.plot($("#KanjiFreq"), %(JSon:Kanji|3)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });               
-               $.plot($("#WordJLPT"), %(JSon:Word|0)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });
-               $.plot($("#WordFreq"), %(JSon:Word|1)s , {   lines:{show: true,fill:1,fillcolor:false}, legend: {position:'nw'}, series: { stack: true } });               
+$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
+$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
+$.plot($("#KanjiFreq"),   %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')}});               
+$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});  
+$.plot($("#KanjiJouyou"), %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
+$.plot($("#KanjiKanken"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+ 
+            
                
                
 });
@@ -367,77 +367,35 @@ def JxGraphsa():
 </head>
 <body>
 
-      <div id="KanjiJLPT" style="width:600px;height:300px"></div>
-     
-      <div id="KanjiJouyou" style="width:600px;height:300px"></div>
-      
-       <div id="KanjiKanken" style="width:600px;height:300px"></div>
-       
-        <div id="KanjiFreq" style="width:600px;height:300px"></div>
-        
-         <div id="WordJLPT" style="width:600px;height:300px"></div>
-         
-          <div id="WordFreq" style="width:600px;height:300px"></div>
-     
- 
-    <div id="placeholder" style="width:600px;height:300px"></div>
- 
+<div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
+<div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
 
- 
-    <p>You selected: <span id="selection"></span></p> 
- 
-    <p>The plot command returns a Plot object you can use to control
-       the selection. Try clicking the buttons below.</p> 
- 
-    <p><input id="clearSelection" type="button" value="Clear selection" /> 
-       <input id="setSelection" type="button" value="Select year 1994" /></p> 
- 
- 
-    <p><input id="zoom" type="checkbox">Zoom to selection.</input></p> 
-      
-      <script id="source" language="javascript" type="text/javascript"> 
-$(function () {
-var data = %(JSon:Word|0)s
- 
-    var options = {
-    series:{stack:true},
-    lines: { show: true },
-        points: { show: true },
-        legend: { noColumns: 2 },
-        xaxis: { tickDecimals: 0 },
-        yaxis: { min: 0 },
-        selection: { mode: "x" }
-    };
- 
-    var placeholder = $("#placeholder");
- 
-    placeholder.bind("plotselected", function (event, ranges) {
-        $("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
- 
-        var zoom = $("#zoom").attr("checked");
-        if (zoom)
-            plot = $.plot(placeholder, data,
-                          $.extend(true, {}, options, {
-                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
-                          }));
-    });
-    
-    var plot = $.plot(placeholder, data, options);
- 
-    $("#clearSelection").click(function () {
-        plot.clearSelection();
-    });
- 
-    $("#setSelection").click(function () {
-        plot.setSelection({ x1: 1994, x2: 1995 });
-    });
-});
-</script> 
-      
-      
+
+<div style="width:100px;height:200px;margin:0 auto;padding:20px;padding-top:70px;text-align:center;"><strong>JLPT</strong>
+<div id="LegendJLPT" align="center" style="width:100px;height:140px;padding-top:10px;">JLPT Legend</div></div>
+
+<div style="clear:both;height:30px"/></div>
+
+<div style="text-align:center;float:left;clear:left;margin-left:10px;"><strong>KANJI Accumulated Frequency</strong><div id="KanjiFreq" style="width:500px;height:250px;"></div></div>
+<div style="text-align:center;float:right;clear:right;margin-right:10px;"><strong>WORDS Accumulated Frequency</strong><div id="WordFreq" style="width:500px;height:250px;"></div></div>
+
+<div style="width:100px;height:200px;margin:0 auto;padding:20px;text-align:center;margin-top:40px;"><strong>FREQUENCY</strong>
+<div id="LegendFreq" align="center" style="width:100px;height:140px;padding-top:10px;">Frequency Legend</div></div>
+
+<div style="clear:both;height:30px"/></div>
+
+<div style="width:500px;text-align:center;float:left;clear:left;margin-left:30px;"><strong>JOUYOU</strong>
+<div id="LegendJouyou" align="center" style="width:360px;margin:0 auto;text-align:center;">Jouyou Legend</div>
+<div id="KanjiJouyou" style="width:500px;height:250px;margin:0 auto;"></div></div>
+
+<div style="width:500px;text-align:center;float:right;clear:right;margin-right:30px;"><strong>KANKEN</strong>
+<div id="LegendKanken" align="center" style="width:460px;margin: 0 auto;text-align:center;">Kanken Legend</div>
+<div id="KanjiKanken" style="width:500px;height:250px;margin:0 auto;"></div></div>
+
+
           </body></html>                 
                     
-                    """% dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)])  
+                    """% (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[Type + '|'+ str(k)][Key] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxPreview.show()  
 

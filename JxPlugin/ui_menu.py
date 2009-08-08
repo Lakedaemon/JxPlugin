@@ -799,7 +799,7 @@ class Jx__Browser(QWebView):
 		sizePolicyd.setVerticalStretch(QSizePolicy.GrowFlag+QSizePolicy.ShrinkFlag)
 		#sizePolicyd.setHeightForWidth(self.sizePolicy().sizeHint())#hasHeightForWidth())
 		self.setSizePolicy(sizePolicyd)
-		self.setMinimumSize(QtCore.QSize(400, 200))
+		self.setMinimumSize(QtCore.QSize(1200, 600))
 		#self.setMaximumSize(QtCore.QSize(210, 16777215))
 		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 		mw.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)	
@@ -807,7 +807,7 @@ class Jx__Browser(QWebView):
 
 			
 	def sizeHint(self):
-		return(QSize(800,600))
+		return(QSize(1400,1100))
 	
 	
 	
