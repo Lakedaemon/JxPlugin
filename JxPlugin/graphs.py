@@ -261,8 +261,8 @@ def JxGraphsa():
                         KeyGraph = Type + "|" + str(k)
                         JxState[KeyGraph] = dict([(Key,0) for (Key,String) in Map.Order] + [('Other',0)])
         JxNowTime = time.time()
-        for (CardId,Time,Interval,NextInterval,Ease) in Rows:
-                if CardId in CardId2Types:
+        for (CardId,Time,Interval,NextInterval,Ease) in Rows:# list
+                try:
                         CardInfo = CardId2Types[CardId]
                         for (Type,Name,Content) in CardInfo[0]:
                                 for (k, Map) in enumerate(JxStatsMap[Type]):
@@ -287,7 +287,9 @@ def JxGraphsa():
                                         if Ease == 1 and Interval > 21:
                                                 JxState[KeyGraph][Key] -= Change
                                         elif Interval <= 21 and NextInterval >21:
-                                                JxState[KeyGraph][Key] += Change                              
+                                                JxState[KeyGraph][Key] += Change
+                except KeyError:
+                        pass                              
                 JxDay = int((Time-JxNowTime) / 86400.0)+1
                 JxStateArray[JxDay] = deepcopy(JxState)
         JxStateArray[0] = deepcopy(JxState)   
@@ -420,7 +422,7 @@ $.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lin
         JxProfile("JxGraphs().Preview.SetHtml")
         JxPreview.show()  
         JxProfile("JxGraphs().Show()")
-        mw.help.showText(JxShowProfile())
+        #mw.help.showText(JxShowProfile())
 
 class JxDeckGraphs(object):
 
