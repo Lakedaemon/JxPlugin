@@ -24,23 +24,15 @@ import time
 
 def JxReplace(String,Dict):
 
-        Tail = String.group(1).split(u",")
-        Head = Tail.pop(0)
-        Container=u"span"
-        if Tail and Tail[0].find(u"=")==False:
-                        Container = Tail.pop(0)
-           
+        Head = String.group(1)
         try:      
-                Head = u'<'+ Container + u' class="' + Head + u'">' + Dict[Head] + u"</" + Container + u'>'
+                Content = Dict[Head].strip()
         except KeyError:
-                Head = u'<'+ Container + u' class="' + Head + u'">' + u'${'+ Head + u'}' + u"</" + Container + u'>'               
-        for Item in Tail:
-                if u"=" in Item:
-                        (Container,Class)=tuple(Item.split(u"="))
-                        Head = u"<" + Container + u' class=">' + Class + u'">' + Head + u"</" + Container + u">" 
-                else:
-                        Head = u"<" + Item + u">" + Head + u"</" + Item + u">" 
-        return Head
+                Content = u'${'+ Head + u'}'             
+        if Content:
+                return u'<span class="' + Head + u'">' + Content + u'</span>'
+        return u'<span style="border-color:transparent;" class="' + Head + u'">&nbsp;</span>'                
+
 
 def JxIntReplace(Match):
         Char = Match.group(0)
