@@ -355,7 +355,7 @@ def JxGraphsa():
 <!--                     Graphs                          -->
 
 
-<script type="text/javascript" src="jquery.newflot.js"></script>
+<script type="text/javascript" src="jquery.flot.js"></script>
 
 <script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
 
