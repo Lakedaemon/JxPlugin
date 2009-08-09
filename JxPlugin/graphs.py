@@ -248,9 +248,11 @@ def JxGraphsa():
                                                 Key = Map.Value(Content)
                                         except KeyError:
                                                 Key = 'Other'
-                                        if Map.To != 'Occurences': 
+                                        if k != 1:
+                                        #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
                                                 Change = 1.0/max(1,len(CardInfo[1]))
-                                        elif Map.From == 'Tango':
+                                        elif Type == "Word":
+                                        #elif Map.From == 'Tango':
                                                 try:
                                                         Change = 100.0*Word2Frequency[Content]/(SumWordOccurences * max(1.0,len(CardInfo[1])))
                                                 except KeyError:
