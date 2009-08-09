@@ -322,7 +322,7 @@ def JxParseForJapaneseCharacters(Card):
         # try to find Kana inside Fields
         
         Set=set()
-        for Field in Card.fact.model.fieldModels:   
+        for Field in Card.fact.fields:
                 Set.update([Field.value])
         if len(Set.intersection(JxPonctuation))>0:
                 #it holds Kana, this is related to Japanese, now go and try to find Fields
