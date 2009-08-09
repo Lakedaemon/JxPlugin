@@ -62,34 +62,39 @@ def JxTableDisplay(TupleList,Class):
                 return u""
 
 def JxStrokeDisplay(KanjiList):
-        result={}
+        # Maybee we should use the Card2Type fonction to filter out the wordswrong K/W but it's working as is and it'll have to wait for an upgrade of the guesstype function...
+        # the "title" tag is a bit slow and tiny, maybee we should inject some javascript/use a nice jquery tooltip plugin... but this will have to wait till we allow javascript inside the main QWebView window (We''ll have to convince damien to set a nice resource directory for javascript..or override hisroutines).
+       
         Kanjis='","'.join(KanjiList)
-        try : # Finds all Kanji facts whose kanji is in the list
-                Query = u"""select kanji.value, meaning.value from 
-                fields as kanji, fields as meaning, fieldModels as fmkanji, fieldModels as fmmeaning where kanji.fieldModelId= fmkanji.id and fmkanji.name="Kanji" and 
-                meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=kanji.factId and
-                kanji.value in ("%s")""" % Kanjis
-                KanjiQuery=mw.deck.s.all(Query)
-        except KeyError:pass
-        for item in KanjiQuery:
-                result[item[0]]=item[1]
-        Kanjis2='","'.join([k for k in KanjiList if k not in result])
+        # Finds all Kanji facts whose kanji is in the list
+        Query = u"""select kanji.value, meaning.value from 
+        fields as kanji, fields as meaning, fieldModels as fmkanji, fieldModels as fmmeaning where kanji.fieldModelId= fmkanji.id and fmkanji.name in ("%s") and 
+        meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=kanji.factId and kanji.value in ("%s")""" % ('","'.join(JxType[0][1]),Kanjis)
+        Rows = mw.deck.s.all(Query)
+
+        Meaning = {}
+        for Item in Rows:
+                Meaning[Item[0]] = Item[1]
+                
+        Kanjis2 = '","'.join([Kanji for Kanji in KanjiList if Kanji not in Meaning])
         if Kanjis2:
-                try : # Now do the same for kanjis in models, that can also have one-kanji-words
-                        Query = u"""select expression.value, meaning.value from 
-                        fields as expression, fields as meaning, fieldModels as fmexpression, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-                        meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and
-                        expression.value in ("%s")""" % Kanjis2
-                        ExpressionQuery=mw.deck.s.all(Query)
-                except KeyError:pass
-                for item in ExpressoinQuery:
-                        result[item[0]]=item[1]
-        ret=''
-        for k in KanjiList:
-                if k not in result:
-                        result[k]=''
-                ret+='<span title="' + result[k] + '">'+ k + '</span>'
-        return ret
+                # Now do the same for kanjis in models, that can also have one-kanji-words
+                Query = u"""select expression.value, meaning.value from 
+                fields as expression, fields as meaning, fieldModels as fmexpression, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
+                meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
+                expression.value in ("%s")""" % Kanjis2
+                Rows = mw.deck.s.all(Query)
+
+                for Item in Rows:
+                        Meaning[Item[0]] = Item[1]
+        mw.help.showText(str(Meaning))
+        Buffer = ''
+        for Kanji in KanjiList:
+                if Kanji in Meaning:
+                        Buffer += '<span title="' + Meaning[Kanji] + '">'+ Kanji + '</span>'
+                else:
+                        Buffer += '<span>'+ Kanji + '</span>'
+        return Buffer
         
         
 ###############################################################################################################
@@ -441,7 +446,7 @@ def append_JxPlugin(Answer,Card):
             ShortType = JxAbbrev[Type]
             Stripped = Content.strip()
             JxAnswerDict[ShortType] = Stripped
-            KanjiList=[c for c in Stripped if JxIsKanji(c)]
+            KanjiList= [c for c in Stripped if JxIsKanji(c)]
             if ShortType != 'K':
                     JxAnswerDict[ShortType + "-Stroke"] = JxStrokeDisplay(KanjiList)
             else:
@@ -486,14 +491,12 @@ def append_JxPlugin(Answer,Card):
             except KeyError:pass
             	
             
-            try : # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
-                    Query = """select expression.value, meaning.value, reading.value from 
-                    fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-                    reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
-                    meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-                    expression.value like "%%%s%%" """ % JxK
-                    JxAnswerDict['K-Words'] = JxTableDisplay(mw.deck.s.all(Query),'K-Words')    
-            except KeyError:pass
+            # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
+            Query = """select expression.value, meaning.value, reading.value from 
+            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
+            expression.value like "%%%s%%" """ % JxK
+            JxAnswerDict['K-Words'] = JxTableDisplay(mw.deck.s.all(Query),'K-Words')    
+
     
     from ui_menu import JxSettings
     JxAnswerDict[u"Css"] = """<style>%s</style>""" % JxSettings.Get(u'Css')
