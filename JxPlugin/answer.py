@@ -60,6 +60,38 @@ def JxTableDisplay(TupleList,Class):
                 return u'<table cellspacing="0px" cellpadding="0px" class="' + Class + u'">%s</table>' % JxHtmlBuffer
         else:
                 return u""
+
+def JxStrokeDisplay(KanjiList):
+        result={}
+        Kanjis='","'.join(KanjiList)
+        try : # Finds all Kanji facts whose kanji is in the list
+                Query = u"""select kanji.value, meaning.value from 
+                fields as kanji, fields as meaning, fieldModels as fmkanji, fieldModels as fmmeaning where kanji.fieldModelId= fmkanji.id and fmkanji.name="Kanji" and 
+                meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=kanji.factId and
+                kanji.value in ("%s")""" % Kanjis
+                KanjiQuery=mw.deck.s.all(Query)
+        except KeyError:pass
+        for item in KanjiQuery:
+                result[item[0]]=item[1]
+        Kanjis2='","'.join([k for k in KanjiList if k not in result])
+        if Kanjis2:
+                try : # Now do the same for kanjis in models, that can also have one-kanji-words
+                        Query = u"""select expression.value, meaning.value from 
+                        fields as expression, fields as meaning, fieldModels as fmexpression, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
+                        meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and
+                        expression.value in ("%s")""" % Kanjis2
+                        ExpressionQuery=mw.deck.s.all(Query)
+                except KeyError:pass
+                for item in ExpressoinQuery:
+                        result[item[0]]=item[1]
+        ret=''
+        for k in KanjiList:
+                if k not in result:
+                        result[k]=''
+                ret+='<span title="' + result[k] + '">'+ k + '</span>'
+        return ret
+        
+        
 ###############################################################################################################
 #
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
@@ -287,7 +319,7 @@ def JxParseFieldsName(Card):
                                 Types.update([Key])
                                 break # no need to parse this Field further
         # same cases than for JxParseModelTags()
-        
+
         if len(Types) ==1:
                 # great, we found the type, now find the field. 
                 return JxAffectFields(Card,Types)
@@ -409,7 +441,11 @@ def append_JxPlugin(Answer,Card):
             ShortType = JxAbbrev[Type]
             Stripped = Content.strip()
             JxAnswerDict[ShortType] = Stripped
-            JxAnswerDict[ShortType + "-Stroke"] = '%s' % ''.join([c for c in Stripped if JxIsKanji(c)])
+            KanjiList=[c for c in Stripped if JxIsKanji(c)]
+            if ShortType != 'K':
+                    JxAnswerDict[ShortType + "-Stroke"] = JxStrokeDisplay(KanjiList)
+            else:
+                    JxAnswerDict[ShortType + "-Stroke"] = ''.join(KanjiList)
     
     # need those for performance : every tenth second counts if you review 300+ Card a day
     # (the first brutal implementation had sometimes between 0.5s and 2s of lag to display the answer (i.e. make the user wait).
