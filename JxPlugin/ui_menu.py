@@ -325,12 +325,12 @@ def JxReadFile(File):
 	"""Reads a tab separated file text and returns a list of tupples."""
 	List = []
 	try:
-        	File = codecs.open(File, "rb", "utf8")
-        	for Line in File:
-        		List.append(tuple(Line.strip('\n').split('\t')))
-        	f.close()
+		File = codecs.open(File, "rb", "utf8")
+		for Line in File:
+			List.append(tuple(map(lambda x:x.replace('<Tab/>','\t'),Line.strip('\n').split('\t'))))
+		f.close()
 	except:
-                pass
+		pass
 	return List
 
 
@@ -380,21 +380,16 @@ JxSettings = Jx__Settings()
 
 
 
-
-
-
-
-
-
-
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
 	def __init__(self,name,parent=JxBase):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
-		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User","JxTable.txt")
+		self.File = os.path.join(mw.config.configPath, "plugins","JxPlugin","User","JxTable.cpickle")
                 if os.path.exists(self.File):
-                        self.Table = JxReadFile(self.File)
+                        File = open(self.File, 'rb')
+                        self.Table = cPickle.load(File)
+                        File.close()
                         self.ResetJxLink()
                 else:
                         self.ResetTables()
@@ -412,7 +407,7 @@ class Jx__Entry_Source_Target(QObject):
 			(self._Name,self._Source,self._Target) = self.Table[self._Entry]
 		else:
 			(self._Name,self._Source,self._Target) = (self.MakeUnique(u"New Entry",0), self.MakeUnique(u"""Add Source
-				(must be unique)""",1), u"Add Target")
+      (must be unique)""",1), u"Add Target")
 			self.Table.append((self._Name,self._Source,self._Target))
 			JxLink[self._Source]=self._Target
 			
@@ -478,7 +473,7 @@ class Jx__Entry_Source_Target(QObject):
                         ">New Entry</button>"""
 		
 	#@QtCore.pyqtSlot(str,int,result=str) doesn't work with OS X 
-        @pyqtSignature("str,int",result="QString")
+        @pyqtSignature("QString, int",result="QString")
 	def MakeUnique(self,value,Int):
 		"""Make sure to return a unique field"""
 		String = str(value)
@@ -515,9 +510,8 @@ class Jx__Entry_Source_Target(QObject):
                 self.ResetJxLink()
 		
 	def SaveTable(self):
-		File = codecs.open(self.File, "wb", "utf8")  
-		for (Name,Source,Target) in self.Table:
-			File.write(u"%s\t%s\t%s\n"%(Name.strip('\t'),Source.strip('\t'),Target.strip('\t')))
+		File = open(self.File, "wb")  
+                cPickle.dump(self.Table, File, cPickle.HIGHEST_PROTOCOL)
 		File.close()
 
         def ResetJxLink(self):
