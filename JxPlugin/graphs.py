@@ -212,75 +212,9 @@ def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Ro
 
 def JxJSon(CouplesList):
         return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
-                
-def JxOldAlgorythm():
-        JxProfile("OldAlgorythm")
-        Rows = mw.deck.s.all("""
-                select reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-                from reviewHistory order by reviewHistory.time
-                """) 
-        JxProfile("JxGraphs().Query History done")
-        t = time.time()
-        from copy import deepcopy # very important or the dictionnary stays linked !!
-        # Parse the info with respect to the CardId2Types dictionnary
-
-        JxStateArray = {}
-        JxState = {}
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
-        for (Type,List) in JxStatsMap.iteritems():
-                for (k,Map) in enumerate(List):
-                        for (Key,String) in Map.Order + [('Other','Other')]:
-                                JxState[(Type,k,Key)] = 0
-        JxNowTime = time.time()
-        for (CardId,Time,Interval,NextInterval,Ease) in Rows:# list
-                try:
-                        (CardInfo,CardWeight) = CardId2Types[CardId]
-                        for (Type,Name,Content) in CardInfo:
-                                for (k, Map) in enumerate(JxStatsMap[Type]):
-                                        try:
-                                                Key = Map.Value(Content)
-                                        except KeyError:
-                                                Key = 'Other'
-                                        if k != 1:
-                                        #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
-                                                Change = 1.0/max(1,len(CardWeight))
-                                        elif Type == "Word":
-                                        #elif Map.From == 'Tango':
-                                                try:
-                                                        Change = 100.0*Word2Frequency[Content]/(SumWordOccurences * max(1.0,len(CardWeight)))
-                                                except KeyError:
-                                                        Change = 0
-                                        else:
-                                                try:
-                                                        Change = 100.0*Kanji2Frequency[Content]/(SumKanjiOccurences*max(1.0,len(CardWeight)))
-                                                except KeyError:
-                                                        Change = 0
-                                       
-                                        if Ease == 1 and Interval > 21:
-                                                JxState[(Type,k,Key)] -= Change
-                                        elif Interval <= 21 and NextInterval >21:
-                                                JxState[(Type,k,Key)] += Change
-                except KeyError:
-                        pass                              
-                JxDay = int((Time-JxNowTime) / 86400.0)+1
-                JxStateArray[JxDay] = deepcopy(JxState)
-        JxStateArray[0] = deepcopy(JxState)   
-        
-        JxProfile("JxGraphs().Parse History done")
-        # Transform the results into JSon strings
-        JxDays = JxStateArray.keys()
-        JxDays.sort()
-        
-        JxGraphsJSon = {}
-        for (Type,List) in JxStatsMap.iteritems():
-                for (k,Map) in enumerate(List):      
-                        for (Key,String) in Map.Order +[('Other','Other')]:
-                                JxGraphsJSon[(Type,k,Key)] = JxJSon([(Day,JxStateArray[Day][(Type,k,Key)]) for Day in JxDays])           
-        JxProfile("JxGraphs().MakeJxSon")
-        return JxGraphsJSon
-        
+                    
 def JxNewAlgorythm():
-        global JxStateArray
+        global JxStateArray,JxStatsMap
         JxProfile("NewAlgorythm Begins")
         Rows = mw.deck.s.all("""
                 select facts.id,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
@@ -291,7 +225,6 @@ def JxNewAlgorythm():
         JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
         JxNowTime = time.time()
         # The Graphs we can have
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}        
         Length = len(Rows)
         Index = 0
         JxCardState = []
@@ -329,6 +262,8 @@ def JxNewAlgorythm():
         JxProfile("NewAlgorythm Ends")
         # return the array
         JxGraphsJSon = {}
+        #global debug
+        #debug=""
         for (Type,List) in JxStatsMap.iteritems():
                 for (k, Map) in enumerate(List):
                         for (Key,String) in Map.Order +[('Other','Other')]:
@@ -336,10 +271,12 @@ def JxNewAlgorythm():
                                         List = JxStateArray[(Type,k,Key)]
                                 except:
                                         List = [0]
+                                        #debug += "<br/>(" + Type+','+str(k)+','+str(Key)+') :'+str(List)
                                 JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day,sum(List[-Day:])) for Day in range(-len(List),1)]) 
         return JxGraphsJSon
+        
 def JxFlushFacts(JxCardStateArray,CardId):
-        global JxStateArray
+        global JxStateArray,JxStatsMap
         """Flush the fact stats into the state array"""
         try:# get the card type and the number of shared cardsids by the fact
                 (CardInfo,CardsNumber) = CardId2Types[CardId]
@@ -370,7 +307,7 @@ def JxFlushFacts(JxCardStateArray,CardId):
                                 except KeyError:
                                         # got to initialize it
                                         List=[]
-                                        
+############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
                                 #now, we got to flush the fact. Let's go for the realist model first
                                 for JxDaysList in JxCardStateArray:
                                         Status = True
@@ -387,18 +324,19 @@ def JxFlushFacts(JxCardStateArray,CardId):
                                                                 List[JxDay] += Change
                                                         else:
                                                                 List[JxDay] -= Change 
+                                        Status = not(Status)
                                         # save the updated list                        
-                                        JxStateArray[(Type,k,Key)] = List[:]                                       
-        except:# we do nothing, this Fact has no type.
+                                        JxStateArray[(Type,k,Key)] = List[:] 
+##############################################################################################################
+        except KeyError:# we do nothing, this Fact has no type.
                 pass
         
                
-def JxGraphsa(): 
+def JxGraphs(): 
         #global JxStateArray
         JxProfile("JxGraphs()")   
         JxParseFacts4Stats() 
         JxGraphsJSon =JxNewAlgorythm()
-        #JxGraphsJSon = JxOldAlgorythm()
         JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
 
 
@@ -517,7 +455,8 @@ $.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lin
         JxProfile("JxGraphs().Preview.SetHtml")
         JxPreview.show()  
         JxProfile("JxGraphs().Show()")
-        mw.help.showText(JxShowProfile())
+        #global debug
+        #mw.help.showText(JxShowProfile()+debug)
 
 
 
