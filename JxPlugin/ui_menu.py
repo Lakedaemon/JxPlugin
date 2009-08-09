@@ -8,17 +8,17 @@ from string import upper
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtWebKit import QWebPage, QWebView
-
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 from ankiqt import mw
 
 import globalobjects
 from loaddata import *
 from answer import *
 from stats import *
-from ui_graphs import *
 from tools import *
 from metacode import *
-
+from graphs import JxGraphs
 
 
 JxMenu = """ 
@@ -191,11 +191,6 @@ QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldMode
 		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
 		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 group by fields.value order by firstAnswered"""
 		
-def JxGraphs():
-        JxGraphsa()
-#	ui.dialogs.get("JxGraphs", mw, mw.deck)
-
-
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")+os.sep)
 
@@ -974,7 +969,6 @@ def init_JxPlugin():
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
 	mw.addHook('deckClosed', exit_JxPlugin) # additional info in answer cards
 	
-	ui.dialogs.registerDialog("JxGraphs", JxGraphProxy) # additional graphs
 
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
