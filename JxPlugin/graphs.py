@@ -264,6 +264,7 @@ def JxNewAlgorythm():
         JxGraphsJSon = {}
         #global debug
         #debug=""
+
         for (Type,List) in JxStatsMap.iteritems():
                 for (k, Map) in enumerate(List):
                         for (Key,String) in Map.Order +[('Other','Other')]:
@@ -272,6 +273,7 @@ def JxNewAlgorythm():
                                 except:
                                         List = [0]
                                         #debug += "<br/>(" + Type+','+str(k)+','+str(Key)+') :'+str(List)
+
                                 JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day,sum(List[-Day:])) for Day in range(-len(List),1)]) 
         return JxGraphsJSon
         
@@ -457,6 +459,7 @@ $.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lin
         JxProfile("JxGraphs().Show()")
         #global debug
         #mw.help.showText(JxShowProfile()+debug)
+
 
 
 
