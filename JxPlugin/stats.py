@@ -14,7 +14,6 @@ from answer import Tango2Dic
 #                      JxStats : Stats
 #
 ######################################################################
-
 def ComputeCount(Dict,Query): 
 	"""compute and Display an HTML report of the result of a Query against a Map"""
 	Count = {"InQuery":0, "Inside":0, "L0":0}
@@ -27,6 +26,113 @@ def ComputeCount(Dict,Query):
 	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
 	Counted = {}
 	for Stuff in mw.deck.s.column0(Query):
+		Stuffed=Tango2Dic(Stuff)
+		if Stuffed not in Counted:
+			Counted[Stuffed] = 0
+			if Stuffed in Dict:
+				a = "L" + str(Dict[Stuffed])
+			else:
+				a = "L0"
+			Count[a] += 1
+	Count["Inside"] = sum(Count["L" + str(value)] for value in Values)
+	Count["InQuery"] = Count["Inside"] + Count["L0"]
+	for value in Values:
+		Count["P" + str(value)] = round(Count["L" + str(value)] * 100.0 / max(Count["T" + str(value)],1),2)
+	Count["PInsideInMap"] = round(Count["Inside"] *100.0 / max(Count["InMap"],1),2)
+	Count["PInsideInQuery"] = round(Count["Inside"] *100.0 / max(Count["InQuery"],1),2)
+	return Count
+        
+def ComputeCount(Dict,Query): 
+	"""compute and Display an HTML report of the result of a Query against a Map"""
+        Rows = mw.deck.s.all("""select fact.id,cards.id,card.reps,card.lastInterval from cards where facts.id=cards.factId order by fact.id""")  
+        # we can compute known/seen/in deck/total stats for each value of each map depending of the type
+        NoType = 0 # known/seen/in deck
+        CardState = 0
+        Length = len(Rows)
+        Index = 0
+        while True:
+                (FactId,CardId,CardRep,Interval) = Rows[Index]
+                # set the card's status                       
+                if Interval > 21 and CardRep:
+                        CardState.append(0)
+                elif CardRep:
+                        CardState.append(1)
+                else:
+                        CardState.append(2)
+                Index += 1
+                if Index == Length: 
+                        # we have finished parsing the Entries.Flush the last Fact and break
+                        #JxCardStateArray.append(JxCardState[:])
+                        #JxFlushFacts(JxCardStateArray,CardId)
+                        break
+                        # we have finished parsing the Entries, flush the Status change
+                elif FactId == Rows[Index][0]:
+                        # Same Fact : Though it does nothing, we put this here for speed purposes because it happens a lot.
+                        pass
+                else:                        
+                        # Fact change
+                        JxFlushFactStats(CardState,CardId)
+                        CardState = []
+
+JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+
+def JxFlushFactStats(CardState,CardId):
+        """Flush the fact stats"""
+        global JxStateArray,JxStatsMap
+        try:# get the card type and the number of shared cardsids by the fact
+                (CardInfo,CardsNumber) = CardId2Types[CardId]
+                CardWeight = 1.0/max(1,len(CardsNumber))
+                for (Type,Name,Content) in CardInfo:
+                        for (k, Map) in enumerate(JxStatsMap[Type]):
+                                try:
+                                        Key = Map.Value(Content)
+                                except KeyError:
+                                        Key = 'Other' 
+                                if k != 1:
+                                #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
+                                        Change = CardWeight
+                                elif Type == "Word":
+                                        #elif Map.From == 'Tango':
+                                        try:
+                                                Change = 100.0 * Word2Frequency[Content] * CardWeight / SumWordOccurences 
+                                        except KeyError:
+                                                Change = 0
+                                else:
+                                        try:
+                                                Change = 100.0 * Kanji2Frequency[Content] * CardWeight / SumKanjiOccurences
+                                        except KeyError:
+                                                Change = 0 
+                                # we have to update the graph of each type
+                                try:
+                                        (Known,Seen,InDeck) = JxStateArray[(Type,k,Key)]
+                                except KeyError:
+                                        # got to initialize it
+                                        (Known,Seen,InDeck) = (0,0,0)         
+############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
+                                #now, we got to flush the fact. Let's go for the realist model first
+                                for State in CardState:
+                                        if State < 2:
+                                                Seen += Change
+                                         if State < 1:
+                                                Known += Change
+                                InFact += 1
+                                # save the updated list                        
+                                JxStateArray[(Type,k,Key)] = (Known,Seen,InDeck) 
+##############################################################################################################     
+        except KeyError: # this fact has no type
+                NoType +=1
+
+
+	Count = {"InQuery":0, "Inside":0, "L0":0}
+	Values = set(Dict.values())
+	for value in Values:
+		Count["T" + str(value)] = 0
+		Count["L" + str(value)] = 0		
+	for key, value in Dict.iteritems():
+		Count["T" + str(value)] += 1
+	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
+	Counted = {}
+	for Stuff in Rows:
 		Stuffed=Tango2Dic(Stuff)
 		if Stuffed not in Counted:
 			Counted[Stuffed] = 0

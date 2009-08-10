@@ -713,6 +713,7 @@ def JxGetInfo():
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango,"Kanji2Kanken":MapKankenKanji}
 
+
 def JxStats(Type):
 	
 	JxHtml = """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
