@@ -8,46 +8,26 @@ from os import path
 from ankiqt import mw
 from ankiqt.ui.utils import getSaveFile, askUser
 from answer import Tango2Dic
-
+from loaddata import *
+from graphs import CardId2Types
 ######################################################################
 #
 #                      JxStats : Stats
 #
 ######################################################################
-def ComputeCount(Dict,Query): 
-	"""compute and Display an HTML report of the result of a Query against a Map"""
-	Count = {"InQuery":0, "Inside":0, "L0":0}
-	Values = set(Dict.values())
-	for value in Values:
-		Count["T" + str(value)] = 0
-		Count["L" + str(value)] = 0		
-	for key, value in Dict.iteritems():
-		Count["T" + str(value)] += 1
-	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
-	Counted = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Stuffed=Tango2Dic(Stuff)
-		if Stuffed not in Counted:
-			Counted[Stuffed] = 0
-			if Stuffed in Dict:
-				a = "L" + str(Dict[Stuffed])
-			else:
-				a = "L0"
-			Count[a] += 1
-	Count["Inside"] = sum(Count["L" + str(value)] for value in Values)
-	Count["InQuery"] = Count["Inside"] + Count["L0"]
-	for value in Values:
-		Count["P" + str(value)] = round(Count["L" + str(value)] * 100.0 / max(Count["T" + str(value)],1),2)
-	Count["PInsideInMap"] = round(Count["Inside"] *100.0 / max(Count["InMap"],1),2)
-	Count["PInsideInQuery"] = round(Count["Inside"] *100.0 / max(Count["InQuery"],1),2)
-	return Count
         
-def ComputeCount(Dict,Query): 
+JxStatsArray = {}
+def ComputeCount(): 
+        global JxStatsArray,NoType
 	"""compute and Display an HTML report of the result of a Query against a Map"""
-        Rows = mw.deck.s.all("""select fact.id,cards.id,card.reps,card.lastInterval from cards where facts.id=cards.factId order by fact.id""")  
+        Rows = mw.deck.s.all("""select cards.factId,cards.id,cards.reps,cards.Interval from cards order by cards.factId""")  
         # we can compute known/seen/in deck/total stats for each value of each map depending of the type
         NoType = 0 # known/seen/in deck
-        CardState = 0
+        CardState = []
+        for (Type,List) in JxStatsMap.iteritems():
+                for (k, Map) in enumerate(List):
+                        for (Key,String) in Map.Order+[('Other','Other')]:
+                                JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
         Length = len(Rows)
         Index = 0
         while True:
@@ -62,8 +42,7 @@ def ComputeCount(Dict,Query):
                 Index += 1
                 if Index == Length: 
                         # we have finished parsing the Entries.Flush the last Fact and break
-                        #JxCardStateArray.append(JxCardState[:])
-                        #JxFlushFacts(JxCardStateArray,CardId)
+                        JxFlushFactStats(CardState,CardId)
                         break
                         # we have finished parsing the Entries, flush the Status change
                 elif FactId == Rows[Index][0]:
@@ -78,7 +57,7 @@ JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKa
 
 def JxFlushFactStats(CardState,CardId):
         """Flush the fact stats"""
-        global JxStateArray,JxStatsMap
+        global JxStatsArray,JxStatsMap, NoType
         try:# get the card type and the number of shared cardsids by the fact
                 (CardInfo,CardsNumber) = CardId2Types[CardId]
                 CardWeight = 1.0/max(1,len(CardsNumber))
@@ -103,72 +82,59 @@ def JxFlushFactStats(CardState,CardId):
                                         except KeyError:
                                                 Change = 0 
                                 # we have to update the graph of each type
-                                try:
-                                        (Known,Seen,InDeck) = JxStateArray[(Type,k,Key)]
-                                except KeyError:
-                                        # got to initialize it
-                                        (Known,Seen,InDeck) = (0,0,0)         
+                                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]      
 ############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
                                 #now, we got to flush the fact. Let's go for the realist model first
                                 for State in CardState:
                                         if State < 2:
                                                 Seen += Change
-                                         if State < 1:
+                                        if State == 0:
                                                 Known += Change
-                                InFact += 1
+                                InDeck += 1
                                 # save the updated list                        
-                                JxStateArray[(Type,k,Key)] = (Known,Seen,InDeck) 
+                                JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total) 
 ##############################################################################################################     
         except KeyError: # this fact has no type
                 NoType +=1
+         
 
 
-	Count = {"InQuery":0, "Inside":0, "L0":0}
-	Values = set(Dict.values())
-	for value in Values:
-		Count["T" + str(value)] = 0
-		Count["L" + str(value)] = 0		
-	for key, value in Dict.iteritems():
-		Count["T" + str(value)] += 1
-	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
-	Counted = {}
-	for Stuff in Rows:
-		Stuffed=Tango2Dic(Stuff)
-		if Stuffed not in Counted:
-			Counted[Stuffed] = 0
-			if Stuffed in Dict:
-				a = "L" + str(Dict[Stuffed])
-			else:
-				a = "L0"
-			Count[a] += 1
-	Count["Inside"] = sum(Count["L" + str(value)] for value in Values)
-	Count["InQuery"] = Count["Inside"] + Count["L0"]
-	for value in Values:
-		Count["P" + str(value)] = round(Count["L" + str(value)] * 100.0 / max(Count["T" + str(value)],1),2)
-	Count["PInsideInMap"] = round(Count["Inside"] *100.0 / max(Count["InMap"],1),2)
-	Count["PInsideInQuery"] = round(Count["Inside"] *100.0 / max(Count["InQuery"],1),2)
-	return Count
+def HtmlReport(Type,Map):
+        global JxStatsArray
+        from graphs import JxParseFacts4Stats
+        JxParseFacts4Stats() 
+        ComputeCount()
+        Type = "Kanji"
+        Map = MapJLPTKanji
+        k=0
+	JxStatsHtml = """<style>
+        .JxStats td{align:center;text-align:center;}
+        .JxStats tr > td:first-child,.JxStats tr > th:first-child{
+        border-right:1px solid black;
+        border-left:1px solid black;
+        }
+        .BorderRight{border-right:1px solid black;}
+        .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
+        </style>
+	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
+	<tr class="Border"><th><b>%s</b></th><th><b>%%</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	""" % Map.To
+        (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
+	for (Key,Value) in Map.Order:
+                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,0,Key)]
+                (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
+		JxStatsHtml += """
+		<tr><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		""" % (Value,Known*100.0/max(1,Total),Known,Seen,InDeck,Total)
+        JxStatsHtml += """
+        <tr class="Border"><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		""" % ('Total',SumKnown*100.0/max(1,SumTotal),SumKnown,SumSeen,SumInDeck,SumTotal)        
+        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,0,'Other')]
+        if (Known,Seen,InDeck,Total) != (0,0,0,0):
+                JxStatsHtml += """<tr><td style="border:0px solid black;"><b>%s</b></td><td></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td></td></tr>""" % ('Other',Known,Seen,InDeck)                
 
-def HtmlReport(Map,Query):
-	JStatsHTML = """
-	<table width="100%%" align="center" style="margin:0 20 0 20;">
-	<tr><td align="left"><b>%(To)s</b></td><th colspan=2 align="center"><b>%(From)s</b></th><td align="right"><b>Percent</b></td></tr>
-	""" 
-	for Key,Value in Map.Order:
-		JStatsHTML += """
-		<tr><td align="left"><b>%s</b></td><td align="right">%%(L%s)s</td><td align="left"> / %%(T%s)s</td><td align="right">%%(P%s).1f %%%%</td></tr>
-		""" % (Value,Key,Key,Key) 
-
-	JStatsHTML += """
-	<tr><td align="left"><b>Total</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InMap)s</td><td align="right">%(PInsideInMap).1f %%</td></tr>
-	<tr><td colspan=4><hr/></td/></tr>
-	<tr><td align="left"><b> %(To)s/All</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InQuery)s</td><td align="right">%(PInsideInQuery).1f %%</td></tr>
-	</table>
-	""" 
-        Dict = ComputeCount(Map.Dict,Query)
-        Dict['To'] = Map.To
-        Dict['From'] = Map.From
-        return JStatsHTML % Dict
+        JxStatsHtml += "</table>"
+        return JxStatsHtml
 
 def SeenHtml(Map,Query):
         """Returns an Html report of the seen stuff corresponding to Map and Query """
