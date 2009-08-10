@@ -61,7 +61,7 @@ def JxTableDisplay(TupleList,Class):
         else:
                 return u""
 
-def JxStrokeDisplay(KanjiList):
+def JxStrokeDisplay(KanjiList,Class):
         # Maybee we should use the Card2Type fonction to filter out the wordswrong K/W but it's working as is and it'll have to wait for an upgrade of the guesstype function...
         # the "title" tag is a bit slow and tiny, maybee we should inject some javascript/use a nice jquery tooltip plugin... but this will have to wait till we allow javascript inside the main QWebView window (We''ll have to convince damien to set a nice resource directory for javascript..or override hisroutines).
        
@@ -87,13 +87,13 @@ def JxStrokeDisplay(KanjiList):
 
                 for Item in Rows:
                         Meaning[Item[0]] = Item[1]
-        mw.help.showText(str(Meaning))
+        #mw.help.showText(str(Meaning))
         Buffer = ''
         for Kanji in KanjiList:
                 if Kanji in Meaning:
-                        Buffer += '<span title="' + Meaning[Kanji] + '">'+ Kanji + '</span>'
+                        Buffer += '<span style="display:block;" title="' + Meaning[Kanji] + '">'+ Kanji + '</span>'
                 else:
-                        Buffer += '<span>'+ Kanji + '</span>'
+                        Buffer += '<span style="display:block;">'+ Kanji + '</span>'
         return Buffer
         
         
@@ -439,7 +439,7 @@ def append_JxPlugin(Answer,Card):
         }    
     
     # ${F-Types}
-    JxAnswerDict[u"F-Types"] = str(JxGuessedList)    
+    JxAnswerDict['F-Types'] = str(JxGuessedList)    
  
     # ${K}, ${W}, ${S}, ${G}  and  ${K-Stroke}, ${W-Stroke}, ${S-Stroke}, ${G-Stroke}        
     for (Type,Field,Content) in JxGuessedList:
@@ -448,9 +448,9 @@ def append_JxPlugin(Answer,Card):
             JxAnswerDict[ShortType] = Stripped
             KanjiList= [c for c in Stripped if JxIsKanji(c)]
             if ShortType != 'K':
-                    JxAnswerDict[ShortType + "-Stroke"] = JxStrokeDisplay(KanjiList)
+                    JxAnswerDict[ShortType + '-Stroke'] = JxStrokeDisplay(KanjiList,ShortType + '-Stroke')
             else:
-                    JxAnswerDict[ShortType + "-Stroke"] = ''.join(KanjiList)
+                    JxAnswerDict[ShortType + '-Stroke'] = ''.join(KanjiList)
     
     # need those for performance : every tenth second counts if you review 300+ Card a day
     # (the first brutal implementation had sometimes between 0.5s and 2s of lag to display the answer (i.e. make the user wait).
