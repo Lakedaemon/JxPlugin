@@ -99,14 +99,12 @@ def JxFlushFactStats(CardState,CardId):
          
 
 
-def HtmlReport(Type,Map):
+def HtmlReport(Type,k):
         global JxStatsArray
         from graphs import JxParseFacts4Stats
         JxParseFacts4Stats() 
         ComputeCount()
-        Type = "Kanji"
-        Map = MapJLPTKanji
-        k=0
+        Map = JxStatsMap[Type][k]
 	JxStatsHtml = """<style>
         .JxStats td{align:center;text-align:center;}
         .JxStats tr > td:first-child,.JxStats tr > th:first-child{

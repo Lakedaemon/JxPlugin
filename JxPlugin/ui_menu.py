@@ -713,18 +713,19 @@ def JxGetInfo():
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango,"Kanji2Kanken":MapKankenKanji}
 
+JxStatsMenu={'JLPT':[('Kanji',0),('Word',0)]}
 
 def JxStats(Type):
-	
-	JxHtml = """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
-	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
-	JxHtml += HtmlReport(JxMap["Kanji2"+Type],QueryKanji)
-	
-	if Type not in ["Jouyou","Kanken"]:
-		JxHtml +="""<br /><center><b style="font-size:1.4em;">TANGO</b></center>"""
-		JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Tango')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Tango')>Seen</a></center><br />"""
-		JxHtml += HtmlReport(JxMap["Tango2"+Type],QueryTango)
-	
+        JxHtml=""
+	for (Type,k) in JxStatsMenu['JLPT']:
+                JxHtml += """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
+                JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
+                JxHtml += HtmlReport(Type,k)
+	#	if Type not in ["Jouyou","Kanken"]:
+	#	JxHtml +="""<br /><center><b style="font-size:1.4em;">TANGO</b></center>"""
+	#	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Tango')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Tango')>Seen</a></center><br />"""
+	#	JxHtml += HtmlReport(JxMap["Tango2"+Type],QueryTango)
+
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict[Type] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
