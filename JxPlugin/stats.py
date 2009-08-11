@@ -28,7 +28,12 @@ def ComputeCount():
         for (Type,List) in JxStatsMap.iteritems():
                 for (k, Map) in enumerate(List):
                         for (Key,String) in Map.Order+[('Other','Other')]:
-                                JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                                if k != 1:
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                                elif Type =='Word':
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Word2Frequency[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                                else:
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Kanji2Frequency[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))                                        
         Length = len(Rows)
         Index = 0
         while True:
@@ -74,12 +79,12 @@ def JxFlushFactStats(CardState,CardId):
                                 elif Type == "Word":
                                         #elif Map.From == 'Tango':
                                         try:
-                                                Change = 100.0 * Word2Frequency[Content] * CardWeight / SumWordOccurences 
+                                                Change = Word2Frequency[Content] * CardWeight
                                         except KeyError:
                                                 Change = 0
                                 else:
                                         try:
-                                                Change = 100.0 * Kanji2Frequency[Content] * CardWeight / SumKanjiOccurences
+                                                Change = Kanji2Frequency[Content] * CardWeight
                                         except KeyError:
                                                 Change = 0 
                                 # we have to update the graph of each type
@@ -121,10 +126,10 @@ def HtmlReport(Type,k):
                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
-		<tr><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		<tr><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
 		""" % (Value,Known*100.0/max(1,Total),Known,Seen,InDeck,Total)
         JxStatsHtml += """
-        <tr class="Border"><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+        <tr class="Border"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
 		""" % ('Total',SumKnown*100.0/max(1,SumTotal),SumKnown,SumSeen,SumInDeck,SumTotal)        
         (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]
         if (Known,Seen,InDeck,Total) != (0,0,0,0):
@@ -148,17 +153,17 @@ def JxWidgetAccumulatedReport(Type,k):
         </style>
 	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
 	<tr class="Border"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
-	""" % Map.To
+	""" 
         JxSumTotal = sum([JxStatsArray[(Type,k,Key)][3] for (Key,Value) in Map.Order])
         (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
 	for (Key,Value) in Map.Order:
                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
-		<tr><td><b>%s</b></td><td>%.0f %%</td><td>%.0f %%</td><td>%.0f %%</td><td class="BorderRight">%.0f %%</td></tr>
+		<tr><td><b>%s</b></td><td>%.0f%%</td><td>%.0f%%</td><td>%.0f%%</td><td class="BorderRight">%.0f%%</td></tr>
 		""" % (Value,Known*100.0/max(1,JxSumTotal),Seen*100.0/max(1,JxSumTotal),InDeck*100.0/max(1,JxSumTotal),Total*100.0/max(1,JxSumTotal))
         JxStatsHtml += """
-        <tr class="Border"><td><b>%s</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+        <tr class="Border"><td><b>%s</b></td><td>%.0f%%</td><td>%.0f%%</td><td>%.0f%%</td><td class="BorderRight">%.0f%%</td></tr>
 		""" % ('Total',SumKnown*100.0/max(1,JxSumTotal),SumSeen*100.0/max(1,JxSumTotal),SumInDeck*100.0/max(1,JxSumTotal),100)        
         (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
 

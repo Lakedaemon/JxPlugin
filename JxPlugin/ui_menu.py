@@ -60,7 +60,14 @@ JxMenu = """
 <script type="text/javascript"> 
 	$(function() {
 		$("#JxMenu").tabs({
-                        fx: { opacity: 'toggle' }
+                        fx: { opacity: 'toggle' },
+                        select: function(event, ui) {
+                                if (ui.panel.id == "X"){
+                                        JxWindow.Hide();
+                                        return false;
+                                };  
+                                return true;
+                         }
                   });
 	});
 </script> 
@@ -109,7 +116,7 @@ div#content {
 <li><a href="#Jouyou">Jouyou</a></li>
 <li><a href="py:JxGraphs()">Graphs</a></li>
 <li ${Tools}><a href="py:JxTools()">Tools</a></li>
-<li><a href=py:JxWindow.hide()>X</a></li>
+<li><a href="#X">X</a></li>
 </ul>
 <div id="JLPT">${JLPT}</div>
 <div id="Frequency">${Frequency}</div>
@@ -118,6 +125,8 @@ div#content {
 <div id="Settings">
 </div>
 <div id="Tools">
+</div>
+<div id="X">
 </div
 </div>
 <div id="content" style="clear:both;">${Content}</div>
@@ -663,14 +672,18 @@ def JxGetInfo():
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango,"Kanji2Kanken":MapKankenKanji}
 
-JxStatsMenu={'JLPT':[('Kanji',0),('Word',0)],'Frequency':[('Kanji',2),('Kanji',1),('Word',2),('Word',1)],'Kanken':[('Kanji',3)],'Jouyou':[('Kanji',4)]}
-
+JxStatsMenu={
+'JLPT':[('Kanji',HtmlReport,('Kanji',0)),('Words',HtmlReport,('Word',0))],
+'Frequency':[('Kanji',HtmlReport,('Kanji',2)),('Kanji',JxWidgetAccumulatedReport,('Kanji',1)),('Word',HtmlReport,('Word',2)),
+('Words',JxWidgetAccumulatedReport,('Word',1))],
+'Kanken':[('Kanji',HtmlReport,('Kanji',3))],
+'Jouyou':[('Kanji',HtmlReport,('Kanji',4))]}
 def JxStats(Tab):
         JxHtml=""
-	for (Type,k) in JxStatsMenu[Tab]:
+	for (Type,Func,Couple) in JxStatsMenu[Tab]:
                 JxHtml += """<br/><center><b style="font-size:1.4em;">""" + Type.upper() + """</b></center>"""
                 JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
-                JxHtml += HtmlReport(Type,k)
+                JxHtml += Func(Couple[0],Couple[1])
         return JxHtml
 
 
@@ -705,22 +718,39 @@ def onClick(url):
 	else:
 		QDesktopServices.openUrl(QUrl(link))
 
-# I now have my own window =^.^=
-JxWindow = QWebView(mw)
-sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-sizePolicy.setHorizontalStretch(0)
-sizePolicy.setVerticalStretch(0)
-sizePolicy.setHeightForWidth(JxWindow.sizePolicy().hasHeightForWidth())
-JxWindow.setSizePolicy(sizePolicy)
-JxWindow.setMinimumSize(QtCore.QSize(410, 400))
-JxWindow.setMaximumSize(QtCore.QSize(410, 16777215))
-JxWindow.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-mw.connect(JxWindow, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)
 
-JxWindow.hide()
 
-#def sizeHint(self):
-#        return QSize(100,100)
+
+
+class Jx__Menu(QWebView):
+	"""A QWebkit Window with mw as parent for Menu related stuff"""
+	def __init__(self,name,parent=None):
+		QWebView.__init__(self,parent)
+		sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+		sizePolicy.setHorizontalStretch(0)
+		sizePolicy.setVerticalStretch(0)
+		sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+		self.setSizePolicy(sizePolicy)
+		self.setMinimumSize(QtCore.QSize(410, 400))
+		self.setMaximumSize(QtCore.QSize(410, 16777215))
+		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks) # delegates link (to be able to call python function with arguments from HTML)
+		self.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick) # delegates link (to be able to call python function with arguments from HTML)
+		self.name = name #name that javascript will know
+		self.BridgeToJavascript() # add inside javascript namespace
+		mw.connect(self.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), self.BridgeToJavascript) #in case of rload, maintains in javascript
+		self.hide()
+	def BridgeToJavascript(self):
+		self.page().mainFrame().addToJavaScriptWindowObject(self.name,self)	                
+	@pyqtSignature("")                
+	def Hide(self):
+		self.hide()
+                
+# The main JxPlugin Window
+JxWindow = Jx__Menu('JxWindow',mw)
+
+
+
+
 
 class Jx__Browser(QWebView):
 	"""A modless QWebkit Window for Stuff that requires lot of space/focus."""
