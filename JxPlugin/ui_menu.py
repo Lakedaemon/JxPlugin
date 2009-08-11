@@ -59,7 +59,9 @@ JxMenu = """
 <script type="text/javascript" src="js/ui.tabs.js"></script> 
 <script type="text/javascript"> 
 	$(function() {
-		$("#JxMenu").tabs();
+		$("#JxMenu").tabs({
+                        fx: { opacity: 'toggle' }
+                  });
 	});
 </script> 
 
@@ -101,14 +103,22 @@ div#content {
 <body>
 <div id="JxMenu">
 <ul>
-<li ${JLPT}><a href=py:JxStats("JLPT")>JLPT</a></li>
-<li ${Jouyou}><a href=py:JxStats("Jouyou")>Jouyou</a></li>
-<li ${Kanken}><a href=py:JxStats("Kanken")>Kanken</a></li>
-<li ${Zone}><a href=py:JxStats("Zone")>Frequency</a></li>
-<li><a href=py:JxGraphs()>Graphs</a></li>
-<li ${Tools}><a href=py:JxTools()>Tools</a></li>
+<li><a href="#JLPT">JLPT</a></li>
+<li><a href="#Frequency">Frequency</a></li>
+<li><a href="#Kanken">Kanken</a></li>
+<li><a href="#Jouyou">Jouyou</a></li>
+<li><a href="py:JxGraphs()">Graphs</a></li>
+<li ${Tools}><a href="py:JxTools()">Tools</a></li>
 <li><a href=py:JxWindow.hide()>X</a></li>
 </ul>
+<div id="JLPT">${JLPT}</div>
+<div id="Frequency">${Frequency}</div>
+<div id="Jouyou">${Jouyou}</div>
+<div id="Kanken">${Kanken}</div>
+<div id="Settings">
+</div>
+<div id="Tools">
+</div
 </div>
 <div id="content" style="clear:both;">${Content}</div>
 </body>
@@ -653,25 +663,16 @@ def JxGetInfo():
 JxMap={"Kanji2JLPT":MapJLPTKanji,"Tango2JLPT":MapJLPTTango,"Kanji2Jouyou":MapJouyouKanji,
 "Kanji2Zone":MapZoneKanji,"Tango2Zone":MapZoneTango,"Kanji2Kanken":MapKankenKanji}
 
-JxStatsMenu={'JLPT':[('Kanji',0),('Word',0)]}
+JxStatsMenu={'JLPT':[('Kanji',0),('Word',0)],'Frequency':[('Kanji',2),('Kanji',1),('Word',2),('Word',1)],'Kanken':[('Kanji',3)],'Jouyou':[('Kanji',4)]}
 
-def JxStats(Type):
+def JxStats(Tab):
         JxHtml=""
-	for (Type,k) in JxStatsMenu['JLPT']:
-                JxHtml += """<br/><center><b style="font-size:1.4em;">KANJI</b></center>"""
+	for (Type,k) in JxStatsMenu[Tab]:
+                JxHtml += """<br/><center><b style="font-size:1.4em;">""" + Type.upper() + """</b></center>"""
                 JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Kanji')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type +  """','Kanji')>Seen</a></center><br/>"""
                 JxHtml += HtmlReport(Type,k)
-	#	if Type not in ["Jouyou","Kanken"]:
-	#	JxHtml +="""<br /><center><b style="font-size:1.4em;">TANGO</b></center>"""
-	#	JxHtml += """<center><a href=py:JxMissing('""" + Type + """','Tango')>Missing</a>&nbsp;&nbsp;<a href=py:JxSeen('""" + Type + """','Tango')>Seen</a></center><br />"""
-	#	JxHtml += HtmlReport(JxMap["Tango2"+Type],QueryTango)
+        return JxHtml
 
-	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
-	Dict[Type] = 'id="active"'
-	JxPage = Template(JxMenu).safe_substitute(Dict)
-	
-	JxWindow.setHtml(JxPage,JxResourcesUrl)
-	JxWindow.show()
 
 JxQuery={"Kanji":QueryKanji,"Tango":QueryTango,"Kanjib":QueryKanjib,"Tangob":QueryTangob}
 
@@ -825,33 +826,22 @@ SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSH
 	JxPreview.show()
 
 
-#<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/mootools/1.2.2/mootools-yui-compressed.js"></script>
-#<link type="text/css" rel="stylesheet" href="asexyforms-blue.css"/>
-#<script type="text/javascript" src="asexyforms.v1.1.mootools.js"></script>
-import sys
-from PyQt4.QtCore import QSize, Qt
-from PyQt4.QtGui import *
-from PyQt4.QtWebKit import *
-class WebWidget(QWidget):
 
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setBrush(Qt.white)
-        painter.setPen(Qt.black)
-        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
-        painter.setBrush(Qt.red)
-        painter.setPen(Qt.NoPen)
-        painter.drawRect(self.width()/4, self.height()/4,
-                         self.width()/2, self.height()/2)
-        painter.end()
-    
-    def sizeHint(self):
-        return QSize(100, 100)
+
+#import sys
+#from PyQt4.QtCore import QSize, Qt
+#from PyQt4.QtGui import *
+from PyQt4.QtWebKit import *
 
 	
 def onJxMenu():
-	JxStats('JLPT')
+        from graphs import JxParseFacts4Stats
+        JxParseFacts4Stats() 
+        ComputeCount()        
+	JxHtml = Template(JxMenu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
+                'Jouyou':JxStats('Jouyou')})
+        JxWindow.setHtml(JxHtml,JxResourcesUrl)
+        JxWindow.show()
 
 
 

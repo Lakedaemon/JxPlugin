@@ -5,4 +5,5 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 JxLink = {}
-
+from loaddata import *
+JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}

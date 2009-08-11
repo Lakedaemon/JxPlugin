@@ -10,6 +10,7 @@ from ankiqt.ui.utils import getSaveFile, askUser
 from answer import Tango2Dic
 from loaddata import *
 from graphs import CardId2Types
+from globalobjects import JxStatsMap
 ######################################################################
 #
 #                      JxStats : Stats
@@ -53,7 +54,7 @@ def ComputeCount():
                         JxFlushFactStats(CardState,CardId)
                         CardState = []
 
-JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+
 
 def JxFlushFactStats(CardState,CardId):
         """Flush the fact stats"""
@@ -86,11 +87,11 @@ def JxFlushFactStats(CardState,CardId):
 ############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
                                 #now, we got to flush the fact. Let's go for the realist model first
                                 for State in CardState:
+                                        InDeck += Change
                                         if State < 2:
                                                 Seen += Change
                                         if State == 0:
                                                 Known += Change
-                                InDeck += 1
                                 # save the updated list                        
                                 JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total) 
 ##############################################################################################################     
@@ -102,8 +103,6 @@ def JxFlushFactStats(CardState,CardId):
 def HtmlReport(Type,k):
         global JxStatsArray
         from graphs import JxParseFacts4Stats
-        JxParseFacts4Stats() 
-        ComputeCount()
         Map = JxStatsMap[Type][k]
 	JxStatsHtml = """<style>
         .JxStats td{align:center;text-align:center;}
@@ -119,7 +118,7 @@ def HtmlReport(Type,k):
 	""" % Map.To
         (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
 	for (Key,Value) in Map.Order:
-                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,0,Key)]
+                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
 		<tr><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
@@ -127,12 +126,45 @@ def HtmlReport(Type,k):
         JxStatsHtml += """
         <tr class="Border"><td><b>%s</b></td><td><b style="font-size:small">%.1f</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
 		""" % ('Total',SumKnown*100.0/max(1,SumTotal),SumKnown,SumSeen,SumInDeck,SumTotal)        
-        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,0,'Other')]
+        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]
         if (Known,Seen,InDeck,Total) != (0,0,0,0):
                 JxStatsHtml += """<tr><td style="border:0px solid black;"><b>%s</b></td><td></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td></td></tr>""" % ('Other',Known,Seen,InDeck)                
 
         JxStatsHtml += "</table>"
         return JxStatsHtml
+        
+def JxWidgetAccumulatedReport(Type,k):
+        global JxStatsArray
+        from graphs import JxParseFacts4Stats
+        Map = JxStatsMap[Type][k]
+	JxStatsHtml = """<style>
+        .JxStats td{align:center;text-align:center;}
+        .JxStats tr > td:first-child,.JxStats tr > th:first-child{
+        border-right:1px solid black;
+        border-left:1px solid black;
+        }
+        .BorderRight{border-right:1px solid black;}
+        .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
+        </style>
+	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
+	<tr class="Border"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	""" % Map.To
+        JxSumTotal = sum([JxStatsArray[(Type,k,Key)][3] for (Key,Value) in Map.Order])
+        (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
+	for (Key,Value) in Map.Order:
+                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
+                (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
+		JxStatsHtml += """
+		<tr><td><b>%s</b></td><td>%.0f %%</td><td>%.0f %%</td><td>%.0f %%</td><td class="BorderRight">%.0f %%</td></tr>
+		""" % (Value,Known*100.0/max(1,JxSumTotal),Seen*100.0/max(1,JxSumTotal),InDeck*100.0/max(1,JxSumTotal),Total*100.0/max(1,JxSumTotal))
+        JxStatsHtml += """
+        <tr class="Border"><td><b>%s</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		""" % ('Total',SumKnown*100.0/max(1,JxSumTotal),SumSeen*100.0/max(1,JxSumTotal),SumInDeck*100.0/max(1,JxSumTotal),100)        
+        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
+
+        JxStatsHtml += "</table>"
+        return JxStatsHtml       
+        
 
 def SeenHtml(Map,Query):
         """Returns an Html report of the seen stuff corresponding to Map and Query """

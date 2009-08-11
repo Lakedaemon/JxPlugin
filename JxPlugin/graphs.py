@@ -11,7 +11,7 @@ import time
 #from anki.utils import ids2str
 from loaddata import *
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
-
+from globalobjects import JxStatsMap
 
 
 #colours for graphs
@@ -222,7 +222,7 @@ def JxNewAlgorythm():
                 order by facts.id,reviewHistory.cardId,reviewHistory.time
                 """) 
         JxProfile("Query ended")  
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
         JxNowTime = time.time()
         # The Graphs we can have
         Length = len(Rows)
@@ -339,7 +339,7 @@ def JxGraphs():
         JxProfile("JxGraphs()")   
         JxParseFacts4Stats() 
         JxGraphsJSon =JxNewAlgorythm()
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
 
 
         from ui_menu import JxPreview
