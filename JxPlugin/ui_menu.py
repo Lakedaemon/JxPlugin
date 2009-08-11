@@ -29,34 +29,54 @@ JxMenu = """
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
 
-
 <!--                  jQuery & UI                          -->
 
 
 <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
 
 
 <!--                         Theme                          -->
 
-<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
 <link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+<!--<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script>--> 
+
+
+<!--                         Tabs                          -->
+
+<style type="text/css">
+.ui-tabs .ui-tabs-hide {
+     display: none;
+}
+
+#JxMenu ul li a{
+        font-size:small;
+        padding:5px;
+}
+</style>
+
+<script type="text/javascript" src="js/ui.core.js"></script> 
+<script type="text/javascript" src="js/ui.tabs.js"></script> 
+<script type="text/javascript"> 
+	$(function() {
+		$("#JxMenu").tabs();
+	});
+</script> 
+
 
 
 <!--                  Buttons                          -->
-
-
-
-
 
 <script src="ui.button/ui.classnameoptions.js"></script> 
 <script src="ui.button/ui.button.js"></script> 
 <link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
 <script src="ui.button/ui.buttonset.js"></script> 
+<script type="text/javascript" >
+        $(document).ready(function(){
+               $('.ui-button').button({checkButtonset:true});
+        });
+</script> 
 
-
-
-	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
 
 <!--                     Selects                          -->
 
@@ -67,100 +87,20 @@ JxMenu = """
 <script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
 
-
-
-
-
 <script type="text/javascript" src="Settings.js"></script>
-
-
-
-
-
-
-
-<script> 
-	jQuery().ready(function(){
-		//var icon = "info"; 
-               $('.ui-button').button({checkButtonset:true});
-
-});
-</script> 
-
-
-
-
-
-
 
 <style type="text/css">
 
 div#content {
 	word-wrap: break-word;
 }
-
-ul#navlist {
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-        white-space: nowrap;
-}
-
-ul#navlist li {
-        float: left;
-        font-family: verdana, arial, sans-serif;
-        font-size: 9px;
-        font-weight: bold;
-        margin: 0;
-        padding: 5px 0 4px 0;
-        background-color: #eef4f1;
-        border-top: 1px solid #e0ede9;
-        border-bottom: 1px solid #e0ede9;
-}
-
-#navlist a, #navlist a:link {
-        margin: 0;
-        padding: 5px 8px 4px 7px;
-        color: #95bbae;
-        border-right: 1px dashed #d1e3db;
-        text-decoration: none;
-}
-
-ul#navlist li#active {
-        color: #95bbae;
-        background-color: #deebe5;
-}
-
-#navlist a:hover {
-        color: #74a893;
-        background-color: #d1e3db;
-}
-
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 </head>
 <body>
-<div id="navcontainer">
-<ul id="navlist">
+<div id="JxMenu">
+<ul>
 <li ${JLPT}><a href=py:JxStats("JLPT")>JLPT</a></li>
 <li ${Jouyou}><a href=py:JxStats("Jouyou")>Jouyou</a></li>
 <li ${Kanken}><a href=py:JxStats("Kanken")>Kanken</a></li>
@@ -300,7 +240,7 @@ $(document).ready(function(){
 	Dict["Tools"] = 'id="active"'
 	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
 	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
-	JxPage = Template(JxMenu).safe_substitute(Dict)
+	JxPage = JxMenu #Template(JxMenu).safe_substitute(Dict)
 	
 
 	#JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
@@ -730,7 +670,7 @@ def JxStats(Type):
 	Dict[Type] = 'id="active"'
 	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
-	JxWindow.setHtml(JxPage)
+	JxWindow.setHtml(JxPage,JxResourcesUrl)
 	JxWindow.show()
 
 JxQuery={"Kanji":QueryKanji,"Tango":QueryTango,"Kanjib":QueryKanjib,"Tangob":QueryTangob}
@@ -742,7 +682,7 @@ def JxMissing(Type,Set):
 	
 	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
 	Dict[Type] = 'id="active"'
-	JxPage = Template(JxMenu).safe_substitute(Dict)
+	JxPage = JxMenu #Template(JxMenu).safe_substitute(Dict)
 	
 	JxWindow.setHtml(JxPage)
 
