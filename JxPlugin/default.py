@@ -126,7 +126,7 @@ clear:right;
 .Tr-Odd {
         background-color:#ddedfc;
 }
-table.K-Words {
+table.K-Words, table.W-Sentence{
         font-size:20px;
         line-height:20px;
         text-align:center;
@@ -135,10 +135,10 @@ table.K-Words {
         font-weight: normal; 
         text-decoration: none;
 }
-table.K-Words td{
+table.K-Words td, table.W-Sentence td{
         padding:6px 10px 6px 10px;
 }
-table.K-Words .Td-One {
+table.K-Words .Td-One, table.W-Sentence .Td-One {
         font-family: Osaka,Arial,Helvetica,sans-serif; 
         font-weight: normal; 
         text-decoration: none; 

@@ -64,6 +64,8 @@ def JxTableDisplay(TupleList,Class):
 def JxStrokeDisplay(KanjiList):
         result={}
         Kanjis='","'.join(KanjiList)
+        KanjiQuery=[]
+        ExpressoinQuery=[]
         try : # Finds all Kanji facts whose kanji is in the list
                 Query = u"""select kanji.value, meaning.value from 
                 fields as kanji, fields as meaning, fieldModels as fmkanji, fieldModels as fmmeaning where kanji.fieldModelId= fmkanji.id and fmkanji.name="Kanji" and 
@@ -88,7 +90,7 @@ def JxStrokeDisplay(KanjiList):
         for k in KanjiList:
                 if k not in result:
                         result[k]=''
-                ret+='<span title="' + result[k] + '">'+ k + '</span>'
+                ret+='<span title="' + result[k] + '">'+ k + '</span><span style="font-size:1px"> </span>'
         return ret
         
         
@@ -164,7 +166,7 @@ def JxMagicalGuess(Card):
         # 0 -> usuall case (no restriction) we know nothing. Parse further ! Later, we might check for the Japanese Tag.
         # 1 -> we found the type, now affect the related field
         # 2 & 3 & 4 -> the user is (posibly wrongly) telling that he wants this card to be considered of those types (what to do now ? affecting the fields). 
-        
+
         if len(Types)>=1:
                 return JxAffectFields(Card,Types)
                 # needed for stats and graphs. We need to know on what field we are working. 
@@ -182,7 +184,7 @@ def JxAffectFields(Card,Types):
                                 if Field.name in TypeList:
                                         List.append((Type,Field.name,Card.fact[Field.name])) 
                                         break
-                                             
+
         if len(List)<len(Types):
                 # there are still missing fields for the types, we could try the "Expression" field next and update the List
                 if len(List)>0:
@@ -199,7 +201,6 @@ def JxAffectFields(Card,Types):
                                                 TempList.append((Type,Field.name,Card.fact[Field.name])) 
                                                 break 
                 List = TempList
-                                                
         if len(List)<len(Types):
                 # field names and "Expression" have failed, we could still try to guess with the fields content
                 # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
@@ -430,7 +431,8 @@ def append_JxPlugin(Answer,Card):
         'K-Stroke':'','W-Stroke':'','S-Stroke':'','G-Stroke':'',
         "W-JLPT":'','W-Freq':'',
         'K-JLPT':'','K-Jouyou':'','K-Freq':'',
-        'K-Words':''
+        'K-Words':'',
+        'W-Sentences':''
         }    
     
     # ${F-Types}
@@ -471,7 +473,16 @@ def append_JxPlugin(Answer,Card):
             try:        # ${W-Freq}
                     JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
             except KeyError:pass
-            
+
+            try : # Finds all word and sentance facts whose expression uses the Word and returns a table with expression, reading, meaning            
+                    Query = """select expression.value, meaning.value, reading.value from 
+                    fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and (fmexpression.name="Expression" or fmexpression.name="Sentence") and 
+                    reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
+                    meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
+                    expression.value like "%%%s%%" and expression.value != "%s" """ % (JxW, JxW)
+                    JxAnswerDict['W-Sentences'] = JxTableDisplay(mw.deck.s.all(Query),'W-Sentences')    
+            except KeyError:pass        
+
     if JxK:
             try:        # ${K:JLPT}
                     JxAnswerDict['K-JLPT'] =  '%s' % MapJLPTKanji.String(JxK)
