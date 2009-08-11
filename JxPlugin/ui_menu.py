@@ -21,7 +21,7 @@ from metacode import *
 from graphs import JxGraphs
 
 
-JxMenu = """ 
+JxMenu = u""" 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
 <head>
@@ -73,6 +73,19 @@ JxMenu = """
 </script> 
 
 
+<!--                  Accordion                          -->
+
+<script type="text/javascript" src="js/ui.accordion.js"></script> 
+<script type="text/javascript">
+	$(function() {
+		$("#Settings").accordion({
+			autoHeight: false
+		});
+	});
+	</script>
+
+
+
 
 <!--                  Buttons                          -->
 
@@ -103,8 +116,32 @@ JxMenu = """
 div#content {
 	word-wrap: break-word;
 }
+
+textarea.Code { 
+        border: #000000 1px solid; 
+        color: #8187da; 
+        background-color: #000000; 
+        scrollbar-face-color: #000000; 
+        scrollbar-highlight-color: #777777; 
+        scrollbar-shadow-color: #777777; 
+        scrollbar-3dlight-color: #000000; 
+        scrollbar-arrow-color: #ff0000; 
+        scrollbar-track-color: #333333; 
+        scrollbar-darkshadow-color: #000000 
+}
 </style>
 
+
+<script type="text/javascript">
+$(document).ready(function(){
+		$('select#Entry').selectmenu({width:200});
+                  var temp = JxSettings.Get('Mode')
+                  for(i=0; i<document.forms.FormMode.Mode.length; i++)
+                        if(document.forms.FormMode.Mode.options[i].text == temp)
+                           document.forms.FormMode.Mode.options.selectedIndex = i;
+                  $('select#Mode').selectmenu({width:150});  
+});
+</script>
 
 </head>
 <body>
@@ -114,25 +151,93 @@ div#content {
 <li><a href="#Frequency">Frequency</a></li>
 <li><a href="#Kanken">Kanken</a></li>
 <li><a href="#Jouyou">Jouyou</a></li>
+<li><a href="#Settings">Settings</a></li>
 <li><a href="py:JxGraphs()">Graphs</a></li>
-<li ${Tools}><a href="py:JxTools()">Tools</a></li>
+<li><a href="py:JxTools()">Tools</a></li>
 <li><a href="#X">X</a></li>
 </ul>
 <div id="JLPT">${JLPT}</div>
 <div id="Frequency">${Frequency}</div>
 <div id="Jouyou">${Jouyou}</div>
 <div id="Kanken">${Kanken}</div>
-<div id="Settings">
+<div id="Settings" style="padding:3px;">
+	<h3><a href="#">About</a></h3>
+	<div>
+        The Japanese eXtended Plugin (V 1.14) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
+                <p>Written by Olivier Binda with patches from Robert Hebler.</p>
+                <div><a style="display:block;" align="center" href='http://www.pledgie.com/campaigns/5354'><img alt='Click here to lend your support to: JxPlugin and make a donation at www.pledgie.com !' src='http://www.pledgie.com/campaigns/5354.png?skin_name=chrome' border='0' /></a></div>
+                <p>
+                Thanks to all the people who have provided suggestions, bug reports and donations.</p>
+	</div>
+	<h3><a href="#">Answer Transductor</a></h3>
+	<div>
+                <center>
+                <form name="FormMode">
+                <select id="Mode" name="Mode" onChange="
+                                var Index = document.forms.FormMode.Mode.options.selectedIndex;
+                                JxSettings.Set('Mode',document.forms.FormMode.Mode.options[Index].text);
+                        ">
+                        <option name="Override">Override</option>    
+                        <option name="Prepend">Prepend</option> 
+                        <option name="Append">Append</option> 
+                        <option name="Bypass">Bypass</option>
+                </select>
+                </form>
+                </center>
+                <br />
+                <form name="Translator"> 
+                <center><textarea  class="Code" name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "
+                        JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)
+                "></textarea></center>
+                <br/>
+                <center class="Entry">&nbsp;</center>
+                <br/>
+                <center><textarea class="Code" name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "
+                        JxTemplateOverride.Target = document.forms.Translator.Target.value
+                " ></textarea></center>
+                <br />
+                <center><div class="ui-buttonset-tiny">
+                        <a class="ui-button" href = "javascript:void(0)" onclick="
+                                JxTemplateOverride.ResetTables();
+                                JxTemplateOverride.Entry = 0;
+                                $('.Entry').html(JxTemplateOverride.GetForm());
+                                $('select#Entry').selectmenu({width:200});
+                                document.forms.Translator.Target.value = JxTemplateOverride.Target;
+                                document.forms.Translator.Source.value = JxTemplateOverride.Source;   
+                         ">Reset</a>
+                         <a class="ui-button" href = "javascript:void(0)" onClick="
+                                $('.Entry').html(JxTemplateOverride.ReduceForm());
+                                $('select#Entry').selectmenu({width:200});
+                                $('.ui-button').button();
+                                document.forms.Translator.Target.value=JxTemplateOverride.Target;
+                                document.forms.Translator.Source.value=JxTemplateOverride.Source;"
+                         >Delete</a>
+                         <a class="ui-button" href = "javascript:void(0)" onClick="Rename()">Rename</a>
+                         <a class="ui-button" href="py:JxBrowse()">Preview</a>
+                         <a class="ui-button" href="py:JxHelp()">Help</a>
+                </div>
+                </center>
+                </form>
+	</div>
+        <h3><a href="#">Tag Redundant Entries</a></h3>
+        <div>
+        	       <center>
+                       <select style="display:inline;" id="s1" multiple="multiple">%s</select>&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
+                </center>
+                <ul>
+                        <li>young ones get "JxDuplicate"</li>
+                        <li>the oldest one gets "JxMasterDuplicate and herits all tags"</li>
+                </ul>
+        </div>
 </div>
 <div id="Tools">
 </div>
 <div id="X">
-</div
 </div>
-<div id="content" style="clear:both;">${Content}</div>
+</div> 
 </body>
 </html>
-""".decode('utf-8')
+"""
 
 QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
 		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
@@ -172,77 +277,6 @@ def JxTools():
 		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
 	FieldsBuffer +=  u"""</optgroup>"""
 	JxHtml = u"""<br />
-        
-        <!-- Black text area-->
-        
-
-	<h3 style="text-align:center;">SETTINGS</h3>
-        <form name="FormMode">
-        <center>
-
-        <select id="Mode" name="Mode" onChange="
-		var Index = document.forms.FormMode.Mode.options.selectedIndex;
-		JxSettings.Set('Mode',document.forms.FormMode.Mode.options[Index].text);">
-                  <option name="Override">Override</option>    
-                  <option name="Prepend">Prepend</option> 
-                  <option name="Append">Append</option> 
-                  <option name="Bypass">Bypass</option>
-         </select>
-         </form>
-         </center>
-         
-	<h3 style="text-align:center;">AUTOMATIC MAPPING</h3>
-        <STYLE> textarea.sample { BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } </STYLE>
-        
-	<form name="Translator"> 
-	
-	<center><textarea  class="sample" name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)"></textarea></center>
-	
-	<br />
-	
-     	<center class="Entry">&nbsp;</center>
-
-<script type="text/javascript">
-$(document).ready(function(){
-		$('select#Entry').selectmenu({width:200});
-                  var temp = JxSettings.Get('Mode')
-                  for(i=0; i<document.forms.FormMode.Mode.length; i++)
-                        if(document.forms.FormMode.Mode.options[i].text == temp)
-                           document.forms.FormMode.Mode.options.selectedIndex = i;
-                  $('select#Mode').selectmenu({width:150});
-                  
-                
-});
-</script>
-	<br />
-	
-	<center><textarea class="sample" name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "JxTemplateOverride.Target = document.forms.Translator.Target.value" ></textarea></center>
-	
-	<br />
-	
-
-<center><div class="ui-buttonset-tiny">
-        <a class="ui-button" href = "javascript:void(0)" onclick="
-        JxTemplateOverride.ResetTables();
-        JxTemplateOverride.Entry = 0;
-        $('.Entry').html(JxTemplateOverride.GetForm());
-        $('select#Entry').selectmenu({width:200});
-        document.forms.Translator.Target.value = JxTemplateOverride.Target;
-        document.forms.Translator.Source.value = JxTemplateOverride.Source;   
-        ">Reset</a>
-        <a class="ui-button" href = "javascript:void(0)" onClick="
-                $('.Entry').html(JxTemplateOverride.ReduceForm());
-                $('select#Entry').selectmenu({width:200});
-                $('.ui-button').button();
-                document.forms.Translator.Target.value=JxTemplateOverride.Target;
-                document.forms.Translator.Source.value=JxTemplateOverride.Source;"
-        >Delete</a>
-        <a class="ui-button" href = "javascript:void(0)" onClick="Rename()">Rename</a>
-        <a class="ui-button" href="py:JxBrowse()">Preview</a>
-        <a class="ui-button" href="py:JxHelp()">Help</a></div>
-</center>
-	
-	</form>
 
 
 	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
@@ -740,7 +774,9 @@ class Jx__Menu(QWebView):
 		mw.connect(self.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), self.BridgeToJavascript) #in case of rload, maintains in javascript
 		self.hide()
 	def BridgeToJavascript(self):
-		self.page().mainFrame().addToJavaScriptWindowObject(self.name,self)	                
+		self.page().mainFrame().addToJavaScriptWindowObject(self.name,self)
+                self.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
+                self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)                
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()
@@ -936,10 +972,10 @@ JxAnswerSettings={}
 def Rah():
 	JxAnswerSettings = JxBase.findChild(Jx__Model_CardModel_String,'JxAnswerSettings')	
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
-	JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
-	JxSettings = JxBase.findChild(Jx__Settings,'JxSettings')	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
+	#JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
+	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
+	#JxSettings = JxBase.findChild(Jx__Settings,'JxSettings')	
+	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
         
         
