@@ -295,12 +295,12 @@ def JxFlushFacts(JxCardStateArray,CardId):
                                 elif Type == "Word":
                                         #elif Map.From == 'Tango':
                                         try:
-                                                Change = 100.0 * Word2Frequency[Content] * CardWeight / SumWordOccurences 
+                                                Change = 100.0 * Jx_Word_Occurences[Content] * CardWeight / Jx_Word_SumOccurences 
                                         except KeyError:
                                                 Change = 0
                                 else:
                                         try:
-                                                Change = 100.0 * Kanji2Frequency[Content] * CardWeight / SumKanjiOccurences
+                                                Change = 100.0 * Jx_Kanji_Occurences[Content] * CardWeight / Jx_Kanji_SumOccurences
                                         except KeyError:
                                                 Change = 0 
                                 # we have to update the graph of each type

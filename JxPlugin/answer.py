@@ -474,7 +474,7 @@ def append_JxPlugin(Answer,Card):
             except KeyError:pass
             
             try:        # ${W-Freq}
-                    JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
+                    JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(Jx_Word_MinOccurences+1,2))/(log(Jx_Word_MaxOccurences+1,2)-log(Jx_Word_MinOccurences+1,2)))) 
             except KeyError:pass
             
     if JxK:
@@ -487,7 +487,7 @@ def append_JxPlugin(Answer,Card):
             except KeyError:pass
 
             try:        # ${K:Freq}    
-                    JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(MaxKanjiOccurences+1,2))*10+100))
+                    JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(Jx_Kanji_MaxOccurences+1,2))*10+100))
             except KeyError:pass
             	
             

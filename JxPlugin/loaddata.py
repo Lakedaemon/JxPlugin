@@ -6,6 +6,22 @@
 # ---------------------------------------------------------------------------
 from ankiqt import mw
 from math import log
+import itertools
+import codecs
+import os
+
+def JxReadFile(File):
+	"""Reads a tab separated file text and returns a list of tupples."""
+	List = []
+	try:
+		File = codecs.open(File, "rb", "utf8")
+		for Line in File:
+			List.append(Line.strip('\n').split('\t'))
+		f.close()
+	except:
+		pass
+	return List
+
 ######################################################################
 #
 #                      JLPT for Kanji
@@ -21,12 +37,7 @@ KanjiList_JLPT = {
 '乙丁刀又勺士及己丈乏寸凡刃弓斤匁氏井仁丹幻凶刈冗弔斗尺屯孔升厄丙且弁功甲仙句巡矢穴丘玄巧矛汁尼迅奴囚凸凹斥弐吏企邦江吉刑充至芝扱旬旨尽缶仰后伏劣朴壮吐如匠妃朱伐舌羊朽帆妄芋沢佐攻系抗迫我抑択秀尾伴邸沖却災孝戒杉里妥肝妙序即寿励芳克没妊豆狂岐廷妨亜把呈尿忍呉伯扶忌肖迭吟汽坑抄壱但松郎房拠拒枠併析宗典祉免忠沿舎抵茂斉炎阻岳拘卓炉牧奇拍往屈径抽披沼肥拐拓尚征邪殴奉怪佳昆芽苗垂宜盲弦炊枢坪泡肪奔享拙侍叔岬侮抹茎劾泌肢附派施姿宣昭皇紀削為染契郡挑促俊侵括透津是奏威柄柳孤牲帝耐恒冒胞浄肺貞胆悔盾軌荘冠卸垣架砕俗洞亭赴盆疫訂怠哀臭洪狩糾峡厘胎窃恨峠叙逓甚姻幽卑帥逝拷某勅衷逐侯弧朕耗挙宮株核討従振浜素益逮陣秘致射貢浦称納紛託敏郷既華哲症倉索俳剤陥兼脅竜梅桜砲祥秩唆泰剣倫殊朗烈悟恩陛衰准浸虐徐脈俵栽浪紋逸隻鬼姫剛疾班宰娠桑飢郭宴珠唐恭悦粋辱桃扇娯俸峰紡胴挿剖唇匿畔翁殉租桟蚊栓宵酌蚕畝倣倹視票渉推崎盛崩脱患執密措描掲控渋掛排訳訟釈隆唱麻斎貫偽脚彩堀菊唯猛陳偏遇陰啓粘遂培淡剰虚帳惨据勘添斜涯眼瓶彫釣粛庶菌巣廊寂酔惜悼累陶粗蛇眺陵舶窒紳旋紺遍猟偵喝豚赦殻陪悠淑笛渇崇曹尉蛍庸渓堕婆脹痘統策提裁証援訴衆隊就塁遣雄廃創筋葬惑博弾塚項喪街属揮貴焦握診裂裕堅賀揺喚距圏軸絞棋揚雰殖随尋棟搭詐紫欺粧滋煮疎琴棚晶堤傍傘循幾掌渦猶慌款敢扉硫媒暁堪酢愉塀閑詠痢婿硝棺詔惰蛮塑虞幹義督催盟献債源継載幕傷鈴棄跡慎携誉勧滞微誠聖詳雅飾詩嫌滅滑頑蓄誇賄墓寛隔暇飼艇奨滝雷酬愚遭稚践嫁嘆碁漠該痴搬虜鉛跳僧溝睡猿摂飽鼓裸塊腸慈遮慨鉢禅絹傑禍酪賊搾廉煩愁楼褐頒嗣銑箇遵態閣摘維遺模僚障徴需端奪誘銭銃駆稲綱閥隠徳豪旗網酸罰腐僕塾漏彰概慢銘漫墜漂駄獄誓酷墨磁寧穀魂暦碑膜漬酵遷雌漆寡慕漸嫡謁賦監審影撃請緊踏儀避締撤盤養還慮緩徹衝撮誕歓縄範暫趣慰潟敵魅敷潮賠摩輝稼噴撲縁慶潜黙輩稿舗熟霊諾勲潔履憂潤穂賓寮澄弊餓窮幣槽墳閲憤戯嘱鋳窯褒罷賜錘墾衛融憲激壊興獲樹薦隣繁擁鋼縦膨憶諮謀壌緯諭糖懐壇奮穏謡憾凝獣縫憩錯縛衡薫濁錠篤隷嬢儒薪錬爵鮮厳聴償縮購謝懇犠翼繊擦覧謙頻轄鍛礁擬謹醜矯嚇霜謄濫離織臨闘騒礎鎖瞬懲糧覆翻顕鎮穫癒騎藩癖襟繕繭璽繰瀬覇簿鯨鏡髄霧麗羅鶏譜藻韻護響懸籍譲騰欄鐘醸躍露顧艦魔襲驚鑑'.decode("utf-8")
 }
 
-
-Kanji2JLPT = {}
-for a in range(1,5):
-    for b in KanjiList_JLPT[a]:
-        Kanji2JLPT[b]=a
-
+Kanji2JLPT = dict([(Kanji,JLPT) for JLPT in range(1,5) for Kanji in KanjiList_JLPT[JLPT]])
 
 ######################################################################
 #
@@ -51,14 +62,7 @@ u'亡寸己干仁尺片冊収処幼庁穴危后灰吸存宇宅机至否我系卵
 u'乙了又与及丈刃凡勺互弔井升丹乏匁屯介冗凶刈匹厄双孔幻斗斤且丙甲凸丘斥仙凹召巨占囚奴尼巧払汁玄甘矛込弐朱吏劣充妄企仰伐伏刑旬旨匠叫吐吉如妃尽帆忙扱朽朴汚汗江壮缶肌舟芋芝巡迅亜更寿励含佐伺伸但伯伴呉克却吟吹呈壱坑坊妊妨妙肖尿尾岐攻忌床廷忍戒戻抗抄択把抜扶抑杉沖沢沈没妥狂秀肝即芳辛迎邦岳奉享盲依佳侍侮併免刺劾卓叔坪奇奔姓宜尚屈岬弦征彼怪怖肩房押拐拒拠拘拙拓抽抵拍披抱抹昆昇枢析杯枠欧肯殴況沼泥泊泌沸泡炎炊炉邪祈祉突肢肪到茎苗茂迭迫邸阻附斉甚帥衷幽為盾卑哀亭帝侯俊侵促俗盆冠削勅貞卸厘怠叙咲垣契姻孤封峡峠弧悔恒恨怒威括挟拷挑施是冒架枯柄柳皆洪浄津洞牲狭狩珍某疫柔砕窃糾耐胎胆胞臭荒荘虐訂赴軌逃郊郎香剛衰畝恋倹倒倣俸倫翁兼准凍剣剖脅匿栽索桑唆哲埋娯娠姫娘宴宰宵峰貢唐徐悦恐恭恵悟悩扇振捜挿捕敏核桟栓桃殊殉浦浸泰浜浮涙浪烈畜珠畔疾症疲眠砲祥称租秩粋紛紡紋耗恥脂朕胴致般既華蚊被託軒辱唇逝逐逓途透酌陥陣隻飢鬼剤竜粛尉彫偽偶偵偏剰勘乾喝啓唯執培堀婚婆寂崎崇崩庶庸彩患惨惜悼悠掛掘掲控据措掃排描斜旋曹殻貫涯渇渓渋淑渉淡添涼猫猛猟瓶累盗眺窒符粗粘粒紺紹紳脚脱豚舶菓菊菌虚蛍蛇袋訟販赦軟逸逮郭酔釈釣陰陳陶陪隆陵麻斎喪奥蛮偉傘傍普喚喫圏堪堅堕塚堤塔塀媒婿掌項幅帽幾廃廊弾尋御循慌惰愉惑雇扉握援換搭揚揺敢暁晶替棺棋棚棟款欺殖渦滋湿渡湾煮猶琴畳塁疎痘痢硬硝硫筒粧絞紫絡脹腕葬募裕裂詠詐詔診訴越超距軸遇遂遅遍酢鈍閑隅随焦雄雰殿棄傾傑債催僧慈勧載嗣嘆塊塑塗奨嫁嫌寛寝廉微慨愚愁慎携搾摂搬暇楼歳滑溝滞滝漠滅溶煙煩雅猿献痴睡督碁禍禅稚継腰艇蓄虞虜褐裸触該詰誇詳誉賊賄跡践跳較違遣酬酪鉛鉢鈴隔雷零靴頑頒飾飽鼓豪僕僚暦塾奪嫡寡寧腐彰徴憎慢摘概雌漆漸漬滴漂漫漏獄碑稲端箇維綱緒網罰膜慕誓誘踊遮遭酵酷銃銑銘閥隠需駆駄髪魂錬緯韻影鋭謁閲縁憶穏稼餓壊懐嚇獲穫潟轄憾歓環監緩艦還鑑輝騎儀戯擬犠窮矯響驚凝緊襟謹繰勲薫慶憩鶏鯨撃懸謙賢顕顧稿衡購墾懇鎖錯撮擦暫諮賜璽爵趣儒襲醜獣瞬潤遵償礁衝鐘壌嬢譲醸錠嘱審薪震錘髄澄瀬請籍潜繊薦遷鮮繕礎槽燥藻霜騒贈濯濁諾鍛壇鋳駐懲聴鎮墜締徹撤謄踏騰闘篤曇縄濃覇輩賠薄爆縛繁藩範盤罷避賓頻敷膚譜賦舞覆噴墳憤幣弊壁癖舗穂簿縫褒膨謀墨撲翻摩磨魔繭魅霧黙躍癒諭憂融慰窯謡翼羅頼欄濫履離慮寮療糧隣隷霊麗齢擁露'
 }
 
-Kanji2Grade = {}
-for a in (1,2,3,4,5,6,'HS'):
-    for b in KanjiList_Jouyou[a]:
-        Kanji2Grade[b]=a
-
-		
-
-
+Kanji2Grade = dict([(Kanji,Grade) for Grade in (1,2,3,4,5,6,'HS') for Kanji in KanjiList_Jouyou[Grade]])
 
 ######################################################################
 #
@@ -66,115 +70,37 @@ for a in (1,2,3,4,5,6,'HS'):
 #
 ######################################################################
 
-import os
-import codecs
-import cPickle
-import itertools
-
 Word2Data = {}
-JLPTWordLists={1:0,2:0,3:0,4:0} #utility ?
+for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "JLPT.Word.List.csv")):
+        if List[1].strip():
+                Word2Data[List[1].strip()] = int(List[4])  
+        else:
+                Word2Data[List[0].strip()] = int(List[4])                  
+                        
 
-file = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "JLPT.Word.List.csv")
-file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Word2Data.pickle")
-
-def read_JLPT(file):
-	"""Reads JLPT wordlists from file."""
-	f = codecs.open(file, "r", "utf8")
-	
-	def keyfunc(line):
-		if line=="\n":
-			return False
-		else:
-			return True
-	Html=""
-	for key, group in itertools.groupby(f.readlines(), keyfunc):
-		if key:
-			group=list(group)
-			data=[l.rstrip().split("	".decode("utf-8")) for l in group]
-			for linol in data:
-		            
-			    if linol[1] == "":
-				Html+= linol[0]+u" "    
-			        Word2Data[linol[0].strip(u" ")] = int(linol[4])
-		            else:
-				Html+= linol[1]+u" "  
-			        Word2Data[linol[1].strip(u" ")] = int(linol[4])
-			    JLPTWordLists[int(linol[4])] = JLPTWordLists[int(linol[4])] + 1
-	f.close()
-
-if (os.path.exists(file_pickle) and 
-	os.stat(file_pickle).st_mtime > os.stat(file).st_mtime):
-	f = open(file_pickle, 'rb')
-	Word2Data = cPickle.load(f)
-	f.close()
-else:
-	read_JLPT(file)
-	f = open(file_pickle, 'wb')
-	cPickle.dump(Word2Data, f, cPickle.HIGHEST_PROTOCOL)
-	f.close()
 	
 ######################################################################
 #
 #                      Kanken for Kanji
 #
 ######################################################################
-Kanji2Kanken = {}
 
-file = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Kanken.csv")
-
-def read_Kanken(file):
-	"""Reads Kanken levels from file."""
-	f = codecs.open(file, "r", "utf8")
-	
-	def keyfunc(line):
-		if line=="\n":
-			return False
-		else:
-			return True
-	for key, group in itertools.groupby(f.readlines(), keyfunc):
-		if key:
-			group=list(group)
-			data=[l.rstrip().split("	".decode("utf-8")) for l in group]
-			for linol in data:
-			    Kanji2Kanken[linol[0].strip(u" ")] = str(linol[1])
-	f.close()
-
-read_Kanken(file)
-
+Kanji2Kanken = dict([(List[0].strip(),List[1].strip()) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Kanken.csv"))])
 
 ######################################################################
 #
 #                      Frequency for Kanji
 #
 ######################################################################
-Kanji2Frequency = {}
 
-file = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "KanjiFrequencyWikipedia.csv")
+Jx_Kanji_Occurences = dict([(List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "KanjiFrequencyWikipedia.csv"))])
 
-def read_Frequency(file):
-	"""Reads Kanji frequency from file."""
-	f = codecs.open(file, "r", "utf8")
-	
-	def keyfunc(line):
-		if line=="\n":
-			return False
-		else:
-			return True
-	for key, group in itertools.groupby(f.readlines(), keyfunc):
-		if key:
-			group=list(group)
-			data=[l.rstrip().split("	".decode("utf-8")) for l in group]
-			for linol in data:
-			    Kanji2Frequency[linol[0].strip(u" ")] = int(linol[1])
-	f.close()
-
-read_Frequency(file)
-MaxKanjiOccurences = max(Kanji2Frequency.values())
-SumKanjiOccurences = sum(Kanji2Frequency.values())
+Jx_Kanji_MaxOccurences = max(Jx_Kanji_Occurences.values())
+Jx_Kanji_SumOccurences = sum(Jx_Kanji_Occurences.values())
 
 Kanji2Zone ={}
-for (key,value) in Kanji2Frequency.iteritems():
-	a= (log(value+1,2)-log(MaxKanjiOccurences+1,2))*10+100
+for (key,value) in Jx_Kanji_Occurences.iteritems():
+	a= (log(value+1,2)-log(Jx_Kanji_MaxOccurences+1,2))*10+100
 	if a > 62.26: #1/2
 		Kanji2Zone[key] = 1
 	elif a > 45: #1/5
@@ -191,35 +117,16 @@ for (key,value) in Kanji2Frequency.iteritems():
 #                      Frequency for Words
 #
 ######################################################################
-{}
-
-file = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "CorpusInternet.csv")
-
-def read_Frequency(file,Dict):
-	"""Reads Kanji frequency from file."""
-	f = codecs.open(file, "r", "utf8")
 	
-	def keyfunc(line):
-		if line=="\n":
-			return False
-		else:
-			return True
-	for key, group in itertools.groupby(f.readlines(), keyfunc):
-		if key:
-			group=list(group)
-			data=[l.rstrip().split("	".decode("utf-8")) for l in group]
-			for linol in data:
-			    Dict[linol[0].strip(u" ")] = int(linol[1])
-	f.close()
-	return Dict
-	
-Word2Frequency = read_Frequency(file,{})
-SumWordOccurences = sum(Word2Frequency.values())
-MaxWordFrequency = max(Word2Frequency.values())
-MinWordFrequency = min(Word2Frequency.values())
+Jx_Word_Occurences = dict([(List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "CorpusInternet.csv"))])
+
+Jx_Word_SumOccurences = sum(Jx_Word_Occurences.values())
+Jx_Word_MaxOccurences = max(Jx_Word_Occurences.values())
+Jx_Word_MinOccurences = min(Jx_Word_Occurences.values())
+
 Word2Zone ={}
-for (key,value) in Word2Frequency.iteritems():
-	a= (log(value+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2))*100
+for (key,value) in Jx_Word_Occurences.iteritems():
+	a= (log(value+1,2)-log(Jx_Word_MinOccurences+1,2))/(log(Jx_Word_MaxOccurences+1,2)-log(Jx_Word_MinOccurences+1,2))*100
 	if a > 38: #1/2
 		Word2Zone[key] = 1
 	elif a > 30: #1/5
@@ -258,11 +165,23 @@ def Tango2Dic(string):
 		return String
                
 MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")],Tidy=Tango2Dic)
-MapFreqTango = FileList("Tango","Occurences",Word2Frequency,[],Tidy=Tango2Dic)
+MapFreqTango = FileList("Tango","Occurences",Jx_Word_Occurences,[],Tidy=Tango2Dic)
 MapZoneTango = FileList("Tango","Frequency",Word2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")],Tidy=Tango2Dic)
 MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")])
-MapFreqKanji = FileList("Tango","Occurences",Kanji2Frequency,[])
+MapFreqKanji = FileList("Tango","Occurences",Jx_Kanji_Occurences,[])
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
 MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"G1"),(2,"G2"),(3,"G3"),(4,"G4"),(5,"G5"),(6,"G6"),("HS","HS")])
 MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"2.5"),('2',"2"),('1,5',"1.5"),('1',"1")])
 
+#  import cPickle
+#import itertools                      
+#file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Word2Data.pickle")                      
+#                        if (os.path.exists(file_pickle) and 
+#	os.stat(file_pickle).st_mtime > os.stat(file).st_mtime):
+#	f = open(file_pickle, 'rb')
+#	Word2Data = cPickle.load(f)
+#	f.close()
+#else:
+#	f = open(file_pickle, 'wb')
+#	cPickle.dump(Word2Data, f, cPickle.HIGHEST_PROTOCOL)
+#	f.close()

@@ -31,9 +31,9 @@ def ComputeCount():
                                 if k != 1:
                                         JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
                                 elif Type =='Word':
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Word2Frequency[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Word_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
                                 else:
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Kanji2Frequency[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))                                        
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Kanji_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))                                        
         Length = len(Rows)
         Index = 0
         while True:
@@ -79,12 +79,12 @@ def JxFlushFactStats(CardState,CardId):
                                 elif Type == "Word":
                                         #elif Map.From == 'Tango':
                                         try:
-                                                Change = Word2Frequency[Content] * CardWeight
+                                                Change = Jx_Word_Occurences[Content] * CardWeight
                                         except KeyError:
                                                 Change = 0
                                 else:
                                         try:
-                                                Change = Kanji2Frequency[Content] * CardWeight
+                                                Change = Jx_Kanji_Occurences[Content] * CardWeight
                                         except KeyError:
                                                 Change = 0 
                                 # we have to update the graph of each type
