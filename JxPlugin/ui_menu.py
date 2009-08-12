@@ -18,226 +18,10 @@ from answer import *
 from stats import *
 from tools import *
 from metacode import *
-from graphs import JxGraphs
-
-
-JxMenu = u""" 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
-<html>
-<head>
-<title>JxPlugin Main Menu</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-
-<!--                  jQuery & UI                          -->
-
-
-<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
-
-
-<!--                         Theme                          -->
-
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-<!--<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script>--> 
-
-
-<!--                         Tabs                          -->
-
-<style type="text/css">
-.ui-tabs .ui-tabs-hide {
-     display: none;
-}
-
-#JxMenu ul li a{
-        font-size:small;
-        padding:5px;
-}
-</style>
-
-<script type="text/javascript" src="js/ui.core.js"></script> 
-<script type="text/javascript" src="js/ui.tabs.js"></script> 
-<script type="text/javascript"> 
-	$(function() {
-		$("#JxMenu").tabs({
-                        fx: { opacity: 'toggle' },
-                        select: function(event, ui) {
-                                if (ui.panel.id == "X"){
-                                        JxWindow.Hide();
-                                        return false;
-                                };  
-                                return true;
-                         }
-                  });
-	});
-</script> 
-
-
-<!--                  Accordion                          -->
-
-<script type="text/javascript" src="js/ui.accordion.js"></script> 
-<script type="text/javascript">
-	$(function() {
-		$("#Settings").accordion({
-			autoHeight: false
-		});
-	});
-	</script>
 
 
 
 
-<!--                  Buttons                          -->
-
-<script src="ui.button/ui.classnameoptions.js"></script> 
-<script src="ui.button/ui.button.js"></script> 
-<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
-<script src="ui.button/ui.buttonset.js"></script> 
-<script type="text/javascript" >
-        $(document).ready(function(){
-               $('.ui-button').button({checkButtonset:true});
-        });
-</script> 
-
-
-<!--                     Selects                          -->
-
-<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-
-
-<script type="text/javascript" src="Settings.js"></script>
-
-<style type="text/css">
-
-div#content {
-	word-wrap: break-word;
-}
-
-textarea.Code { 
-        border: #000000 1px solid; 
-        color: #8187da; 
-        background-color: #000000; 
-        scrollbar-face-color: #000000; 
-        scrollbar-highlight-color: #777777; 
-        scrollbar-shadow-color: #777777; 
-        scrollbar-3dlight-color: #000000; 
-        scrollbar-arrow-color: #ff0000; 
-        scrollbar-track-color: #333333; 
-        scrollbar-darkshadow-color: #000000 
-}
-</style>
-
-
-<script type="text/javascript">
-$(document).ready(function(){
-		$('select#Entry').selectmenu({width:200});
-                  var temp = JxSettings.Get('Mode')
-                  for(i=0; i<document.forms.FormMode.Mode.length; i++)
-                        if(document.forms.FormMode.Mode.options[i].text == temp)
-                           document.forms.FormMode.Mode.options.selectedIndex = i;
-                  $('select#Mode').selectmenu({width:150});  
-});
-</script>
-
-</head>
-<body>
-<div id="JxMenu">
-<ul>
-<li><a href="#JLPT">JLPT</a></li>
-<li><a href="#Frequency">Frequency</a></li>
-<li><a href="#Kanken">Kanken</a></li>
-<li><a href="#Jouyou">Jouyou</a></li>
-<li><a href="#Settings">Settings</a></li>
-<li><a href="py:JxGraphs()">Graphs</a></li>
-<li><a href="py:JxTools()">Tools</a></li>
-<li><a href="#X">X</a></li>
-</ul>
-<div id="JLPT">${JLPT}</div>
-<div id="Frequency">${Frequency}</div>
-<div id="Jouyou">${Jouyou}</div>
-<div id="Kanken">${Kanken}</div>
-<div id="Settings" style="padding:3px;">
-	<h3><a href="#">About</a></h3>
-	<div>
-        The Japanese eXtended Plugin (V 1.14) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
-                <p>Written by Olivier Binda with patches from Robert Hebler.</p>
-                <div><a style="display:block;" align="center" href='http://www.pledgie.com/campaigns/5354'><img alt='Click here to lend your support to: JxPlugin and make a donation at www.pledgie.com !' src='http://www.pledgie.com/campaigns/5354.png?skin_name=chrome' border='0' /></a></div>
-                <p>
-                Thanks to all the people who have provided suggestions, bug reports and donations.</p>
-	</div>
-	<h3><a href="#">Answer Transductor</a></h3>
-	<div>
-                <center>
-                <form name="FormMode">
-                <select id="Mode" name="Mode" onChange="
-                                var Index = document.forms.FormMode.Mode.options.selectedIndex;
-                                JxSettings.Set('Mode',document.forms.FormMode.Mode.options[Index].text);
-                        ">
-                        <option name="Override">Override</option>    
-                        <option name="Prepend">Prepend</option> 
-                        <option name="Append">Append</option> 
-                        <option name="Bypass">Bypass</option>
-                </select>
-                </form>
-                </center>
-                <br />
-                <form name="Translator"> 
-                <center><textarea  class="Code" name="Source" style="width: 70%%;height:50px;text-align:center;" onChange = "
-                        JxTemplateOverride.Source = JxTemplateOverride.MakeUnique(document.forms.Translator.Source.value,1)
-                "></textarea></center>
-                <br/>
-                <center class="Entry">&nbsp;</center>
-                <br/>
-                <center><textarea class="Code" name="Target" style="width: 90%%;height:100px;text-align:center;" onChange = "
-                        JxTemplateOverride.Target = document.forms.Translator.Target.value
-                " ></textarea></center>
-                <br />
-                <center><div class="ui-buttonset-tiny">
-                        <a class="ui-button" href = "javascript:void(0)" onclick="
-                                JxTemplateOverride.ResetTables();
-                                JxTemplateOverride.Entry = 0;
-                                $('.Entry').html(JxTemplateOverride.GetForm());
-                                $('select#Entry').selectmenu({width:200});
-                                document.forms.Translator.Target.value = JxTemplateOverride.Target;
-                                document.forms.Translator.Source.value = JxTemplateOverride.Source;   
-                         ">Reset</a>
-                         <a class="ui-button" href = "javascript:void(0)" onClick="
-                                $('.Entry').html(JxTemplateOverride.ReduceForm());
-                                $('select#Entry').selectmenu({width:200});
-                                $('.ui-button').button();
-                                document.forms.Translator.Target.value=JxTemplateOverride.Target;
-                                document.forms.Translator.Source.value=JxTemplateOverride.Source;"
-                         >Delete</a>
-                         <a class="ui-button" href = "javascript:void(0)" onClick="Rename()">Rename</a>
-                         <a class="ui-button" href="py:JxBrowse()">Preview</a>
-                         <a class="ui-button" href="py:JxHelp()">Help</a>
-                </div>
-                </center>
-                </form>
-	</div>
-        <h3><a href="#">Tag Redundant Entries</a></h3>
-        <div>
-        	       <center>
-                       <select style="display:inline;" id="s1" multiple="multiple">%s</select>&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
-                </center>
-                <ul>
-                        <li>young ones get "JxDuplicate"</li>
-                        <li>the oldest one gets "JxMasterDuplicate and herits all tags"</li>
-                </ul>
-        </div>
-</div>
-<div id="Tools">
-</div>
-<div id="X">
-</div>
-</div> 
-</body>
-</html>
-"""
 
 QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
 		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
@@ -306,7 +90,8 @@ def JxTools():
 	JxWindow.setHtml(JxPage,JxResourcesUrl)
 
 def JxHelp():
-        JxPreview.setHtml(JxHelpAutomaticMapping,JxResourcesUrl)
+        from html import Jx_Html_HelpAutomaticMapping
+        JxPreview.setHtml(Jx_Html_HelpAutomaticMapping,JxResourcesUrl)
         JxPreview.show()
 
 import os
@@ -712,6 +497,8 @@ JxStatsMenu={
 ('Words',JxWidgetAccumulatedReport,('Word',1))],
 'Kanken':[('Kanji',HtmlReport,('Kanji',3))],
 'Jouyou':[('Kanji',HtmlReport,('Kanji',4))]}
+
+
 def JxStats(Tab):
         JxHtml=""
 	for (Type,Func,Couple) in JxStatsMenu[Tab]:
@@ -784,7 +571,15 @@ class Jx__Menu(QWebView):
 # The main JxPlugin Window
 JxWindow = Jx__Menu('JxWindow',mw)
 
-
+def onJxMenu():
+        from graphs import JxParseFacts4Stats
+        JxParseFacts4Stats() 
+        ComputeCount()        
+        from html import Jx_Html_Menu
+	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
+                'Jouyou':JxStats('Jouyou')})
+        JxWindow.setHtml(JxHtml,JxResourcesUrl)
+        JxWindow.show()
 
 
 
@@ -900,16 +695,125 @@ SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSH
 from PyQt4.QtWebKit import *
 
 	
-def onJxMenu():
-        from graphs import JxParseFacts4Stats
+
+
+def onJxGraphs():
+        from graphs import JxParseFacts4Stats, JxNewAlgorythm
         JxParseFacts4Stats() 
-        ComputeCount()        
-	JxHtml = Template(JxMenu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
-                'Jouyou':JxStats('Jouyou')})
-        JxWindow.setHtml(JxHtml,JxResourcesUrl)
-        JxWindow.show()
+        JxGraphsJSon =JxNewAlgorythm()
+        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+        JxHtml = u"""
+                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
 
+
+<!--                  jQuery & UI                          -->
+
+
+<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
+
+
+<!--                         Theme                          -->
+
+<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+
+
+<!--                  Buttons                          -->
+
+
+
+
+
+<script src="ui.button/ui.classnameoptions.js"></script> 
+<script src="ui.button/ui.button.js"></script> 
+<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
+<script src="ui.button/ui.buttonset.js"></script> 
+
+
+
+	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
+
+<!--                     Selects                          -->
+
+<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
+<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
+
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
+
+
+<!--                     Graphs                          -->
+
+
+<script type="text/javascript" src="jquery.flot.js"></script>
+
+<script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
+
+
+
+
+
+
+<script> 
+	jQuery().ready(function(){
+               $('.ui-button').button({checkButtonset:true});
+               
+$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
+$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
+$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+    return val.toFixed(axis.tickDecimals) +' %%'}}});               
+$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+    return val.toFixed(axis.tickDecimals) +' %%'}}});  
+$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
+$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+ 
+            
+               
+               
+});
+</script> 
+</head>
+<body>
+
+<div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
+<div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
+
+
+<div style="width:100px;height:200px;margin:0 auto;padding:20px;padding-top:70px;text-align:center;"><strong>JLPT</strong>
+<div id="LegendJLPT" align="center" style="width:100px;height:140px;padding-top:10px;">JLPT Legend</div></div>
+
+<div style="clear:both;height:30px"/></div>
+
+<div style="text-align:center;float:left;clear:left;margin-left:10px;"><strong>KANJI Accumulated Frequency</strong><div id="KanjiFreq" style="width:500px;height:250px;"></div></div>
+<div style="text-align:center;float:right;clear:right;margin-right:10px;"><strong>WORDS Accumulated Frequency</strong><div id="WordFreq" style="width:500px;height:250px;"></div></div>
+
+<div style="width:100px;height:200px;margin:0 auto;padding:20px;text-align:center;margin-top:40px;"><strong>FREQUENCY</strong>
+<div id="LegendFreq" align="center" style="width:100px;height:140px;padding-top:10px;">Frequency Legend</div></div>
+
+<div style="clear:both;height:30px"/></div>
+
+<div style="width:500px;text-align:center;float:left;clear:left;margin-left:30px;"><strong>JOUYOU</strong>
+<div id="LegendJouyou" align="center" style="width:360px;margin:0 auto;text-align:center;">Jouyou Legend</div>
+<div id="KanjiJouyou" style="width:500px;height:250px;margin:0 auto;"></div></div>
+
+<div style="width:500px;text-align:center;float:right;clear:right;margin-right:30px;"><strong>KANKEN</strong>
+<div id="LegendKanken" align="center" style="width:460px;margin: 0 auto;text-align:center;">Kanken Legend</div>
+<div id="KanjiKanken" style="width:500px;height:250px;margin:0 auto;"></div></div>
+
+
+          </body></html>                 
+                    
+                    """% (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
+        JxProfile("JxGraphs().Substitute done")
+        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+        JxProfile("JxGraphs().Preview.SetHtml")
+        JxPreview.show() 
 
 
 
@@ -939,9 +843,15 @@ def init_JxPlugin():
 	
 	# creates menu entry
 	mw.mainWin.actionJxMenu = QtGui.QAction('JxMenu', mw)
-	mw.mainWin.actionJxMenu.setStatusTip('Menuol')
+	mw.mainWin.actionJxMenu.setStatusTip('Stats, Tools ans Settings for Japanese')
 	mw.mainWin.actionJxMenu.setEnabled(False)
 	mw.connect(mw.mainWin.actionJxMenu, QtCore.SIGNAL('triggered()'), onJxMenu)
+
+	# creates graph entry
+	mw.mainWin.actionJxGraphs = QtGui.QAction('JxGraphs', mw)
+	mw.mainWin.actionJxGraphs.setStatusTip('Graphs for Japanese')
+	mw.mainWin.actionJxGraphs.setEnabled(False)
+	mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
 
 	# creates menu in the plugin sub menu
 	#mw.mainWin.pluginMenu = mw.mainWin.menubar.addMenu('&JPlugin')
@@ -950,12 +860,13 @@ def init_JxPlugin():
 	#mw.mainWin.actionJStats.setShortcut(_("Ctrl+J"))
 
 
-	# adds the plugin icon in the Anki Toolbar
+	# adds the plugin icons in the Anki Toolbar
 	
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
+	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu",)
+	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs",)
 	
 	# Ading features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
@@ -983,133 +894,5 @@ def Rah():
         
         
         
-JxHelpAutomaticMapping="""
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
- 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
-  <head> 
-    <meta http-equiv="content-type" content="text/html;charset=UTF-8" /> 
-        <title>Documentation - JxPlugin - GitHub</title> 
 
-
-
- 
-    <meta name="description" content="Japanese Extended Plugin for the Spaced Repetition System ANKI" /> 
- 
- 
-    
- 
-  </head> <body><style>
-html,body{height:100%;}
-body{background-color:white;font:13.34px helvetica,arial,clean,sans-serif;*font-size:small;text-align:center;}
-table{font-size:inherit;font:100%;}
-select,input[type=text],input[type=password],input[type=image],textarea{font:99% helvetica,arial,sans-serif;}
-select,option{padding:0 .25em;}
-input.text{padding:1px 0;}
-optgroup{margin-top:.5em;}
-pre,code{font:115% Monaco,"Courier New",monospace;*font-size:100%;}
-body *{line-height:1.4em;}
-img{border:0;}
-a{color:#4183c4;text-decoration:none;}
-a.action{color:#d00;text-decoration:underline;}
-a.action span{text-decoration:none;}
-a:hover{text-decoration:underline;}
-.clear{clear:both;}
-.sparkline{display:none;}
-.right{float:right;}
-.left{float:left;}
-.hidden{display:none;}
-img.help{vertical-align:middle;}
-.notification{background:#FFFBE2 none repeat scroll 0;border:1px solid #FFE222;padding:1em;margin:1em 0;font-weight:bold;}
-.warning{background:#fffccc;font-weight:bold;padding:.5em;margin-bottom:.8em;}
-.error_box{background:#FFEBE8 none repeat scroll 0;border:1px solid #DD3C10;padding:1em;font-weight:bold;}
-abbr{border-bottom:none;}
-.flash{color:green;}
-body{text-align:center;}  
-
-</style>
-<div >
-        <h1><span class="caps">AUTOMATIC MAPPING</span></h1>
-<p>These settings are usefull if you want to customize the display of the Answer cards when reviewing in Anki.</p>
-<table align="center" style="border: 1px solid black;">
-	<tbody><tr>
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 150px; height: 30px;">%(Reading)s</textarea> &nbsp; <b>(1)</b></center></td>
-
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-		<td style="text-align: center;"><b>(2)</b>&nbsp;<a>Delete</a></td>
-		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recall </span><span style="border: 1px solid black; padding: 2px 5px;">V</span>&nbsp;<b>(3)</b></td>
-
-		<td style="text-align: center;"><a>Rename </a>&nbsp;<b>(4)</b></td>
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">${Css}&lt;div style="float:left"&gt;&lt;div&gt;${T2JLPT}&lt;/div&gt;&lt;div&gt;${T2Freq}&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;center&gt;${Expression}&lt;br /&gt;${Reading}&lt;/center&gt;&lt;/div&gt;</textarea>&nbsp;<b>(5)</b></center></td>
-
-	</tr>
-	<tr>
-		<td colspan="3"><center><b>(6)</b>&nbsp;<a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a>&nbsp;<b>(7)</b></center></td>
-	</tr>
-</tbody></table>
-<h2>How to enhance the &quot;recognition&quot; template for Words</h2>
-<p>You first select &quot;Word recognition&quot; in the select menu <b>(3)</b> to get</p>
-
-<table align="center" style="border: 1px solid black;">
-	<tbody><tr>
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 170px; height: 35px;">%(Reading)s&lt;br&gt;%(Meaning)</textarea></center></td>
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-		<td style="text-align: center;"><a>Delete</a></td>
-
-		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recognition</span><span style="border: 1px solid black; padding: 2px 5px;">V</span>&nbsp;<b>(3)</b></td>
-		<td style="text-align: center;"><a>Rename </a></td>
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">${Css} &lt;b&gt;(4)&lt;/b&gt;&lt;div style="float:left;"&gt;&lt;div&gt;${T2JLPT}&lt;/div&gt;&lt;div&gt;${T2Freq}&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;center&gt;${Reading}&lt;br&gt;${Meaning}&lt;/center&gt;&lt;/div&gt;</textarea></center></td>
-	</tr>
-	<tr>
-		<td colspan="3"><center><a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a></center></td>
-	</tr>
-</tbody></table>
-<p>Then, you modify the field <b>(5)</b> to your liking, using <span class="caps">HTML</span> and Css markup. The JxPlugin ads support for some special symbols related to the study of japanese that you can use too like $(CSS), $([Field Name]), $(WJLPT), $(TJLPT), …</p>
-
-<table align="center" style="border: 1px solid black;">
-	<tbody><tr>
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 170px; height: 35px;">%(Reading)s&lt;br&gt;%(Meaning)</textarea></center></td>
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-		<td style="text-align: center;"><a>Delete</a></td>
-
-		<td style="text-align: center;"><span style="border: 1px solid black; padding: 2px 40px;">Word recognition</span><span style="border: 1px solid black; padding: 2px 5px;">V</span></td>
-		<td style="text-align: center;"><a>Rename </a></td>
-	</tr>
-	<tr>
-		<td colspan="3"></td>
-	</tr>
-	<tr>
-
-		<td colspan="3"><center><textarea style="border: 1px solid black; padding: 2px 40px; width: 260px; height: 80px;">&lt;center&gt;My markup code for $(Expression)&lt;/center&gt;JLPT Level is : $(WJLPT)</textarea>&nbsp;<b>(5)</b></center></td>
-	</tr>
-	<tr>
-		<td colspan="3"><center><a>Preview</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a>Help</a></center></td>
-	</tr>
-</tbody></table>
-      </div><p></p></body></html>
-"""
 	
