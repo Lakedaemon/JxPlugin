@@ -149,6 +149,7 @@ $(document).ready(function(){
                   $('select#Mode').selectmenu({width:150});
                   $('select#Tags').html(JxTags.GetOptions());
                   $("select#Tags").dropdownchecklist({ firstItemChecksAll: true,width:150});
+
 });
 </script>
 
@@ -172,7 +173,7 @@ $(document).ready(function(){
         <h3><a href="#">Tag Redundant Entries</a></h3>
         <div>
         	       <center><div class="ui-buttonset-tiny">
-                       <select style="display:inline;" id="Tags" multiple="multiple"></select>&nbsp;&nbsp;&nbsp;<a class="ui-button" onClick="JxTags.TagThemAll()">Tag them !</a></div>
+                       <select style="display:inline;" id="Tags" multiple="multiple">${TagOptions}</select>&nbsp;&nbsp;&nbsp;<a class="ui-button" onClick="JxTags.TagThemAll()">Tag them !</a></div>
                 </center>
                 <ul>
                         <li>young ones get "JxDuplicate"</li>

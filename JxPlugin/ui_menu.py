@@ -20,6 +20,9 @@ from tools import *
 from metacode import *
 
 
+import os
+import cPickle
+import itertools
 
 
 
@@ -40,64 +43,13 @@ QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldMode
 		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 group by fields.value order by firstAnswered"""
 		
 
-JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")+os.sep)
-
-	
-
-def JxTools():
-	FieldsBuffer = u""
-	FieldsBuffer +=  u"""<option id="Model" selected="selected">All</option>"""
-	FieldsBuffer +=  u"""<optgroup label="Models">"""
-	JxPopulateModels = []
-	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
-	for Name in Rows:
-		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Model."+ Name}
-		JxPopulateModels.append(Name)
-		
-	FieldsBuffer +=  u"""</optgroup>"""
-	FieldsBuffer +=  u"""<optgroup label="Fields">"""
-	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
-	for Name in Rows:
-		FieldsBuffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
-	FieldsBuffer +=  u"""</optgroup>"""
-	JxHtml = u"""<br />
-
-
-	<h3 style="text-align:center;">TAG REDUNDANT ENTRIES IN A SET</h3>
-	<center>
-	<span style="vertical-align:middle;"><select style="display:inline;" id="s1" multiple="multiple">%s</select></span> 
-	&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
-	</center>
-	<ul><li>young ones get "JxDuplicate"</li><li>the oldest one gets "JxMasterDuplicate"</li></ul>
-	
-	
-	 """ % FieldsBuffer
-	
-	Dict = {"JLPT":'',"Jouyou":'',"Kanken":'',"Zone":'',"Tools":'',"Content":JxHtml}
-	Dict["Tools"] = 'id="active"'
-	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
-	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
-	JxPage = Template(JxMenu).safe_substitute(Dict)
-	
-
-	#JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
-	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
-
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
-	JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)
-	mw.connect( JxWindow.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
-
-	JxWindow.setHtml(JxPage,JxResourcesUrl)
+JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
 
 def JxHelp():
         from html import Jx_Html_HelpAutomaticMapping
         JxPreview.setHtml(Jx_Html_HelpAutomaticMapping,JxResourcesUrl)
         JxPreview.show()
 
-import os
-#import codecs
-import cPickle
-import itertools
 
 def JxReadFile(File):
 	"""Reads a tab separated file text and returns a list of tupples."""
@@ -518,17 +470,15 @@ class Jx__MultiSelect(QObject):
 		QObject.__init__(self,parent)
 		self.setObjectName(name)
                 self.name = name
-		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
-		self.FieldModels = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
 		self.Javascript=u"""
                         function ReturnField(){return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";}
                         ReturnField();
                         """
-                self.BridgeToJavascript()
-	def BridgeToJavascript(self):
-		JxWindow.page().mainFrame().addToJavaScriptWindowObject(self.name,self)
+        def Update(self):
+		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
+		self.FieldModels = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")                        
 	@pyqtSignature("",result="QString")
-	def GetOptions(self):               
+	def GetOptions(self):     
 		Buffer =  u"""<option id="Model" selected="selected">All</option>"""
 		Buffer +=  u"""<optgroup label="Models">"""
 		JxPopulateModels = []
@@ -558,7 +508,7 @@ class Jx__MultiSelect(QObject):
 		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
 		fieldModels.name in ('""" + "','".join(Fields) + """') and models.name in  ('""" + "','".join(Models) + """') group by facts.id order by fields.value """)
                 
-        
+Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase)        
 
 class Jx__Menu(QWebView):
 	"""A QWebkit Window with mw as parent for Menu related stuff"""
@@ -582,6 +532,7 @@ class Jx__Menu(QWebView):
 		self.page().mainFrame().addToJavaScriptWindowObject(self.name,self)
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
                 self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)     
+                self.page().mainFrame().addToJavaScriptWindowObject("JxTags",Jx_Control_Tags)   
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()
@@ -589,16 +540,26 @@ class Jx__Menu(QWebView):
 # The main JxPlugin Window
 JxWindow = Jx__Menu('JxWindow',mw)
 
+
+
+
+
+
 def onJxMenu():
         from graphs import JxParseFacts4Stats
         JxParseFacts4Stats() 
         ComputeCount()        
-        Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase)
+        Jx_Control_Tags.Update()
         from html import Jx_Html_Menu
 	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
                 'Jouyou':JxStats('Jouyou')})
         JxWindow.setHtml(JxHtml,JxResourcesUrl)
         JxWindow.show()
+
+
+
+
+
 
 
 
@@ -687,13 +648,13 @@ def init_JxPlugin():
 	# creates menu entry
 	mw.mainWin.actionJxMenu = QtGui.QAction('JxMenu', mw)
 	mw.mainWin.actionJxMenu.setStatusTip('Stats, Tools ans Settings for Japanese')
-	mw.mainWin.actionJxMenu.setEnabled(False)
+        mw.mainWin.actionJxMenu.setEnabled(not not mw.deck)
 	mw.connect(mw.mainWin.actionJxMenu, QtCore.SIGNAL('triggered()'), onJxMenu)
 
 	# creates graph entry
 	mw.mainWin.actionJxGraphs = QtGui.QAction('JxGraphs', mw)
 	mw.mainWin.actionJxGraphs.setStatusTip('Graphs for Japanese')
-	mw.mainWin.actionJxGraphs.setEnabled(False)
+	mw.mainWin.actionJxGraphs.setEnabled(not not mw.deck)
 	mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
 
 	# creates menu in the plugin sub menu
@@ -713,12 +674,14 @@ def init_JxPlugin():
 	
 	# Ading features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
-	mw.addHook('deckClosed', exit_JxPlugin) # additional info in answer cards
-	
+	mw.addHook('deckClosed', exit_JxPlugin) # additional info in answer cards	
 
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
 print 'Japanese Extended Plugin loaded'
+
+
+
 
 
 JxAnswerSettings={}
