@@ -171,6 +171,7 @@ def read_Frequency(file):
 read_Frequency(file)
 MaxKanjiOccurences = max(Kanji2Frequency.values())
 SumKanjiOccurences = sum(Kanji2Frequency.values())
+
 Kanji2Zone ={}
 for (key,value) in Kanji2Frequency.iteritems():
 	a= (log(value+1,2)-log(MaxKanjiOccurences+1,2))*10+100
