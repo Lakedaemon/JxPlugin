@@ -616,82 +616,12 @@ def JxBrowse():
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	mw.connect( JxPreview.page().mainFrame(),QtCore.SIGNAL('javaScriptWindowObjectCleared()'), Rah);
 	JxPreview.setWindowTitle(u"Css and Template Browser")
-	JxPreview.setHtml(u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
-<html>
-<head>
-<title>JxPlugin Main Menu</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<!--<link rel="stylesheet" type="text/css" href="demo.css" /> -->
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
-<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-
-<style type="text/css"> select { width: 200px; }</style> 
-
-<!--	<script type="text/javascript" src="http://ui.jquery.com/applications/themeroller/themeswitchertool/"></script> 
-<script type="text/javascript"> $(function(){ $('<div style="position: absolute; top: 20px; right: 10px;" />').appendTo('body').themeswitcher(); }); </script> 
--->
-
-<!--                  Buttons                          -->
-
-
-
-
-
-<script src="ui.button/ui.classnameoptions.js"></script> 
-<script src="ui.button/ui.button.js"></script> 
-<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
-<script src="ui.button/ui.buttonset.js"></script> 
-
-
-
-
-
-<script type="text/javascript">
-$(document).ready(function(){
-		$('.Model').html(JxAnswerSettings.GetFormModels());
-		$('.CardModel').html(JxAnswerSettings.GetFormCardModels());
-                	$('.Prefix').html(JxAnswerSettings.GetFormPrefix());
-		$('.Answer').html(JxAnswerSettings.DisplayString);	
-		$('select#Model').selectmenu();
-		$('select#CardModel').selectmenu();
-                	$('select#Prefix').selectmenu();
-                  var Temp = JxSettings.Get('Css'); 
-                  document.forms.FormCss.Css.value = Temp; 
-                  $('.ui-button').button();
-              
-});
-
-</script>
-<STYLE> textarea#Css { 
-	resize: vertical;
-         min-width: 100%;
-         max-width:100%;
-         min-height: 300px;
-	max-height: 800px;
-BORDER-RIGHT: #000000 1px solid; BORDER-TOP: #000000 1px solid; BORDER-LEFT: #000000 1px solid; BORDER-BOTTOM: #000000 1px solid; COLOR: #8187da; BACKGROUND-COLOR: #000000; SCROLLBAR-FACE-COLOR: #000000; SCROLLBAR-HIGHLIGHT-COLOR: #777777; SCROLLBAR-SHADOW-COLOR: #777777; SCROLLBAR-3DLIGHT-COLOR: #000000; 
-SCROLLBAR-ARROW-COLOR: #ff0000; SCROLLBAR-TRACK-COLOR: #333333; SCROLLBAR-DARKSHADOW-COLOR: #000000 } 
-</STYLE>
-</head><body>
-
-<div><form name="FormCss"><textarea name="Css" id="Css" onChange="JxSettings.Set('Css',document.forms.FormCss.Css.value)"></textarea></form><table align="center" width="80%"><tr>
-<td align="center"><span class="Model">&nbsp;</span></td>
-<td align="center"><span class="CardModel">&nbsp;</span></td>
-<td align="center"><span class="Prefix">&nbsp;</span></td>
-<td align="center"><a class="Toggle ui-button ui-button-toggle-tiny" href = "javascript:void(0)"onClick="JxAnswerSettings.Toggle();                $('.Answer').html(JxAnswerSettings.DisplayString);">Toggle View</a></td>
-</tr></table></div><hr />
-<div style="padding:10px"><div style="border: "class="Answer">&nbsp;</div></div>
-</body></html>""",JxResourcesUrl)
+        from html import Jx_Html_Preview
+	JxPreview.setHtml(Jx_Html_Preview,JxResourcesUrl)
 	JxPreview.show()
 
 
 
-
-#import sys
-#from PyQt4.QtCore import QSize, Qt
-#from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
 
 	
@@ -702,114 +632,8 @@ def onJxGraphs():
         JxParseFacts4Stats() 
         JxGraphsJSon =JxNewAlgorythm()
         #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
-        JxHtml = u"""
-                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
-<html>
-<head>
-<title>JxPlugin Main Menu</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-
-
-<!--                  jQuery & UI                          -->
-
-
-<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
-
-
-<!--                         Theme                          -->
-
-<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-
-
-<!--                  Buttons                          -->
-
-
-
-
-
-<script src="ui.button/ui.classnameoptions.js"></script> 
-<script src="ui.button/ui.button.js"></script> 
-<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
-<script src="ui.button/ui.buttonset.js"></script> 
-
-
-
-	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
-
-<!--                     Selects                          -->
-
-<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-
-
-<!--                     Graphs                          -->
-
-
-<script type="text/javascript" src="jquery.flot.js"></script>
-
-<script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
-
-
-
-
-
-
-<script> 
-	jQuery().ready(function(){
-               $('.ui-button').button({checkButtonset:true});
-               
-$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
-$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
-$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});               
-$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});  
-$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
- 
-            
-               
-               
-});
-</script> 
-</head>
-<body>
-
-<div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
-<div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
-
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;padding-top:70px;text-align:center;"><strong>JLPT</strong>
-<div id="LegendJLPT" align="center" style="width:100px;height:140px;padding-top:10px;">JLPT Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="text-align:center;float:left;clear:left;margin-left:10px;"><strong>KANJI Accumulated Frequency</strong><div id="KanjiFreq" style="width:500px;height:250px;"></div></div>
-<div style="text-align:center;float:right;clear:right;margin-right:10px;"><strong>WORDS Accumulated Frequency</strong><div id="WordFreq" style="width:500px;height:250px;"></div></div>
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;text-align:center;margin-top:40px;"><strong>FREQUENCY</strong>
-<div id="LegendFreq" align="center" style="width:100px;height:140px;padding-top:10px;">Frequency Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="width:500px;text-align:center;float:left;clear:left;margin-left:30px;"><strong>JOUYOU</strong>
-<div id="LegendJouyou" align="center" style="width:360px;margin:0 auto;text-align:center;">Jouyou Legend</div>
-<div id="KanjiJouyou" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-<div style="width:500px;text-align:center;float:right;clear:right;margin-right:30px;"><strong>KANKEN</strong>
-<div id="LegendKanken" align="center" style="width:460px;margin: 0 auto;text-align:center;">Kanken Legend</div>
-<div id="KanjiKanken" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-
-          </body></html>                 
-                    
-                    """% (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
+        from html import Jx_Html_Graphs
+        JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
         JxProfile("JxGraphs().Substitute done")
         JxPreview.setHtml(JxHtml ,JxResourcesUrl)
         JxProfile("JxGraphs().Preview.SetHtml")
