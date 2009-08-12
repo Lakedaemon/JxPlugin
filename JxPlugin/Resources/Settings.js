@@ -15,8 +15,6 @@ $(document).ready(function(){
 		$(".Entry").html(JxTemplateOverride.GetForm());
 		$('select#Entry').selectmenu({width:200});
 		
-	// dropdown list checkboxes
-	$("#s1").dropdownchecklist({ firstItemChecksAll: true,width:100});
 
 
 

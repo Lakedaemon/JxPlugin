@@ -42,7 +42,7 @@ QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldMode
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources")+os.sep)
 
-
+	
 
 def JxTools():
 	FieldsBuffer = u""
@@ -77,7 +77,7 @@ def JxTools():
 	Dict["Tools"] = 'id="active"'
 	Dict["DeckModels"] = u"{%s}" % string.join([u"'"+ a + u"':'" + a + u"'" for a in JxPopulateModels],",")
 	Dict["DeckModelselected"] = u"%s" % JxPopulateModels[0]	
-	JxPage = JxMenu #Template(JxMenu).safe_substitute(Dict)
+	JxPage = Template(JxMenu).safe_substitute(Dict)
 	
 
 	#JxAnswerSettings = Jx__Model_CardModel_String("JxAnswerSettings")
@@ -454,34 +454,6 @@ class Jx__Model_CardModel_String(QObject):
                         Template = String
                 self.DisplayString = re.sub("\$\{(.*?)\}",lambda x:JxReplace(x,self.Sample),Template)
 	
-		
-
-JxJavaScript = u"""
-	function getInfo(){
-	return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";
-	}
-	getInfo();
-	"""
-# To Do : Implement Tags too	
-def JxGetInfo():
-	Models = []
-	Rows = mw.deck.s.column0(u"""select name from models group by name order by name""")
-	for Name in Rows:
-		Value = JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % {"Id":u"Model." + Name}).toString()
-		if Value != u"":
-			Models.append(Value)
-	Fields = []
-	Rows = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
-	for Name in Rows:
-		Value = JxWindow.page().mainFrame().evaluateJavaScript(JxJavaScript % {"Id":u"Field." + Name}).toString()
-		if Value != u"":
-			Fields.append(Value)	
-	
-	return """select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
-		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
-		fieldModels.name in (%(Fields)s) and models.name in  (%(Models)s) group by facts.id order by fields.value """ % ({"Fields":JxList2SQL(Fields),"Models":JxList2SQL(Models)})
-	#mw.help.showText(str(Models)+str(Fields)+Query)		#Debug
-
 
 
 
@@ -540,8 +512,53 @@ def onClick(url):
 		QDesktopServices.openUrl(QUrl(link))
 
 
-
-
+class Jx__MultiSelect(QObject):
+	"""Data class for the HtmlJavascript Multiselect Widget"""
+	def __init__(self,name,parent=JxBase):
+		QObject.__init__(self,parent)
+		self.setObjectName(name)
+                self.name = name
+		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
+		self.FieldModels = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")
+		self.Javascript=u"""
+                        function ReturnField(){return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";}
+                        ReturnField();
+                        """
+                self.BridgeToJavascript()
+	def BridgeToJavascript(self):
+		JxWindow.page().mainFrame().addToJavaScriptWindowObject(self.name,self)
+	@pyqtSignature("",result="QString")
+	def GetOptions(self):               
+		Buffer =  u"""<option id="Model" selected="selected">All</option>"""
+		Buffer +=  u"""<optgroup label="Models">"""
+		JxPopulateModels = []
+		for Name in self.Models:
+                        Buffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Model."+ Name}
+                        JxPopulateModels.append(Name)
+		Buffer +=  u"""</optgroup>"""
+		Buffer +=  u"""<optgroup label="Fields">"""
+		for Name in self.FieldModels:
+                        Buffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
+		Buffer +=  u"""</optgroup>"""
+		return Buffer
+	@pyqtSignature("")
+	def TagThemAll(self):
+		Models = []
+		for Name in self.Models:
+                        Value = str(JxWindow.page().mainFrame().evaluateJavaScript(self.Javascript % {"Id":u"Model." + Name}).toString())
+                        if Value != u"":
+                                Models.append(Value)                        
+		Fields = []
+		for Name in self.FieldModels:
+                        Value = str(JxWindow.page().mainFrame().evaluateJavaScript(self.Javascript % {"Id":u"Field." + Name}).toString())
+                        if Value != u"":
+                                Fields.append(Value)
+		from tools import JxTagDuplicates
+		JxTagDuplicates(u"""select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
+		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
+		fieldModels.name in ('""" + "','".join(Fields) + """') and models.name in  ('""" + "','".join(Models) + """') group by facts.id order by fields.value """)
+                
+        
 
 class Jx__Menu(QWebView):
 	"""A QWebkit Window with mw as parent for Menu related stuff"""
@@ -554,6 +571,7 @@ class Jx__Menu(QWebView):
 		self.setSizePolicy(sizePolicy)
 		self.setMinimumSize(QtCore.QSize(410, 400))
 		self.setMaximumSize(QtCore.QSize(410, 16777215))
+                                
 		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks) # delegates link (to be able to call python function with arguments from HTML)
 		self.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick) # delegates link (to be able to call python function with arguments from HTML)
 		self.name = name #name that javascript will know
@@ -563,7 +581,7 @@ class Jx__Menu(QWebView):
 	def BridgeToJavascript(self):
 		self.page().mainFrame().addToJavaScriptWindowObject(self.name,self)
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
-                self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)                
+                self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)     
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()
@@ -575,6 +593,7 @@ def onJxMenu():
         from graphs import JxParseFacts4Stats
         JxParseFacts4Stats() 
         ComputeCount()        
+        Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase)
         from html import Jx_Html_Menu
 	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
                 'Jouyou':JxStats('Jouyou')})

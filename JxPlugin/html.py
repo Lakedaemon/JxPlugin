@@ -5,6 +5,8 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 
+################################################# Main Menu ##########################################################
+
 Jx_Html_Menu = u""" 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
 <html>
@@ -96,7 +98,25 @@ Jx_Html_Menu = u"""
 <script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
 
 
-<script type="text/javascript" src="Settings.js"></script>
+<script type="text/javascript">
+	function Rename (){
+                if (JxTemplateOverride.Name != "New Entry") {
+		$('.Entry').html('<textarea name="Name" style="text-align:center" onBlur="Restore();" onChange="	JxTemplateOverride.Name = JxTemplateOverride.MakeUnique(document.forms.Translator.Name.value,0);Restore();">'+ JxTemplateOverride.Name +'</textarea>');	
+		document.forms.Translator.Name.focus();
+                };
+	};
+	function Restore (){
+
+		$('.Entry').html(JxTemplateOverride.GetForm());
+                $('select#Entry').selectmenu({width:200});
+	};
+$(document).ready(function(){
+		document.forms.Translator.Source.value = JxTemplateOverride.Source;
+		document.forms.Translator.Target.value = JxTemplateOverride.Target;
+		$(".Entry").html(JxTemplateOverride.GetForm());
+		$('select#Entry').selectmenu({width:200});
+});
+</script>
 
 <style type="text/css">
 
@@ -126,7 +146,9 @@ $(document).ready(function(){
                   for(i=0; i<document.forms.FormMode.Mode.length; i++)
                         if(document.forms.FormMode.Mode.options[i].text == temp)
                            document.forms.FormMode.Mode.options.selectedIndex = i;
-                  $('select#Mode').selectmenu({width:150});  
+                  $('select#Mode').selectmenu({width:150});
+                  $('select#Tags').html(JxTags.GetOptions());
+                  $("select#Tags").dropdownchecklist({ firstItemChecksAll: true,width:150});
 });
 </script>
 
@@ -138,14 +160,26 @@ $(document).ready(function(){
 <li><a href="#Frequency">Frequency</a></li>
 <li><a href="#Kanken">Kanken</a></li>
 <li><a href="#Jouyou">Jouyou</a></li>
-<li><a href="#Settings">Settings</a></li>
 <li><a href="#Tools">Tools</a></li>
+<li><a href="#Settings">Settings</a></li>
 <li><a href="#X">X</a></li>
 </ul>
 <div id="JLPT">${JLPT}</div>
 <div id="Frequency">${Frequency}</div>
 <div id="Jouyou">${Jouyou}</div>
 <div id="Kanken">${Kanken}</div>
+<div id="Tools">
+        <h3><a href="#">Tag Redundant Entries</a></h3>
+        <div>
+        	       <center><div class="ui-buttonset-tiny">
+                       <select style="display:inline;" id="Tags" multiple="multiple"></select>&nbsp;&nbsp;&nbsp;<a class="ui-button" onClick="JxTags.TagThemAll()">Tag them !</a></div>
+                </center>
+                <ul>
+                        <li>young ones get "JxDuplicate"</li>
+                        <li>Oldest one gets "JxMasterDuplicate" and inherits all tags.</li>
+                </ul>
+        </div>
+</div>
 <div id="Settings" style="padding:3px;">
 	<h3><a href="#">About</a></h3>
 	<div>
@@ -206,18 +240,6 @@ $(document).ready(function(){
                 </form>
 	</div>
         
-</div>
-<div id="Tools">
-        <h3><a href="#">Tag Redundant Entries</a></h3>
-        <div>
-        	       <center>
-                       <select style="display:inline;" id="s1" multiple="multiple">%s</select>&nbsp;&nbsp;&nbsp;<a href=py:JxTagDuplicates(JxGetInfo())>Tag them !</a>
-                </center>
-                <ul>
-                        <li>young ones get "JxDuplicate"</li>
-                        <li>Oldest one gets "JxMasterDuplicate" and inherits all tags.</li>
-                </ul>
-        </div>
 </div>
 <div id="X">
 </div>
