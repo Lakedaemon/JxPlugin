@@ -21,7 +21,64 @@ def JxReadFile(File):
 	except:
 		pass
 	return List
-
+	
+def JxDictToZones(Dict):
+        Array = [Stuff for Stuff in Dict.iteritems()]
+        Array.sort(lambda x,y:y[1]-x[1])
+        Sum = 0
+        Limit = []
+        TotalSum = sum(Value for (Key,Value) in Array)
+        for (Key,Value)in Array:
+                Sum += Value
+                if Sum >= TotalSum * 0.5 and not Limit:
+                        Limit.append(Value)
+                elif Sum>= TotalSum * 0.8 and len(Limit)==1:
+                        Limit.append(Value)
+                elif Sum >= TotalSum * 0.95 and len(Limit)==2:
+                        Limit.append(Value)
+                elif Sum >= TotalSum * 0.99:
+                        Limit.append(Value)
+                        break
+        Dict2Zones ={}
+        for (Key,Value) in Array:
+                if Value >= Limit[0]: 
+                        Dict2Zones[Key] = 1
+                elif Value >= Limit[1]: 
+                        Dict2Zones[Key] = 2
+		elif Value >= Limit[2]: 
+		        Dict2Zones[Key] = 3
+	        elif Value>= Limit[3]:
+	                Dict2Zones[Key] = 4
+	        else:
+	                Dict2Zones[Key] = 5
+	return Dict2Zones
+	
+class FileList(dict):
+        def __init__(self,From,To,Dict,Order,Tidy = lambda x:x):
+                self.From = From
+                self.To = To
+                self.Dict = Dict
+                self.Order = Order
+                self.LegendDict = dict(Order)
+                self.Tidy = Tidy
+                self.Rank = [Value for Key,Value in Order]
+        def Legend(self,Key):
+                return self.LegendDict[Key]
+        def String(self,Stuff):
+                return self.LegendDict[self.Dict[self.Tidy(Stuff)]]
+        def Value(self,Stuff,Process = lambda x:x):        
+                return Process(self.Dict[self.Tidy(Stuff)])
+  
+def Tango2Dic(string):
+	String = string.strip(u" ")
+	if String.endswith(u"する") and len(String)>2:
+		return String[0:-2]
+	elif (String.endswith(u"な") or String.endswith(u"の") or String.endswith(u"に")) and len(String)>1: #python24 fix for OS X                  
+#	elif String.endswith((u"な",u"の",u"に")) and len(String)>1:    #python25
+		return String[0:-1]
+	else:
+		return String
+		
 ######################################################################
 #
 #                      JLPT for Kanji
@@ -93,24 +150,12 @@ Kanji2Kanken = dict([(List[0].strip(),List[1].strip()) for List in JxReadFile(os
 #
 ######################################################################
 
-Jx_Kanji_Occurences = dict([(List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "KanjiFrequencyWikipedia.csv"))])
-
-Jx_Kanji_MaxOccurences = max(Jx_Kanji_Occurences.values())
+Jx_Kanji_Occurences = dict((List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "KanjiFrequencyWikipedia.csv")))
+Jx_Kanji_MaxOccurences = max(Jx_Kanji_Occurences.values()) #inneficient but pythonic
 Jx_Kanji_SumOccurences = sum(Jx_Kanji_Occurences.values())
 
-Kanji2Zone ={}
-for (key,value) in Jx_Kanji_Occurences.iteritems():
-	a= (log(value+1,2)-log(Jx_Kanji_MaxOccurences+1,2))*10+100
-	if a > 62.26: #1/2
-		Kanji2Zone[key] = 1
-	elif a > 45: #1/5
-		Kanji2Zone[key] = 2
-	elif a > 30.32: #1/13
-		Kanji2Zone[key] = 3
-	elif a > 0.6: #1/100
-		Kanji2Zone[key] = 4
-	else:
-		Kanji2Zone[key] = 5
+Kanji2Zone = JxDictToZones(Jx_Kanji_Occurences)
+	
 		
 ######################################################################
 #
@@ -124,45 +169,9 @@ Jx_Word_SumOccurences = sum(Jx_Word_Occurences.values())
 Jx_Word_MaxOccurences = max(Jx_Word_Occurences.values())
 Jx_Word_MinOccurences = min(Jx_Word_Occurences.values())
 
-Word2Zone ={}
-for (key,value) in Jx_Word_Occurences.iteritems():
-	a= (log(value+1,2)-log(Jx_Word_MinOccurences+1,2))/(log(Jx_Word_MaxOccurences+1,2)-log(Jx_Word_MinOccurences+1,2))*100
-	if a > 38: #1/2
-		Word2Zone[key] = 1
-	elif a > 30: #1/5
-		Word2Zone[key] = 2
-	elif a > 12: #1/13
-		Word2Zone[key] = 3
-	elif a > 4: #1/100
-		Word2Zone[key] = 4
-	else:
-		Word2Zone[key] = 5
+Word2Zone = JxDictToZones(Jx_Word_Occurences)
 
-class FileList(dict):
-        def __init__(self,From,To,Dict,Order,Tidy = lambda x:x):
-                self.From = From
-                self.To = To
-                self.Dict = Dict
-                self.Order = Order
-                self.LegendDict = dict(Order)
-                self.Tidy = Tidy
-                self.Rank = [Value for Key,Value in Order]
-        def Legend(self,Key):
-                return self.LegendDict[Key]
-        def String(self,Stuff):
-                return self.LegendDict[self.Dict[self.Tidy(Stuff)]]
-        def Value(self,Stuff,Process = lambda x:x):        
-                return Process(self.Dict[self.Tidy(Stuff)])
-  
-def Tango2Dic(string):
-	String = string.strip(u" ")
-	if String.endswith(u"する") and len(String)>2:
-		return String[0:-2]
-	elif (String.endswith(u"な") or String.endswith(u"の") or String.endswith(u"に")) and len(String)>1: #python24 fix for OS X                  
-#	elif String.endswith((u"な",u"の",u"に")) and len(String)>1:    #python25
-		return String[0:-1]
-	else:
-		return String
+
                
 MapJLPTTango = FileList("Tango","JLPT",Word2Data,[(4,u"4級"),(3,u"3級"),(2,u"2級"),(1,u"1級")],Tidy=Tango2Dic)
 MapFreqTango = FileList("Tango","Occurences",Jx_Word_Occurences,[],Tidy=Tango2Dic)
@@ -171,7 +180,7 @@ MapJLPTKanji = FileList("Kanji","JLPT",Kanji2JLPT,[(4,u"4級"),(3,u"3級"),(2,u"
 MapFreqKanji = FileList("Tango","Occurences",Jx_Kanji_Occurences,[])
 MapZoneKanji = FileList("Kanji","Frequency",Kanji2Zone,[(1,"Highest"),(2,"High"),(3,"Fair"),(4,"Low"),(5,"Lowest")])
 MapJouyouKanji = FileList("Kanji","Jouyou",Kanji2Grade,[(1,"G1"),(2,"G2"),(3,"G3"),(4,"G4"),(5,"G5"),(6,"G6"),("HS","HS")])
-MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'),('5','5'),('4',"4"),('3',"3"),('2,5',"2.5"),('2',"2"),('1,5',"1.5"),('1',"1")])
+MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),('8','8'),('7','7'),('6','6'), ('5','5'),('4',"4"),('3',"3"),('2,5',"2.5"),('2',"2"),('1,5',"1.5"),('1',"1")])
 
 #  import cPickle
 #import itertools                      

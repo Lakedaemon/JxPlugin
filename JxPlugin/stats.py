@@ -137,7 +137,17 @@ def HtmlReport(Type,k):
 
         JxStatsHtml += "</table>"
         return JxStatsHtml
-        
+
+def JxFormat(Float):
+        if Float < 0.01:                             # 0.0001 -> 0
+                return "0"
+        if Float < 0.1:
+                return "%.1g" % Float       
+        if Float <1:
+                return "%.2g" % Float                            
+        else:                                       # 100
+                return "%.3g" % Float               
+ 
 def JxWidgetAccumulatedReport(Type,k):
         global JxStatsArray
         from graphs import JxParseFacts4Stats
@@ -160,11 +170,11 @@ def JxWidgetAccumulatedReport(Type,k):
                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
-		<tr><td><b>%s</b></td><td>%.0f%%</td><td>%.0f%%</td><td>%.0f%%</td><td class="BorderRight">%.0f%%</td></tr>
-		""" % (Value,Known*100.0/max(1,JxSumTotal),Seen*100.0/max(1,JxSumTotal),InDeck*100.0/max(1,JxSumTotal),Total*100.0/max(1,JxSumTotal))
+		<tr><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%.0f%%</td></tr>
+		""" % (Value,JxFormat(Known*100.0/max(1,JxSumTotal)),JxFormat(Seen*100.0/max(1,JxSumTotal)),JxFormat(InDeck*100.0/max(1,JxSumTotal)),Total*100.0/max(1,JxSumTotal))
         JxStatsHtml += """
-        <tr class="Border"><td><b>%s</b></td><td>%.0f%%</td><td>%.0f%%</td><td>%.0f%%</td><td class="BorderRight">%.0f%%</td></tr>
-		""" % ('Total',SumKnown*100.0/max(1,JxSumTotal),SumSeen*100.0/max(1,JxSumTotal),SumInDeck*100.0/max(1,JxSumTotal),100)        
+        <tr class="Border"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%s%%</td></tr>
+		""" % ('Total',JxFormat(SumKnown*100.0/max(1,JxSumTotal)),JxFormat(SumSeen*100.0/max(1,JxSumTotal)),JxFormat(SumInDeck*100.0/max(1,JxSumTotal)),100)        
         (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
 
         JxStatsHtml += "</table>"
