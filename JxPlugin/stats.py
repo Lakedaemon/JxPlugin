@@ -126,7 +126,7 @@ def JxFlushFactStats(CardState,CardId):
                                 JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total)
                                 if (Known-OldKnown) * 2 >= InDeck-OldInDeck: #Majority
                                         JxPartitionLists[(Type,k,Key,'Known')].append((Content,CardId))
-                                elif (Known-OldKnown)>0: # At least once
+                                elif (Known-OldKnown + Seen - OldSeen) > 0: # At least once
                                         JxPartitionLists[(Type,k,Key,'Seen')].append((Content,CardId))
                                 else:
                                         JxPartitionLists[(Type,k,Key,'InDeck')].append((Content,CardId))
@@ -193,6 +193,7 @@ def JxWidgetAccumulatedReport(Type,k):
         .BorderRight{border-right:1px solid black;}
         .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
         </style>
+        <br/>
 	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
 	<tr class="Border"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
 	""" 
@@ -251,48 +252,15 @@ def JxShowMissingPartition(Type,k):
                 if Buffer[Key]:
 			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
 	return HtmlBuffer
-	
-#def Escape(string):
-#        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
-        
-def MissingHtml(Map,Query):
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Seen = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Seen[Stuff] = 0
-		
-	Color = {}
-	Buffer = {}
-	for (Key,String) in Map.Order:
-		Buffer[Key] = u""
-		Color[Key] = True	
-	for (Key,Value) in Map.Dict.iteritems():
-		if Key not in Seen:
-			Color[Value] = not(Color[Value])			
-			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
-			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
-	HtmlBuffer = u""
-	for (Key,String) in Map.Order:
-                if Buffer[Key] !=u"":
-                        HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
-	return HtmlBuffer	
-	
-	
+     
+def JxDoNothing(Stuff):
+	pass
 
-	
-	
-	
-	
-	
-	
 	
 	
 User = []
 
-def JxDoNothing(Stuff):
-	pass
+
 
 def JxAddo(Stuff,Id):
 	if (Stuff,Id) not in User:
