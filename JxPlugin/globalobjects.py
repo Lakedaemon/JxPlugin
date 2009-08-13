@@ -11,3 +11,5 @@ JxStatsMap = {
 'Kanji':[MapJLPTKanji,MapZoneKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],
 'Grammar':[],
 'Sentence':[]}
+CardId2Types = {}
+FactId2Types = {}

@@ -25,7 +25,8 @@ colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
 #          Routines for building the Card2Type Dictionnary
 #
 ######################################################################
-CardId2Types={}
+from globalobjects import CardId2Types, FactId2Types
+
 
 def JxParseFacts4Stats():
         global ModelInfo,Fields,Tuple,Tau
@@ -59,6 +60,7 @@ def JxParseFacts4Stats():
                 List = JxParseFactTags4Stats(Rows,Index)
                 CardsIds = [Rows[a][0] for a in range(Index,Index + Delta,Tau)]
                 CardId2Types.update([(Id,(List,CardsIds)) for Id in CardsIds])
+                FactId2Types.update([(Rows[Index][7],(List,CardsIds))])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Tuple[2]:
