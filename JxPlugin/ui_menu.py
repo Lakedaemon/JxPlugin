@@ -68,26 +68,21 @@ def JxStats(Type):
                 JxHtml += Func(Couple[0],Couple[1])
         return JxHtml
 
-
-def JxMissing(Type,Set):
-	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">MISSING ${CAPSET}</b></center><center><a href=py:JxSeen("${Type}","${Set}")>Seen</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=upper(Set)) 
-	JxHtml += MissingHtml(JxMap[Set+"2"+Type],JxQuery[Set])
-	
-	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Tools":'',"Content":JxHtml}
-	Dict[Type] = 'id="active"'
-	JxPage = JxMenu #Template(JxMenu).safe_substitute(Dict)
-	
-	JxWindow.setHtml(JxPage)
-
 def JxShowIn(Type,k,Label):
-        JxPreview.setHtml(JxShowPartition(Type,k,Label),JxResourcesUrl)
+        from html import Jx_Html_DisplayStuff
+        JxHtml = Jx_Html_DisplayStuff + JxShowPartition(Type,k,Label)+ """</body></html>"""
+        JxPreview.setHtml(JxHtml,JxResourcesUrl)
         JxPreview.activateWindow()
+        JxPreview.setWindowTitle("Cards Report")
         JxPreview.show()
         
 	
 def JxShowOut(Type,k):
-        JxPreview.setHtml(JxShowMissingPartition(Type,k),JxResourcesUrl)
+        from html import Jx_Html_DisplayStuff
+        JxHtml = Jx_Html_DisplayStuff + JxShowMissingPartition(Type,k) + """</body></html>"""
+        JxPreview.setHtml(JxHtml,JxResourcesUrl)
         JxPreview.activateWindow()
+        JxPreview.setWindowTitle("Cards Report")
         JxPreview.show()  
 		
 from controls import Jx_Control_Tags       

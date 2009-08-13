@@ -120,10 +120,6 @@ $(document).ready(function(){
 
 <style type="text/css">
 
-div#content {
-	word-wrap: break-word;
-}
-
 textarea.Code { 
         border: #000000 1px solid; 
         color: #8187da; 
@@ -249,6 +245,32 @@ $(document).ready(function(){
 </html>
 """
 
+
+
+
+################################################# Known/Seen/Deck/Missing ##########################################################
+
+Jx_Html_DisplayStuff =u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html>
+<head>
+<title>JxPlugin Main Menu</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
+<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
+<style>
+body {
+	word-wrap: break-word;
+}
+</style>
+</head><body>
+
+"""
+
+
+
+
+
+
 ################################################# Template Preview ##########################################################
 
 
@@ -257,7 +279,6 @@ Jx_Html_Preview =u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 <head>
 <title>JxPlugin Main Menu</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<!--<link rel="stylesheet" type="text/css" href="demo.css" /> -->
 <link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
 <link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
 <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
