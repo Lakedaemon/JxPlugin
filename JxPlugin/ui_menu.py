@@ -24,25 +24,7 @@ import os
 import cPickle
 import itertools
 
-
-
-QueryKanji = """select fields.value from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 order by firstAnswered"""
-
-QueryKanjib = """select fields.value,cards.id from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Kanji" and models.tags like "%Kanji%" and cards.reps > 0 group by fields.value order by firstAnswered """
 		
-QueryTango = """select fields.value from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 order by firstAnswered"""
-
-QueryTangob = """select fields.value, cards.id from facts,cards,fields,fieldModels, models where 
-		cards.factId = facts.id  and facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and 
-		fieldModels.name = "Expression" and models.tags like "%Japanese%" and cards.reps > 0 group by fields.value order by firstAnswered"""
-		
-
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
 
 def JxHelp():
@@ -438,9 +420,6 @@ def JxStats(Type):
         return JxHtml
 
 
-JxQuery={"Kanji":QueryKanji,"Tango":QueryTango,"Kanjib":QueryKanjib,"Tangob":QueryTangob}
-
-
 def JxMissing(Type,Set):
 	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">MISSING ${CAPSET}</b></center><center><a href=py:JxSeen("${Type}","${Set}")>Seen</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=upper(Set)) 
 	JxHtml += MissingHtml(JxMap[Set+"2"+Type],JxQuery[Set])
@@ -471,50 +450,8 @@ def onClick(url):
 		QDesktopServices.openUrl(QUrl(link))
 
 
-class Jx__MultiSelect(QObject):
-	"""Data class for the HtmlJavascript Multiselect Widget"""
-	def __init__(self,name,parent=JxBase):
-		QObject.__init__(self,parent)
-		self.setObjectName(name)
-                self.name = name
-		self.Javascript=u"""
-                        function ReturnField(){return (document.getElementById("%(Id)s").selected)?document.getElementById("%(Id)s").innerHTML:"";}
-                        ReturnField();
-                        """
-        def Update(self):
-		self.Models = mw.deck.s.column0(u"""select name from models group by name order by name""")
-		self.FieldModels = mw.deck.s.column0(u"""select name from fieldModels group by name order by name""")                        
-	@pyqtSignature("",result="QString")
-	def GetOptions(self):     
-		Buffer =  u"""<option id="Model" selected="selected">All</option>"""
-		Buffer +=  u"""<optgroup label="Models">"""
-		JxPopulateModels = []
-		for Name in self.Models:
-                        Buffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Model."+ Name}
-                        JxPopulateModels.append(Name)
-		Buffer +=  u"""</optgroup>"""
-		Buffer +=  u"""<optgroup label="Fields">"""
-		for Name in self.FieldModels:
-                        Buffer +=  u"""<option id="%(Id)s" selected="selected">%(Name)s</option> """ % {"Name":Name,"Id":u"Field."+ Name}
-		Buffer +=  u"""</optgroup>"""
-		return Buffer
-	@pyqtSignature("")
-	def TagThemAll(self):
-		Models = []
-		for Name in self.Models:
-                        Value = str(JxWindow.page().mainFrame().evaluateJavaScript(self.Javascript % {"Id":u"Model." + Name}).toString())
-                        if Value != u"":
-                                Models.append(Value)                        
-		Fields = []
-		for Name in self.FieldModels:
-                        Value = str(JxWindow.page().mainFrame().evaluateJavaScript(self.Javascript % {"Id":u"Field." + Name}).toString())
-                        if Value != u"":
-                                Fields.append(Value)
-		from tools import JxTagDuplicates
-		JxTagDuplicates(u"""select fields.value, facts.id, facts.created, facts.tags from fields,facts,fieldModels,models where 
-		facts.id = fields.factId and fields.fieldModelId = fieldModels.id and facts.modelId = models.id and  
-		fieldModels.name in ('""" + "','".join(Fields) + """') and models.name in  ('""" + "','".join(Models) + """') group by facts.id order by fields.value """)
-                
+		
+from controls import Jx__MultiSelect                
 Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase)        
 
 class Jx__Menu(QWebView):
@@ -605,6 +542,7 @@ def JxBrowse():
 	JxPreview.setWindowTitle(u"Css and Template Browser")
         from html import Jx_Html_Preview
 	JxPreview.setHtml(Jx_Html_Preview,JxResourcesUrl)
+	JxPreview.activateWindow()
 	JxPreview.show()
 
 
@@ -616,9 +554,9 @@ from PyQt4.QtWebKit import *
 
 def onJxGraphs():
         from graphs import JxParseFacts4Stats, JxNewAlgorythm
-        JxParseFacts4Stats() 
+        if not CardId2Types:
+                JxParseFacts4Stats() 
         JxGraphsJSon =JxNewAlgorythm()
-        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
         from html import Jx_Html_Graphs
         JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
         JxProfile("JxGraphs().Substitute done")
@@ -696,10 +634,6 @@ JxAnswerSettings={}
 def Rah():
 	JxAnswerSettings = JxBase.findChild(Jx__Model_CardModel_String,'JxAnswerSettings')	
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
-	#JxTemplateOverride = JxBase.findChild(Jx__Entry_Source_Target,'JxTemplateOverride')	
-	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
-	#JxSettings = JxBase.findChild(Jx__Settings,'JxSettings')	
-	#JxWindow.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
 	JxPreview.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
         
         
