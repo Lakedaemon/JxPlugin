@@ -499,12 +499,17 @@ def append_JxPlugin(Answer,Card):
 
     
     from ui_menu import JxSettings
-    JxAnswerDict[u"Css"] = """<style>%s</style>""" % JxSettings.Get(u'Css')
+    JxAnswerDict['Css'] = '<style>%s</style>' % JxSettings.Get(u'Css')
     
     # ${<Field>}
     for FieldModel in Card.fact.model.fieldModels:
 	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
                 hexifyID(FieldModel.id), Card.fact[FieldModel.name])
+            
+    # ${F-Tags}, ${M-Tags}, ${Tags}
+    JxAnswerDict['F-Tags'] = Card.fact.tags
+    JxAnswerDict['M-Tags'] = Card.fact.model.tags
+    JxAnswerDict['Tags'] = " ".join(set(Card.fact.model.tags.split(" ") + Card.fact.tags.split(" ") + [Card.cardModel.name]))
                 
     JxProfile("Fill JxCodes")
     
