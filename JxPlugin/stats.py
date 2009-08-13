@@ -232,6 +232,25 @@ def JxShowPartition(Type,k,Label):
         if Buffer['Other']:
 			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer['Other']
 	return HtmlBuffer
+
+def JxShowMissingPartition(Type,k):
+        global JxPartitionLists
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
+        Map = JxStatsMap[Type][k]
+	Color = dict([(Key,True) for (Key,String) in Map.Order])
+	Buffer = dict([(Key,"") for (Key,String) in Map.Order])
+	for (Key,String) in Map.Order:
+	        for Stuff in JxPartitionLists[(Type,k,Key,'Missing')]:
+			Color[Key] = not(Color[Key])			
+			if Color[Key]:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
+			else:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
+	HtmlBuffer = u""
+	for (Key,Value) in Map.Order:
+                if Buffer[Key]:
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
+	return HtmlBuffer
 	
 #def Escape(string):
 #        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
@@ -261,29 +280,7 @@ def MissingHtml(Map,Query):
 	return HtmlBuffer	
 	
 	
-def MissingHtml(Map,Query):
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Seen = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Seen[Stuff] = 0
-		
-	Color = {}
-	Buffer = {}
-	for (Key,String) in Map.Order:
-		Buffer[Key] = u""
-		Color[Key] = True	
-	for (Key,Value) in Map.Dict.iteritems():
-		if Key not in Seen:
-			Color[Value] = not(Color[Value])			
-			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
-			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
-	HtmlBuffer = u""
-	for (Key,String) in Map.Order:
-                if Buffer[Key] !=u"":
-                        HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
-	return HtmlBuffer	
+
 	
 	
 	

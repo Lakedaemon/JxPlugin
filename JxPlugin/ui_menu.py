@@ -429,10 +429,10 @@ def JxStats(Type):
 	        if Func == HtmlReport:
 	                JxHtml += '<br/><center><b style="font-size:1.4em;">' + Title.upper() + "</b></center>"
 	                JxHtml += """<center>
-	                <a href=py:JxMissing('""" + Couple[0] + """','Kanji')>Missing</a>&nbsp;&nbsp;
 	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Known')>Known</a>&nbsp;&nbsp;
 	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Seen')>Seen</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>
+	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>&nbsp;&nbsp;
+	                <a href=py:JxShowOut('""" + Couple[0] + "'," + str(Couple[1])+ """)>Missing</a>
 	                </center><br/>"""
                 JxHtml += Func(Couple[0],Couple[1])
         return JxHtml
@@ -453,8 +453,15 @@ def JxMissing(Type,Set):
 
 def JxShowIn(Type,k,Label):
         JxPreview.setHtml(JxShowPartition(Type,k,Label),JxResourcesUrl)
-        JxPreview.show()        
+        JxPreview.activateWindow()
+        JxPreview.show()
+        
 	
+def JxShowOut(Type,k):
+        JxPreview.setHtml(JxShowMissingPartition(Type,k),JxResourcesUrl)
+        JxPreview.activateWindow()
+        JxPreview.show()  
+        
 def onClick(url):
 	String = unicode(url.toString())
 	if String.startswith("py:"):
