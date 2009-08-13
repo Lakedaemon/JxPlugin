@@ -142,6 +142,8 @@ def HtmlReport(Type,k):
         from graphs import JxParseFacts4Stats
         Map = JxStatsMap[Type][k]
 	JxStatsHtml = """<style>
+	.BackgroundHeader {background-color: #eee8d4;}
+	.Background {background-color: #fff9e5;}
         .JxStats td{align:center;text-align:center;}
         .JxStats tr > td:first-child,.JxStats tr > th:first-child{
         border-right:1px solid black;
@@ -151,17 +153,17 @@ def HtmlReport(Type,k):
         .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
         </style>
 	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
-	<tr class="Border"><th><b>%s</b></th><th><b>%%</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	<tr class="Border BackgroundHeader"><th><b>%s</b></th><th><b>%%</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
 	""" % Map.To
         (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
 	for (Key,Value) in Map.Order:
                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
-		<tr><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		<tr class="Background"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
 		""" % (Value,Known*100.0/max(1,Total),Known,Seen,InDeck,Total)
         JxStatsHtml += """
-        <tr class="Border"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+        <tr class="Border BackgroundHeader"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
 		""" % ('Total',SumKnown*100.0/max(1,SumTotal),SumKnown,SumSeen,SumInDeck,SumTotal)        
         (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]
         if (Known,Seen,InDeck,Total) != (0,0,0,0):
@@ -185,6 +187,8 @@ def JxWidgetAccumulatedReport(Type,k):
         from graphs import JxParseFacts4Stats
         Map = JxStatsMap[Type][k]
 	JxStatsHtml = """<style>
+	.BackgroundHeader {background-color: #817865;}
+	.Background {background-color: #fece2f;}
         .JxStats td{align:center;text-align:center;}
         .JxStats tr > td:first-child,.JxStats tr > th:first-child{
         border-right:1px solid black;
@@ -195,7 +199,7 @@ def JxWidgetAccumulatedReport(Type,k):
         </style>
         <br/>
 	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
-	<tr class="Border"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	<tr class="Border BackgroundHeader"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
 	""" 
         JxSumTotal = sum([JxStatsArray[(Type,k,Key)][3] for (Key,Value) in Map.Order])
         (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
@@ -203,10 +207,10 @@ def JxWidgetAccumulatedReport(Type,k):
                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
                 (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
 		JxStatsHtml += """
-		<tr><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%.0f%%</td></tr>
+		<tr class="Background"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%.0f%%</td></tr>
 		""" % (Value,JxFormat(Known*100.0/max(1,JxSumTotal)),JxFormat(Seen*100.0/max(1,JxSumTotal)),JxFormat(InDeck*100.0/max(1,JxSumTotal)),Total*100.0/max(1,JxSumTotal))
         JxStatsHtml += """
-        <tr class="Border"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%s%%</td></tr>
+        <tr class="Border BackgroundHeader"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%s%%</td></tr>
 		""" % ('Total',JxFormat(SumKnown*100.0/max(1,JxSumTotal)),JxFormat(SumSeen*100.0/max(1,JxSumTotal)),JxFormat(SumInDeck*100.0/max(1,JxSumTotal)),100)        
         (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
 
@@ -215,7 +219,7 @@ def JxWidgetAccumulatedReport(Type,k):
 	
 def JxShowPartition(Type,k,Label):
         global JxPartitionLists
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
+        """Returns an Html report of the seen stuff of Type/k/Label"""
         Map = JxStatsMap[Type][k]
 	Color = dict([(Key,True) for (Key,String) in Map.Order + [('Other','Other')]])
 	Buffer = dict([(Key,"") for (Key,String) in Map.Order + [('Other','Other')]])

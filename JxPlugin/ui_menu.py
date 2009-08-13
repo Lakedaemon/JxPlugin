@@ -191,11 +191,6 @@ mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
 print 'Japanese Extended Plugin loaded'
 
-
-
-
-
-#JxAnswerSettings={}
  
         
         
