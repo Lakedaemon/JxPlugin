@@ -18,8 +18,9 @@ from globalobjects import JxStatsMap
 ######################################################################
         
 JxStatsArray = {}
+JxPartitionLists = {}
 def ComputeCount(): 
-        global JxStatsArray,NoType
+        global JxStatsArray,JxPartitionLists,NoType
 	"""compute and Display an HTML report of the result of a Query against a Map"""
         Rows = mw.deck.s.all("""select cards.factId,cards.id,cards.reps,cards.Interval from cards order by cards.factId""")  
         # we can compute known/seen/in deck/total stats for each value of each map depending of the type
@@ -33,7 +34,9 @@ def ComputeCount():
                                 elif Type =='Word':
                                         JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Word_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
                                 else:
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Kanji_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))                                        
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Kanji_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                                for Label in ['Known','Seen','InDeck']:
+                                        JxPartitionLists[(Type,k,Key,Label)] = []
         Length = len(Rows)
         Index = 0
         while True:
@@ -63,7 +66,7 @@ def ComputeCount():
 
 def JxFlushFactStats(CardState,CardId):
         """Flush the fact stats"""
-        global JxStatsArray,JxStatsMap, NoType
+        global JxStatsArray,JxPartitionLists,JxStatsMap, NoType
         try:# get the card type and the number of shared cardsids by the fact
                 (CardInfo,CardsNumber) = CardId2Types[CardId]
                 CardWeight = 1.0/max(1,len(CardsNumber))
@@ -87,8 +90,9 @@ def JxFlushFactStats(CardState,CardId):
                                                 Change = Jx_Kanji_Occurences[Content] * CardWeight
                                         except KeyError:
                                                 Change = 0 
-                                # we have to update the graph of each type
-                                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]      
+                                # we have to update the stats of each type
+                                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)] 
+                                (OldKnown,OldSeen,OldInDeck) = (Known,Seen,InDeck)
 ############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
                                 #now, we got to flush the fact. Let's go for the realist model first
                                 for State in CardState:
@@ -98,7 +102,14 @@ def JxFlushFactStats(CardState,CardId):
                                         if State == 0:
                                                 Known += Change
                                 # save the updated list                        
-                                JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total) 
+                                JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total)
+                                if (Known-OldKnown) * 2 >= InDeck-OldInDeck: #Majority
+                                        JxPartitionLists[(Type,k,Key,'Known')].append((Content,CardId))
+                                elif (Known-OldKnown)>0: # At least once
+                                        JxPartitionLists[(Type,k,Key,'Seen')].append((Content,CardId))
+                                else:
+                                        JxPartitionLists[(Type,k,Key,'InDeck')].append((Content,CardId))
+                                        
 ##############################################################################################################     
         except KeyError: # this fact has no type
                 NoType +=1
@@ -139,13 +150,13 @@ def HtmlReport(Type,k):
         return JxStatsHtml
 
 def JxFormat(Float):
-        if Float < 0.01:                             # 0.0001 -> 0
+        if Float < 0.01:                            # 0.001 -> 0
                 return "0"
-        if Float < 0.1:
+        if Float < 0.1:                             # 0.016 -> 0.02
                 return "%.1g" % Float       
-        if Float <1:
+        if Float <1:                                # 0.168 -> 0.17
                 return "%.2g" % Float                            
-        else:                                       # 100
+        else:                                       # 4.00 -> 4          4.10 -> 4           4.1678 -> 4.17           15.28 -> 15.3
                 return "%.3g" % Float               
  
 def JxWidgetAccumulatedReport(Type,k):
@@ -208,6 +219,28 @@ def SeenHtml(Map,Query):
         if Buffer[u"Other"] != u"":
 			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
 	return HtmlBuffer
+	
+def JxShowPartition(Type,k,Label):
+        global JxPartitionLists
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
+        Map = JxStatsMap[Type][k]
+	Color = dict([(Key,True) for (Key,String) in Map.Order + [('Other','Other')]])
+	Buffer = dict([(Key,"") for (Key,String) in Map.Order + [('Other','Other')]])
+	for (Key,String) in Map.Order + [('Other','Other')]:
+	        for (Stuff,Id) in JxPartitionLists[(Type,k,Key,Label)]:
+			Color[Key] = not(Color[Key])			
+			if Color[Key]:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
+			else:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
+	HtmlBuffer = u""
+	for (Key,Value) in Map.Order:
+                if Buffer[Key] != u"":
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
+        if Buffer[u"Other"] != u"":
+			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
+	return HtmlBuffer
+	
 def Escape(string):
         return string.strip("""'"<>()""").strip(u"""'"<>()""") 
         

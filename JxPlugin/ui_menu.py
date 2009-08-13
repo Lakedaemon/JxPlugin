@@ -455,6 +455,10 @@ def JxSeen(Type,Set):
 	
 	JxWindow.setHtml(JxPage)
 	
+def JxSeen(Type,Set):
+        JxPreview.setHtml(JxShowPartition(Type,0,'Known'))
+        JxPreview.show()
+	
 def onClick(url):
 	String = unicode(url.toString())
 	if String.startswith("py:"):
