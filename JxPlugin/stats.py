@@ -190,35 +190,6 @@ def JxWidgetAccumulatedReport(Type,k):
 
         JxStatsHtml += "</table>"
         return JxStatsHtml       
-        
-
-def SeenHtml(Map,Query):
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Seen = {}
-	Color = {u"Other":True}
-	Buffer = {u"Other":u""}
-	for (Key,String) in Map.Order:
-		Buffer[Key] = u""
-		Color[Key] = True	
-	for (Stuff,Id) in mw.deck.s.all(Query):
-		if Stuff not in Seen:
-			try: 
-				Value = Map.Dict[Stuff]	  
-			except KeyError:
-				Value = u"Other"
-			Seen[Stuff] = 0
-			Color[Value] = not(Color[Value])			
-			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-	HtmlBuffer = u""
-	for Key,Value in Map.Order:
-                if Buffer[Key] != u"":
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-        if Buffer[u"Other"] != u"":
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
-	return HtmlBuffer
 	
 def JxShowPartition(Type,k,Label):
         global JxPartitionLists
@@ -235,10 +206,10 @@ def JxShowPartition(Type,k,Label):
 				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 	HtmlBuffer = u""
 	for (Key,Value) in Map.Order:
-                if Buffer[Key] != u"":
+                if Buffer[Key]:
 			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-        if Buffer[u"Other"] != u"":
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
+        if Buffer['Other']:
+			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer['Other']
 	return HtmlBuffer
 	
 def Escape(string):

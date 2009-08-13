@@ -425,14 +425,14 @@ JxStatsMenu={
 
 def JxStats(Type):
         JxHtml=""
-	for (TypeString,Func,Couple) in JxStatsMenu[Type]:
+	for (Title,Func,Couple) in JxStatsMenu[Type]:
 	        if Func == HtmlReport:
-	                JxHtml += '<br/><center><b style="font-size:1.4em;">' + TypeString.upper() + "</b></center>"
+	                JxHtml += '<br/><center><b style="font-size:1.4em;">' + Title.upper() + "</b></center>"
 	                JxHtml += """<center>
-	                <a href=py:JxMissing('""" + TypeString + """','Kanji')>Missing</a>&nbsp;&nbsp;
-	                <a href=py:JxShow('""" + TypeString + "'," + str(Couple[1]) +  """,'Known')>Known</a>&nbsp;&nbsp;
-	                <a href=py:JxShow('""" + TypeString + "'," + str(Couple[1]) +  """,'Seen')>Seen</a>&nbsp;&nbsp;
-	                <a href=py:JxShow('""" + TypeString + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>
+	                <a href=py:JxMissing('""" + Couple[0] + """','Kanji')>Missing</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Known')>Known</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Seen')>Seen</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>
 	                </center><br/>"""
                 JxHtml += Func(Couple[0],Couple[1])
         return JxHtml
@@ -451,21 +451,9 @@ def JxMissing(Type,Set):
 	
 	JxWindow.setHtml(JxPage)
 
-#def JxSeen(Type,Set):
-#	JxHtml = Template("""<br /><center><b style="font-size:1.4em;">SEEN ${CAPSET}</b></center><center><a href=py:JxMissing("${Type}","${Set}")>Missing</a>&nbsp;<a href=py:JxStats("${Type}")>Stats</a></center>""").substitute(Type=Type,Set=Set,CAPSET=upper(Set)) 
-#	JxHtml += SeenHtml(JxMap[Set+"2"+Type],JxQuery[Set+"b"])
-#	
-#	Dict = {"JLPT":'',"Jouyou":'',"Zone":'',"Kanken":'',"Tools":'',"Content":JxHtml}
-#	Dict[Type] = 'id="active"'
-#	JxPage = Template(JxMenu).safe_substitute(Dict)	
-#	JxWindow.setHtml(JxPage)
-
-def JxShow(Type,k,Label):
+def JxShowIn(Type,k,Label):
         JxPreview.setHtml(JxShowPartition(Type,k,Label),JxResourcesUrl)
         JxPreview.show()        
-def JxSeen(Type,Set):
-        JxPreview.setHtml(JxShowPartition(Type,0,'Known'))
-        JxPreview.show()
 	
 def onClick(url):
 	String = unicode(url.toString())
