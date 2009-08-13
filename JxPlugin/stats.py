@@ -61,9 +61,30 @@ def ComputeCount():
                         # Fact change
                         JxFlushFactStats(CardState,CardId)
                         CardState = []
-
-
-
+        # Create and sort the missing lists
+        # Sort the list with respect to frequency
+        for (Type,List) in JxStatsMap.iteritems():
+                Dict = None
+                if Type == 'Kanji':
+                        Dict = Jx_Kanji_Occurences
+                elif Type == 'Word':
+                        Dict = Jx_Word_Occurences
+                if Dict:
+                        for (k, Map) in enumerate(List):
+                                for (Key,String) in Map.Order+[('Other','Other')]: 
+                                        Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
+                                        if Key != 'Other':
+                                                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
+                                                JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
+                                        for Label in ['Known','Seen','InDeck']:
+                                                JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
+def JxVal(Dict,x):
+        try:
+                return  Dict[x]
+        except KeyError:
+                return -1
+  
+        
 def JxFlushFactStats(CardState,CardId):
         """Flush the fact stats"""
         global JxStatsArray,JxPartitionLists,JxStatsMap, NoType
@@ -212,8 +233,8 @@ def JxShowPartition(Type,k,Label):
 			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer['Other']
 	return HtmlBuffer
 	
-def Escape(string):
-        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
+#def Escape(string):
+#        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
         
 def MissingHtml(Map,Query):
         """Returns an Html report of the seen stuff corresponding to Map and Query """
@@ -238,6 +259,38 @@ def MissingHtml(Map,Query):
                 if Buffer[Key] !=u"":
                         HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
 	return HtmlBuffer	
+	
+	
+def MissingHtml(Map,Query):
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
+	Seen = {}
+	for Stuff in mw.deck.s.column0(Query):
+		Seen[Stuff] = 0
+		
+	Color = {}
+	Buffer = {}
+	for (Key,String) in Map.Order:
+		Buffer[Key] = u""
+		Color[Key] = True	
+	for (Key,Value) in Map.Dict.iteritems():
+		if Key not in Seen:
+			Color[Value] = not(Color[Value])			
+			if Color[Value]:
+				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
+			else:
+				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
+	HtmlBuffer = u""
+	for (Key,String) in Map.Order:
+                if Buffer[Key] !=u"":
+                        HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
+	return HtmlBuffer	
+	
+	
+	
+	
+	
+	
+	
 	
 User = []
 
