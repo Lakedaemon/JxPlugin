@@ -17,14 +17,14 @@ from tools import *
 
 
 
-
+from PyQt4.QtGui import QDesktopServices
 def onClick(url):
         String = unicode(url.toString())
 	if String.startswith("py:"):
 	        String = String[3:]
 	        eval(String)
 	else:
-	        QDesktopServices.openUrl(QUrl(link))	
+	        QDesktopServices.openUrl(QUrl(url))	
 		
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
 
@@ -50,8 +50,8 @@ JxStatsMenu={
 'JLPT':[('Kanji',HtmlReport,('Kanji',0)),('Words',HtmlReport,('Word',0))],
 'Frequency':[('Kanji',HtmlReport,('Kanji',2)),('Kanji',JxWidgetAccumulatedReport,('Kanji',1)),('Word',HtmlReport,('Word',2)),
 ('Words',JxWidgetAccumulatedReport,('Word',1))],
-'Kanken':[('Kanji',HtmlReport,('Kanji',3))],
-'Jouyou':[('Kanji',HtmlReport,('Kanji',4))]}
+'Kanken':[('Kanji',HtmlReport,('Kanji',4))],
+'Jouyou':[('Kanji',HtmlReport,('Kanji',3))]}
 
 
 def JxStats(Type):
@@ -90,8 +90,6 @@ from controls import Jx_Control_Tags
                 
 # The main JxPlugin Window
 from controls import JxWindow
-#from controls import Jx__Menu
-#JxWindow = Jx__Menu('JxWindow',mw)
 
 
 
