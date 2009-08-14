@@ -14,7 +14,7 @@ from loaddata import *
 from answer import *
 from stats import *
 from tools import *
-
+import kanjidic
 
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
