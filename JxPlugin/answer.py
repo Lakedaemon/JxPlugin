@@ -13,6 +13,7 @@ from globalobjects import JxLink
 from anki.hooks import *
 from anki.utils import hexifyID
 import time
+from japanese.furigana import rubify
 
 
 def JxReplace(String,Dict):
@@ -53,7 +54,7 @@ def JxTableDisplay(TupleList,Class):
                             JxHtmlBuffer += u"""<tr class="Tr-Even">"""
                 Boolean = not(Boolean)
                 for Index in range(len(Tuple)):
-                        JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + Tuple[Index].strip() + u'</td>'
+                        JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + rubify(Tuple[Index].strip()) + u'</td>'
                 JxHtmlBuffer += u"</tr>"
 
         if len(JxHtmlBuffer):
