@@ -91,7 +91,7 @@ def JxStrokeDisplay(KanjiList,Class):
         Buffer = ''
         for Kanji in KanjiList:
                 if Kanji in Meaning:
-                        Buffer += '<span class="' + Class + '-Kanji" title="' + Meaning[Kanji] + '">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>'
+                        Buffer += '<span class="' + Class + '-Kanji" title="' + Meaning[Kanji] + '">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>' # the ' ' allows a linbreak after every kanji, but if two of them fit in the box, it doent break
                 else:
                         Buffer += '<span class="' + Class + '-Kanji">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>'
         return Buffer
