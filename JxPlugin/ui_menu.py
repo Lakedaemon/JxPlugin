@@ -57,7 +57,20 @@ def JxStats(Type):
                 JxHtml += Func(Couple[0],Couple[1])
         return JxHtml
 
+
+
+
+
 def JxShowIn(Type,k,Label):
+        Map = JxStatsMap[Type][k]
+        Dict = None
+        if Type == 'Kanji':
+                Dict = Jx_Kanji_Occurences
+        elif Type == 'Word':
+                Dict = Jx_Word_Occurences
+        if Dict:
+                for (Key,String) in Map.Order + [('Other','Other')]: 
+                        JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
         from html import Jx_Html_DisplayStuff
         JxHtml = Jx_Html_DisplayStuff + JxShowPartition(Type,k,Label)+ """</body></html>"""
         JxPreview.setHtml(JxHtml,JxResourcesUrl)
@@ -67,6 +80,17 @@ def JxShowIn(Type,k,Label):
         
 	
 def JxShowOut(Type,k):
+        Map = JxStatsMap[Type][k]
+        Dict = None
+        if Type == 'Kanji':
+                Dict = Jx_Kanji_Occurences
+        elif Type == 'Word':
+                Dict = Jx_Word_Occurences
+        for (Key,String) in Map.Order: 
+                Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
+                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
+                if Dict:               
+                        JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
         from html import Jx_Html_DisplayStuff
         JxHtml = Jx_Html_DisplayStuff + JxShowMissingPartition(Type,k) + """</body></html>"""
         JxPreview.setHtml(JxHtml,JxResourcesUrl)
