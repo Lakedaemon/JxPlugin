@@ -11,7 +11,7 @@ import time
 #from anki.utils import ids2str
 from loaddata import *
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
-
+from globalobjects import JxStatsMap
 
 
 #colours for graphs
@@ -25,7 +25,8 @@ colorJLPT={4:"#996633",3:"#999933",2:"#99CC33",1:"#99FF33",0:"#FFFF33"}
 #          Routines for building the Card2Type Dictionnary
 #
 ######################################################################
-CardId2Types={}
+from globalobjects import CardId2Types, FactId2Types
+
 
 def JxParseFacts4Stats():
         global ModelInfo,Fields,Tuple,Tau
@@ -59,6 +60,7 @@ def JxParseFacts4Stats():
                 List = JxParseFactTags4Stats(Rows,Index)
                 CardsIds = [Rows[a][0] for a in range(Index,Index + Delta,Tau)]
                 CardId2Types.update([(Id,(List,CardsIds)) for Id in CardsIds])
+                FactId2Types.update([(Rows[Index][7],(List,CardsIds))])
                 Index += Delta
                 if Index < Length:
                         if Rows[Index][2] != Tuple[2]:
@@ -222,7 +224,7 @@ def JxNewAlgorythm():
                 order by facts.id,reviewHistory.cardId,reviewHistory.time
                 """) 
         JxProfile("Query ended")  
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
+        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
         JxNowTime = time.time()
         # The Graphs we can have
         Length = len(Rows)
@@ -295,12 +297,12 @@ def JxFlushFacts(JxCardStateArray,CardId):
                                 elif Type == "Word":
                                         #elif Map.From == 'Tango':
                                         try:
-                                                Change = 100.0 * Word2Frequency[Content] * CardWeight / SumWordOccurences 
+                                                Change = 100.0 * Jx_Word_Occurences[Content] * CardWeight / Jx_Word_SumOccurences 
                                         except KeyError:
                                                 Change = 0
                                 else:
                                         try:
-                                                Change = 100.0 * Kanji2Frequency[Content] * CardWeight / SumKanjiOccurences
+                                                Change = 100.0 * Jx_Kanji_Occurences[Content] * CardWeight / Jx_Kanji_SumOccurences
                                         except KeyError:
                                                 Change = 0 
                                 # we have to update the graph of each type
@@ -333,142 +335,4 @@ def JxFlushFacts(JxCardStateArray,CardId):
         except KeyError:# we do nothing, this Fact has no type.
                 pass
         
-               
-def JxGraphs(): 
-        #global JxStateArray
-        JxProfile("JxGraphs()")   
-        JxParseFacts4Stats() 
-        JxGraphsJSon =JxNewAlgorythm()
-        JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
-
-
-        from ui_menu import JxPreview
-        from ui_menu import JxResourcesUrl
-        JxHtml=u"""
-                    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
-<html>
-<head>
-<title>JxPlugin Main Menu</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-
-
-<!--                  jQuery & UI                          -->
-
-
-<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script> 
-
-
-<!--                         Theme                          -->
-
-<!--<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" /> -->
-<link rel="Stylesheet" href="themes/sunny/jquery-ui.css" type="text/css" /> 
-
-
-<!--                  Buttons                          -->
-
-
-
-
-
-<script src="ui.button/ui.classnameoptions.js"></script> 
-<script src="ui.button/ui.button.js"></script> 
-<link rel="stylesheet" type="text/css" href="ui.button/ui-button.css" /> 
-<script src="ui.button/ui.buttonset.js"></script> 
-
-
-
-	<script type="text/javascript"  src="http://jqueryui.com/themeroller/themeswitchertool/"></script> 
-
-<!--                     Selects                          -->
-
-<link rel="stylesheet" type="text/css" href="ui.dropdownchecklist.css" /> 
-<script type="text/javascript" src="ui.dropdownchecklist.js"></script>
-
-<link rel="Stylesheet" href="ui.selectmenu/ui.selectmenu.css" type="text/css" /> 
-<script type="text/javascript" src="ui.selectmenu/ui.selectmenu.js"></script> 
-
-
-<!--                     Graphs                          -->
-
-
-<script type="text/javascript" src="jquery.flot.js"></script>
-
-<script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
-
-
-
-
-
-
-<script> 
-	jQuery().ready(function(){
-               $('.ui-button').button({checkButtonset:true});
-               
-$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
-$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
-$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});               
-$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});  
-$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
  
-            
-               
-               
-});
-</script> 
-</head>
-<body>
-
-<div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
-<div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
-
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;padding-top:70px;text-align:center;"><strong>JLPT</strong>
-<div id="LegendJLPT" align="center" style="width:100px;height:140px;padding-top:10px;">JLPT Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="text-align:center;float:left;clear:left;margin-left:10px;"><strong>KANJI Accumulated Frequency</strong><div id="KanjiFreq" style="width:500px;height:250px;"></div></div>
-<div style="text-align:center;float:right;clear:right;margin-right:10px;"><strong>WORDS Accumulated Frequency</strong><div id="WordFreq" style="width:500px;height:250px;"></div></div>
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;text-align:center;margin-top:40px;"><strong>FREQUENCY</strong>
-<div id="LegendFreq" align="center" style="width:100px;height:140px;padding-top:10px;">Frequency Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="width:500px;text-align:center;float:left;clear:left;margin-left:30px;"><strong>JOUYOU</strong>
-<div id="LegendJouyou" align="center" style="width:360px;margin:0 auto;text-align:center;">Jouyou Legend</div>
-<div id="KanjiJouyou" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-<div style="width:500px;text-align:center;float:right;clear:right;margin-right:30px;"><strong>KANKEN</strong>
-<div id="LegendKanken" align="center" style="width:460px;margin: 0 auto;text-align:center;">Kanken Legend</div>
-<div id="KanjiKanken" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-
-          </body></html>                 
-                    
-                    """% (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
-        JxProfile("JxGraphs().Substitute done")
-        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
-        JxProfile("JxGraphs().Preview.SetHtml")
-        JxPreview.show()  
-        JxProfile("JxGraphs().Show()")
-        #global debug
-        #mw.help.showText(JxShowProfile()+debug)
-
-
-
-
-
-
-	
-	
-	
-	
-	
-	
-	

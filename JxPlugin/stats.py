@@ -8,120 +8,263 @@ from os import path
 from ankiqt import mw
 from ankiqt.ui.utils import getSaveFile, askUser
 from answer import Tango2Dic
-
+from loaddata import *
+from graphs import CardId2Types
+from globalobjects import JxStatsMap
 ######################################################################
 #
 #                      JxStats : Stats
 #
 ######################################################################
-
-def ComputeCount(Dict,Query): 
-	"""compute and Display an HTML report of the result of a Query against a Map"""
-	Count = {"InQuery":0, "Inside":0, "L0":0}
-	Values = set(Dict.values())
-	for value in Values:
-		Count["T" + str(value)] = 0
-		Count["L" + str(value)] = 0		
-	for key, value in Dict.iteritems():
-		Count["T" + str(value)] += 1
-	Count["InMap"] = sum(Count["T" + str(value)] for value in Values)
-	Counted = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Stuffed=Tango2Dic(Stuff)
-		if Stuffed not in Counted:
-			Counted[Stuffed] = 0
-			if Stuffed in Dict:
-				a = "L" + str(Dict[Stuffed])
-			else:
-				a = "L0"
-			Count[a] += 1
-	Count["Inside"] = sum(Count["L" + str(value)] for value in Values)
-	Count["InQuery"] = Count["Inside"] + Count["L0"]
-	for value in Values:
-		Count["P" + str(value)] = round(Count["L" + str(value)] * 100.0 / max(Count["T" + str(value)],1),2)
-	Count["PInsideInMap"] = round(Count["Inside"] *100.0 / max(Count["InMap"],1),2)
-	Count["PInsideInQuery"] = round(Count["Inside"] *100.0 / max(Count["InQuery"],1),2)
-	return Count
-
-def HtmlReport(Map,Query):
-	JStatsHTML = """
-	<table width="100%%" align="center" style="margin:0 20 0 20;">
-	<tr><td align="left"><b>%(To)s</b></td><th colspan=2 align="center"><b>%(From)s</b></th><td align="right"><b>Percent</b></td></tr>
-	""" 
-	for Key,Value in Map.Order:
-		JStatsHTML += """
-		<tr><td align="left"><b>%s</b></td><td align="right">%%(L%s)s</td><td align="left"> / %%(T%s)s</td><td align="right">%%(P%s).1f %%%%</td></tr>
-		""" % (Value,Key,Key,Key) 
-
-	JStatsHTML += """
-	<tr><td align="left"><b>Total</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InMap)s</td><td align="right">%(PInsideInMap).1f %%</td></tr>
-	<tr><td colspan=4><hr/></td/></tr>
-	<tr><td align="left"><b> %(To)s/All</b></td><td align="right">%(Inside)s</td><td align="left"> / %(InQuery)s</td><td align="right">%(PInsideInQuery).1f %%</td></tr>
-	</table>
-	""" 
-        Dict = ComputeCount(Map.Dict,Query)
-        Dict['To'] = Map.To
-        Dict['From'] = Map.From
-        return JStatsHTML % Dict
-
-def SeenHtml(Map,Query):
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Seen = {}
-	Color = {u"Other":True}
-	Buffer = {u"Other":u""}
-	for (Key,String) in Map.Order:
-		Buffer[Key] = u""
-		Color[Key] = True	
-	for (Stuff,Id) in mw.deck.s.all(Query):
-		if Stuff not in Seen:
-			try: 
-				Value = Map.Dict[Stuff]	  
-			except KeyError:
-				Value = u"Other"
-			Seen[Stuff] = 0
-			Color[Value] = not(Color[Value])			
-			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-	HtmlBuffer = u""
-	for Key,Value in Map.Order:
-                if Buffer[Key] != u"":
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-        if Buffer[u"Other"] != u"":
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer[u"Other"]
-	return HtmlBuffer
-def Escape(string):
-        return string.strip("""'"<>()""").strip(u"""'"<>()""") 
         
-def MissingHtml(Map,Query):
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-	Seen = {}
-	for Stuff in mw.deck.s.column0(Query):
-		Seen[Stuff] = 0
-		
-	Color = {}
-	Buffer = {}
-	for (Key,String) in Map.Order:
-		Buffer[Key] = u""
-		Color[Key] = True	
-	for (Key,Value) in Map.Dict.iteritems():
-		if Key not in Seen:
-			Color[Value] = not(Color[Value])			
-			if Color[Value]:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
+JxStatsArray = {}
+JxPartitionLists = {}
+def ComputeCount(): 
+        global JxStatsArray,JxPartitionLists,NoType
+	"""compute and Display an HTML report of the result of a Query against a Map"""
+        Rows = mw.deck.s.all("""select cards.factId,cards.id,cards.reps,cards.Interval from cards order by cards.factId""")  
+        # we can compute known/seen/in deck/total stats for each value of each map depending of the type
+        NoType = 0 # known/seen/in deck
+        CardState = []
+        for (Type,List) in JxStatsMap.iteritems():
+                for (k, Map) in enumerate(List):
+                        for (Key,String) in Map.Order+[('Other','Other')]:
+                                if k != 1:
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                                elif Type =='Word':
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Word_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                                else:
+                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Kanji_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                                for Label in ['Known','Seen','InDeck']:
+                                        JxPartitionLists[(Type,k,Key,Label)] = []
+        Length = len(Rows)
+        Index = 0
+        while True:
+                (FactId,CardId,CardRep,Interval) = Rows[Index]
+                # set the card's status                       
+                if Interval > 21 and CardRep:
+                        CardState.append(0)
+                elif CardRep:
+                        CardState.append(1)
+                else:
+                        CardState.append(2)
+                Index += 1
+                if Index == Length: 
+                        # we have finished parsing the Entries.Flush the last Fact and break
+                        JxFlushFactStats(CardState,CardId)
+                        break
+                        # we have finished parsing the Entries, flush the Status change
+                elif FactId == Rows[Index][0]:
+                        # Same Fact : Though it does nothing, we put this here for speed purposes because it happens a lot.
+                        pass
+                else:                        
+                        # Fact change
+                        JxFlushFactStats(CardState,CardId)
+                        CardState = []
+        # Create and sort the missing lists
+        # Sort the list with respect to frequency
+        for (Type,List) in JxStatsMap.iteritems():
+                Dict = None
+                if Type == 'Kanji':
+                        Dict = Jx_Kanji_Occurences
+                elif Type == 'Word':
+                        Dict = Jx_Word_Occurences
+                if Dict:
+                        for (k, Map) in enumerate(List):
+                                for (Key,String) in Map.Order+[('Other','Other')]: 
+                                        Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
+                                        if Key != 'Other':
+                                                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
+                                                JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
+                                        for Label in ['Known','Seen','InDeck']:
+                                                JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
+def JxVal(Dict,x):
+        try:
+                return  Dict[x]
+        except KeyError:
+                return -1
+  
+        
+def JxFlushFactStats(CardState,CardId):
+        """Flush the fact stats"""
+        global JxStatsArray,JxPartitionLists,JxStatsMap, NoType
+        try:# get the card type and the number of shared cardsids by the fact
+                (CardInfo,CardsNumber) = CardId2Types[CardId]
+                CardWeight = 1.0/max(1,len(CardsNumber))
+                for (Type,Name,Content) in CardInfo:
+                        for (k, Map) in enumerate(JxStatsMap[Type]):
+                                try:
+                                        Key = Map.Value(Content)
+                                except KeyError:
+                                        Key = 'Other' 
+                                if k != 1:
+                                #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
+                                        Change = CardWeight
+                                elif Type == "Word":
+                                        #elif Map.From == 'Tango':
+                                        try:
+                                                Change = Jx_Word_Occurences[Content] * CardWeight
+                                        except KeyError:
+                                                Change = 0
+                                else:
+                                        try:
+                                                Change = Jx_Kanji_Occurences[Content] * CardWeight
+                                        except KeyError:
+                                                Change = 0 
+                                # we have to update the stats of each type
+                                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)] 
+                                (OldKnown,OldSeen,OldInDeck) = (Known,Seen,InDeck)
+############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
+                                #now, we got to flush the fact. Let's go for the realist model first
+                                for State in CardState:
+                                        InDeck += Change
+                                        if State < 2:
+                                                Seen += Change
+                                        if State == 0:
+                                                Known += Change
+                                # save the updated list                        
+                                JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total)
+                                if (Known-OldKnown) * 2 >= InDeck-OldInDeck: #Majority
+                                        JxPartitionLists[(Type,k,Key,'Known')].append((Content,CardId))
+                                elif (Known-OldKnown + Seen - OldSeen) > 0: # At least once
+                                        JxPartitionLists[(Type,k,Key,'Seen')].append((Content,CardId))
+                                else:
+                                        JxPartitionLists[(Type,k,Key,'InDeck')].append((Content,CardId))
+                                        
+##############################################################################################################     
+        except KeyError: # this fact has no type
+                NoType +=1
+         
+
+
+def HtmlReport(Type,k):
+        global JxStatsArray
+        from graphs import JxParseFacts4Stats
+        Map = JxStatsMap[Type][k]
+	JxStatsHtml = """<style>
+	.BackgroundHeader {background-color: #eee8d4;}
+	.Background {background-color: #fff9e5;}
+        .JxStats td{align:center;text-align:center;}
+        .JxStats tr > td:first-child,.JxStats tr > th:first-child{
+        border-right:1px solid black;
+        border-left:1px solid black;
+        }
+        .BorderRight{border-right:1px solid black;}
+        .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
+        </style>
+	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
+	<tr class="Border BackgroundHeader"><th><b>%s</b></th><th><b>%%</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	""" % Map.To
+        (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
+	for (Key,Value) in Map.Order:
+                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
+                (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
+		JxStatsHtml += """
+		<tr class="Background"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		""" % (Value,Known*100.0/max(1,Total),Known,Seen,InDeck,Total)
+        JxStatsHtml += """
+        <tr class="Border BackgroundHeader"><td><b>%s</b></td><td><b style="font-size:small">%.0f%%</b></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td class="BorderRight">%.0f</td></tr>
+		""" % ('Total',SumKnown*100.0/max(1,SumTotal),SumKnown,SumSeen,SumInDeck,SumTotal)        
+        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]
+        if (Known,Seen,InDeck,Total) != (0,0,0,0):
+                JxStatsHtml += """<tr><td style="border:0px solid black;"><b>%s</b></td><td></td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td></td></tr>""" % ('Other',Known,Seen,InDeck)                
+
+        JxStatsHtml += "</table>"
+        return JxStatsHtml
+
+def JxFormat(Float):
+        if Float < 0.01:                            # 0.001 -> 0
+                return "0"
+        if Float < 0.1:                             # 0.016 -> 0.02
+                return "%.1g" % Float       
+        if Float <1:                                # 0.168 -> 0.17
+                return "%.2g" % Float                            
+        else:                                       # 4.00 -> 4          4.10 -> 4           4.1678 -> 4.17           15.28 -> 15.3
+                return "%.3g" % Float               
+ 
+def JxWidgetAccumulatedReport(Type,k):
+        global JxStatsArray
+        from graphs import JxParseFacts4Stats
+        Map = JxStatsMap[Type][k]
+	JxStatsHtml = """<style>
+	.BackgroundHeader {background-color: #817865;}
+	.Background {background-color: #fece2f;}
+        .JxStats td{align:center;text-align:center;}
+        .JxStats tr > td:first-child,.JxStats tr > th:first-child{
+        border-right:1px solid black;
+        border-left:1px solid black;
+        }
+        .BorderRight{border-right:1px solid black;}
+        .Border td,.Border th{border-top:1px solid black;border-bottom:1px solid black;}
+        </style>
+        <br/>
+	<table class="JxStats" width="100%%" align="center" style="margin:0 20 0 20;border:0px solid black;" cellspacing="0px"; cellpadding="4px">
+	<tr class="Border BackgroundHeader"><th><b>Accumulated</b></th><th><b>Known</b></th><th><b>Seen</b></th><th><b>Deck</b></th><th class="BorderRight"><b>Total</b></th></tr>
+	""" 
+        JxSumTotal = sum([JxStatsArray[(Type,k,Key)][3] for (Key,Value) in Map.Order])
+        (SumKnown, SumSeen, SumInDeck, SumTotal)=(0,0,0,0)
+	for (Key,Value) in Map.Order:
+                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)]
+                (SumKnown, SumSeen, SumInDeck, SumTotal) = (SumKnown + Known, SumSeen + Seen, SumInDeck + InDeck, SumTotal + Total)
+		JxStatsHtml += """
+		<tr class="Background"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%.0f%%</td></tr>
+		""" % (Value,JxFormat(Known*100.0/max(1,JxSumTotal)),JxFormat(Seen*100.0/max(1,JxSumTotal)),JxFormat(InDeck*100.0/max(1,JxSumTotal)),Total*100.0/max(1,JxSumTotal))
+        JxStatsHtml += """
+        <tr class="Border BackgroundHeader"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%s%%</td></tr>
+		""" % ('Total',JxFormat(SumKnown*100.0/max(1,JxSumTotal)),JxFormat(SumSeen*100.0/max(1,JxSumTotal)),JxFormat(SumInDeck*100.0/max(1,JxSumTotal)),100)        
+        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
+
+        JxStatsHtml += "</table>"
+        return JxStatsHtml       
+	
+def JxShowPartition(Type,k,Label):
+        global JxPartitionLists
+        """Returns an Html report of the seen stuff of Type/k/Label"""
+        Map = JxStatsMap[Type][k]
+	Color = dict([(Key,True) for (Key,String) in Map.Order + [('Other','Other')]])
+	Buffer = dict([(Key,"") for (Key,String) in Map.Order + [('Other','Other')]])
+	for (Key,String) in Map.Order + [('Other','Other')]:
+	        for (Stuff,Id) in JxPartitionLists[(Type,k,Key,Label)]:
+			Color[Key] = not(Color[Key])			
+			if Color[Key]:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 			else:
-				Buffer[Value] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Key}
+				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
 	HtmlBuffer = u""
+	for (Key,Value) in Map.Order:
+                if Buffer[Key]:
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
+        if Buffer['Other']:
+			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer['Other']
+	return HtmlBuffer
+
+def JxShowMissingPartition(Type,k):
+        global JxPartitionLists
+        """Returns an Html report of the seen stuff corresponding to Map and Query """
+        Map = JxStatsMap[Type][k]
+	Color = dict([(Key,True) for (Key,String) in Map.Order])
+	Buffer = dict([(Key,"") for (Key,String) in Map.Order])
 	for (Key,String) in Map.Order:
-                if Buffer[Key] !=u"":
-                        HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Map.Legend(Key),Buffer[Key])
-	return HtmlBuffer	
+	        for Stuff in JxPartitionLists[(Type,k,Key,'Missing')]:
+			Color[Key] = not(Color[Key])			
+			if Color[Key]:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
+			else:
+				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
+	HtmlBuffer = u""
+	for (Key,Value) in Map.Order:
+                if Buffer[Key]:
+			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
+	return HtmlBuffer
+     
+def JxDoNothing(Stuff):
+	pass
+
+	
 	
 User = []
 
-def JxDoNothing(Stuff):
-	pass
+
 
 def JxAddo(Stuff,Id):
 	if (Stuff,Id) not in User:

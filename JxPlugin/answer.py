@@ -404,6 +404,7 @@ def JxShowProfile():
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
+    
     JxProfile("Start")
     
     # Guess the type(s) and the relevant content(s) of the Fact
@@ -474,17 +475,30 @@ def append_JxPlugin(Answer,Card):
             except KeyError:pass
             
             try:        # ${W-Freq}
-                    JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(MinWordFrequency+1,2))/(log(MaxWordFrequency+1,2)-log(MinWordFrequency+1,2)))) 
+                    JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(Jx_Word_MinOccurences+1,2))/(log(Jx_Word_MaxOccurences+1,2)-log(Jx_Word_MinOccurences+1,2)))) 
             except KeyError:pass
 
-            try : # Finds all word and sentance facts whose expression uses the Word and returns a table with expression, reading, meaning            
-                    Query = """select expression.value, meaning.value, reading.value from 
-                    fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and (fmexpression.name="Expression" or fmexpression.name="Sentence") and 
-                    reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and 
-                    meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-                    expression.value like "%%%s%%" and expression.value != "%s" """ % (JxW, JxW)
-                    JxAnswerDict['W-Sentences'] = JxTableDisplay(mw.deck.s.all(Query),'W-Sentences')    
-            except KeyError:pass        
+            #  ${W-Sentences}
+            #
+            # This Finds all sentence facts whose expression uses the Word and returns a table with expression, reading, meaning 
+            #
+            # It might be more complicated, but it should be faster and it uses the _precious_ FactId2Types dictonnary that tells the type of a fact and gives it's relevant content
+            from globalobjects import FactId2Types            
+            if not FactId2Types:
+                    from graphs import JxParseFacts4Stats
+                    JxParseFacts4Stats()
+                    
+            # First find the id (and the sentence) of the facts of type 'sentence' which include the word (you gotta love list comprehension and the FactId2Types dictionnary)
+            List = [(Id,Content) for (Id,Couple) in FactId2Types.iteritems() for (Name,Type,Content) in Couple[0] if Type == 'Sentence' and JxW in Content]
+            
+            # then, query the database (this is the slow part) to get the meaning and the reading that ar coupled with the relevant content  
+            Query = """select meaning.factId, meaning.value, reading.value from fields as reading, fields as meaning, fieldModels as fmreading, fieldModels as fmmeaning where  
+            reading.fieldModelId= fmreading.id and fmreading.name="Reading" and 
+            meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and 
+            meaning.factId = reading.factId and meaning.factId in ('%s')""" % "','".join([Id for (Id,Content) in List])
+            # now we got to merge the two tables and display the result (this behaves a bit like a database but should be faster)
+            JxAnswerDict['W-Sentences'] = JxTableDisplay([(Content,Meaning,Reading) for (Id,Meaning,Reading) in mw.deck.s.all(Query) for (FactId,Content) in List if FactId == Id],'W-Sentences')    
+      
 
     if JxK:
             try:        # ${K:JLPT}
@@ -496,11 +510,9 @@ def append_JxPlugin(Answer,Card):
             except KeyError:pass
 
             try:        # ${K:Freq}    
-                    JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(MaxKanjiOccurences+1,2))*10+100))
-            except KeyError:pass
-            	
+                    JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(Jx_Kanji_MaxOccurences+1,2))*10+100))
+            except KeyError:pass      	       
             
-            # Finds all word facts whose expression uses the Kanji and returns a table with expression, reading, meaning            
             Query = """select expression.value, meaning.value, reading.value from 
             fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
             expression.value like "%%%s%%" """ % JxK
@@ -508,12 +520,17 @@ def append_JxPlugin(Answer,Card):
 
     
     from ui_menu import JxSettings
-    JxAnswerDict[u"Css"] = """<style>%s</style>""" % JxSettings.Get(u'Css')
+    JxAnswerDict['Css'] = '<style>%s</style>' % JxSettings.Get(u'Css')
     
     # ${<Field>}
     for FieldModel in Card.fact.model.fieldModels:
 	    JxAnswerDict[FieldModel.name] = '<span class="fm%s">%s</span>' % (
                 hexifyID(FieldModel.id), Card.fact[FieldModel.name])
+            
+    # ${F-Tags}, ${M-Tags}, ${Tags}
+    JxAnswerDict['F-Tags'] = Card.fact.tags
+    JxAnswerDict['M-Tags'] = Card.fact.model.tags
+    JxAnswerDict['Tags'] = " ".join(set(Card.fact.model.tags.split(" ") + Card.fact.tags.split(" ") + [Card.cardModel.name]))
                 
     JxProfile("Fill JxCodes")
     

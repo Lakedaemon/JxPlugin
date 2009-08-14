@@ -10,11 +10,12 @@ import time
 import string
 
 	
-def JxList2SQL(List):
-	if List==[]:
-		return u''
-	else:
-		return string.join([unicode("'" + Stuff + "',") for Stuff in List])[0:-1]
+#def JxList2SQL(List):
+#	if List==[]:
+#		return u''
+#	else:
+#		return string.join([unicode("'" + Stuff + "',") for Stuff in List])[0:-1]
+
 
 def JxTagDuplicates(Query):
 
