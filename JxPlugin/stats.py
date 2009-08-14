@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 from os import path
 from ankiqt import mw
-from ankiqt.ui.utils import getSaveFile, askUser
+#from ankiqt.ui.utils import getSaveFile, askUser
 from answer import Tango2Dic
 from loaddata import *
 from graphs import CardId2Types
