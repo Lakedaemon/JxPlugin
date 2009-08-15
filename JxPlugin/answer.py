@@ -13,7 +13,7 @@ from globalobjects import JxLink
 from anki.hooks import *
 from anki.utils import hexifyID
 import time
-
+from globalobjects import JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
 
 def JxReplace(String,Dict):
 
@@ -382,23 +382,7 @@ def JxDoc(Field,Code,DocString):
         """adds DocString as documentation for ${Field}"""
         pass
 
-Jx_Profile=[("Init",time.time())]
-def JxInitProfile(String):
-        global Jx_Profile
-        Jx_Profile=[(String,time.time())]
-def JxProfile(String):
-        global Jx_Profile
-        Jx_Profile.append((String,time.time()))
-def JxShowProfile():
-        global Jx_Profile
-        JxHtml = ""
-        for a in range(len(Jx_Profile)):
-                (String,Time)=Jx_Profile[a]
-                if a==0:
-                        JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time) +"</td></tr>"
-                else:
-                        JxHtml+="<tr><td>"+ String +"</td><td>"+ str(Time-Jx_Profile[a-1][1]) +"</td></tr>"                
-        return "<table>" + JxHtml + "</table>"
+
 
         
 def append_JxPlugin(Answer,Card):

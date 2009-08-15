@@ -16,9 +16,6 @@ JxJMdic = []
 
 JxLanguage="fre"
 
-# need this to see what happens
-Debug=""
-
 # we don't care about lots of stuff : codepoint[cp], ...
 
 def start_element(Name,Attributes):
@@ -28,13 +25,6 @@ def start_element(Name,Attributes):
         if Name == 'entry':
                 # multiple container node -> list
                 JxBuffer = dict([('k_ele',[]),('r_ele',[]),('sense',[])])              
-        global Debug
-        if len(Debug)<100000:
-                String = u''
-                if Attributes:
-                        for (Key,Value) in Attributes.iteritems():
-                                String += " " + str(Key) + '="' + str(Value) + '"'
-                Debug += '&lt;' +str(Name)+ String +'&gt;<br/>'
                 
 def char_data(Data):
         global JxElement,JxAttributes,JxBuffer
@@ -70,11 +60,7 @@ def char_data(Data):
                         try:
                                 JxBuffer['lsource'].append([(Data,Language,Type,Wasei)])                        
                         except KeyError:
-                                JxBuffer['lsource'] = [(Data,Language,Type,Wasei)] 
-        global Debug
-        if len(Debug)<100000 and Data !=u'\n':
-                Debug+= 'Data:' +str(repr(Data)) +"<br/>"                
-                
+                                JxBuffer['lsource'] = [(Data,Language,Type,Wasei)]               
         
 def end_element(Name):
         if Name == 'k_ele':
@@ -99,9 +85,6 @@ def end_element(Name):
                 if JxBuffer['sense']: #no need to save if there aren't any glosses in the target language
                         JxJMdic.append([JxBuffer])
 
-        global Debug
-        if len(Debug)<100000:
-                Debug+= '&lt;/' +str( Name)+"&gt;<br/>"
 
 
 
@@ -125,17 +108,23 @@ else:
         File.close()
         # I don't ncessarily want Entities to be replaced with the default JMdict strings... I may provide my own strings
         from re import sub
+        from globalobjects import JxInitProfile,JxProfile,JxShowProfile
+        JxInitProfile('JMdict.py')
         JMdicWithoutEntities = sub(r'<!ENTITY (.*?) ".*?">',lambda x:'<!ENTITY ' + x.group(1) + ' "${' + x.group(1) + '}">',JMdic)
+        JxProfile('re-place')
         import xml.parsers.expat
         Jx_Parser_JMdic = xml.parsers.expat.ParserCreate()                
         Jx_Parser_JMdic.StartElementHandler = start_element
         Jx_Parser_JMdic.EndElementHandler = end_element
         Jx_Parser_JMdic.CharacterDataHandler = char_data
+        JxProfile('Parser created')
         Jx_Parser_JMdic.Parse(JMdicWithoutEntities)
+        JxProfile('JMdit parsed')
+        mw.help.showText(JxShowProfile())
 	f = open(file_pickle, 'wb')
 	cPickle.dump(JxJMdic, f, cPickle.HIGHEST_PROTOCOL)
 	f.close()
-mw.help.showText(str(len(JxJMdic))+" " +str(JxJMdic[6666])+Debug)#str(JxKanjidic))
+#mw.help.showText(str(len(JxJMdic))+" " +str(JxJMdic[6666])+Debug)#str(JxKanjidic))
 """
 <!DOCTYPE JMdict [
 <!ELEMENT JMdict (entry*)>

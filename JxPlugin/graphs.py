@@ -10,8 +10,8 @@ import time
 
 #from anki.utils import ids2str
 from loaddata import *
-from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
-from globalobjects import JxStatsMap
+from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
+from globalobjects import JxStatsMap,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
 
 
 #colours for graphs
