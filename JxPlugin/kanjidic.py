@@ -8,14 +8,8 @@
 from os.path import join
 from ankiqt import mw
 import codecs
-#dom = parse(join(mw.config.configPath, "plugins","JxPlugin","Data", "Kanjidic2.xml"))
-#dom = xml.dom.minidom.parseString(document)
-import xml.parsers.expat
-import itertools
 
-
-
-# ok, let's say that we want to create a list (or a dictionary) for the entries of Kanjidic2.xml : 
+# ok, let's say that we want to create a list for the entries of Kanjidic2.xml : 
 JxKanjidic = [] 
 
 
@@ -104,6 +98,7 @@ else:
         File = gzip.open(File, 'rb')
         Kanjidic2 = File.read()
         File.close()
+        import xml.parsers.expat
         Jx_Parser_Kanjidic = xml.parsers.expat.ParserCreate()                
         Jx_Parser_Kanjidic.StartElementHandler = start_element
         Jx_Parser_Kanjidic.EndElementHandler = end_element
