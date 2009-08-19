@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 from os import path
 from ankiqt import mw
-from ankiqt.ui.utils import getSaveFile, askUser
+#from ankiqt.ui.utils import getSaveFile, askUser
 from answer import Tango2Dic
 from loaddata import *
 from graphs import CardId2Types
@@ -61,23 +61,7 @@ def ComputeCount():
                         # Fact change
                         JxFlushFactStats(CardState,CardId)
                         CardState = []
-        # Create and sort the missing lists
-        # Sort the list with respect to frequency
-        for (Type,List) in JxStatsMap.iteritems():
-                Dict = None
-                if Type == 'Kanji':
-                        Dict = Jx_Kanji_Occurences
-                elif Type == 'Word':
-                        Dict = Jx_Word_Occurences
-                if Dict:
-                        for (k, Map) in enumerate(List):
-                                for (Key,String) in Map.Order+[('Other','Other')]: 
-                                        Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
-                                        if Key != 'Other':
-                                                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
-                                                JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
-                                        for Label in ['Known','Seen','InDeck']:
-                                                JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
+
 def JxVal(Dict,x):
         try:
                 return  Dict[x]
@@ -122,7 +106,7 @@ def JxFlushFactStats(CardState,CardId):
                                                 Seen += Change
                                         if State == 0:
                                                 Known += Change
-                                # save the updated list                        
+                                # save the updated list                        #### this is probably a bit slow
                                 JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total)
                                 if (Known-OldKnown) * 2 >= InDeck-OldInDeck: #Majority
                                         JxPartitionLists[(Type,k,Key,'Known')].append((Content,CardId))
