@@ -44,18 +44,30 @@ def JxIntReplace(Match):
 def JxInt2Name(Int):
         return re.sub(u".",JxIntReplace,str(Int))
 
-def JxTableDisplay(TupleList,Class):
+def JxTableDisplay(TupleList,Class,Type=None):
+        if Type != None:
+                from globalobjects import FactId2Types            
+                if not FactId2Types:
+                        from graphs import JxParseFacts4Stats
+                        JxParseFacts4Stats()
+                tupleStart=1
+        else:
+                tupleStart=0
+
         JxHtmlBuffer = u"" 
         Boolean = True 
         for Tuple in TupleList:
-                if Boolean:
-                            JxHtmlBuffer += u"""<tr class="Tr-Odd">"""
-                else:
-                            JxHtmlBuffer += u"""<tr class="Tr-Even">"""
-                Boolean = not(Boolean)
-                for Index in range(len(Tuple)):
-                        JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + rubify(Tuple[Index].strip()) + u'</td>'
-                JxHtmlBuffer += u"</tr>"
+                if Type != None:
+                        Types= [t for (t,e,c) in FactId2Types[Tuple[0]][0]] #FactID2Type is a very strange structure
+                if Type == None or Type in Types:
+                        if Boolean:
+                                    JxHtmlBuffer += u"""<tr class="Tr-Odd">"""
+                        else:
+                                    JxHtmlBuffer += u"""<tr class="Tr-Even">"""
+                        Boolean = not(Boolean)
+                        for Index in range(tupleStart,len(Tuple)):
+                                JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + rubify(Tuple[Index].strip()) + u'</td>'
+                        JxHtmlBuffer += u"</tr>"
 
         if len(JxHtmlBuffer):
                 return u'<table cellspacing="0px" cellpadding="0px" class="' + Class + u'">%s</table>' % JxHtmlBuffer
@@ -70,29 +82,20 @@ def JxStrokeDisplay(KanjiList,Class):
         # Finds all Kanji facts whose kanji is in the list
         Query = u"""select kanji.value, meaning.value from 
         fields as kanji, fields as meaning, fieldModels as fmkanji, fieldModels as fmmeaning where kanji.fieldModelId= fmkanji.id and fmkanji.name in ("%s") and 
-        meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=kanji.factId and kanji.value in ("%s")""" % ('","'.join(JxType[0][1]),Kanjis)
+        meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=kanji.factId and kanji.value in ("%s")""" % ('","'.join(JxTypeHash[u'Kanji'])+'","'+JxExpression,Kanjis)
         Rows = mw.deck.s.all(Query)
 
         Meaning = {}
         for Item in Rows:
-                Meaning[Item[0]] = Item[1]
-                
-        Kanjis2 = '","'.join([Kanji for Kanji in KanjiList if Kanji not in Meaning])
-        if Kanjis2:
-                # Now do the same for kanjis in models, that can also have one-kanji-words
-                Query = u"""select expression.value, meaning.value from 
-                fields as expression, fields as meaning, fieldModels as fmexpression, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and 
-                meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-                expression.value in ("%s")""" % Kanjis2
-                Rows = mw.deck.s.all(Query)
-
-                for Item in Rows:
-                        Meaning[Item[0]] = Item[1]
+                if Item[0] not in Meaning:
+                        Meaning[Item[0]]=[]
+                if Item[1] not in Meaning[Item[0]]:
+                        Meaning[Item[0]].append(Item[1])
         #mw.help.showText(str(Meaning))
         Buffer = ''
         for Kanji in KanjiList:
                 if Kanji in Meaning:
-                        Buffer += '<span class="' + Class + '-Kanji" title="' + Meaning[Kanji] + '">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>' # the ' ' allows a linbreak after every kanji, but if two of them fit in the box, it doent break
+                        Buffer += '<span class="' + Class + '-Kanji" title="' + ' | '.join(Meaning[Kanji]) + '">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>' # the ' ' allows a linbreak after every kanji, but if two of them fit in the box, it doent break
                 else:
                         Buffer += '<span class="' + Class + '-Kanji">'+ Kanji + '</span><span style="font-size:1px;width:1px;height:1px"> </span>'
         return Buffer
@@ -149,6 +152,9 @@ def JxDefaultAnswer(Buffer,String,Dict):
 JxTypeJapanese = ["japanese","Japanese","JAPANESE",u"日本語",u"にほんご"]
 JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
 ('Sentence',["sentence","Sentence","SENTENCE",u"文",u"ぶん"]),('Grammar',["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"])]    
+JxTypeHash={u'Kanji':[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"],'Word':["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"],
+'Sentence':["sentence","Sentence","SENTENCE",u"文",u"ぶん"],'Grammar':["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"]}
+JxExpression='expression","Expression","EXPRESSION'
 JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
 JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
 JxPonctuation.remove(u'々')    
@@ -479,27 +485,13 @@ def append_JxPlugin(Answer,Card):
                     JxAnswerDict['W-Freq'] =  '%s'  % MapFreqTango.Value(JxW, lambda x:int(100*(log(x+1,2)-log(Jx_Word_MinOccurences+1,2))/(log(Jx_Word_MaxOccurences+1,2)-log(Jx_Word_MinOccurences+1,2)))) 
             except KeyError:pass
 
-            #  ${W-Sentences}
-            #
-            # This Finds all sentence facts whose expression uses the Word and returns a table with expression, reading, meaning 
-            #
-            # It might be more complicated, but it should be faster and it uses the _precious_ FactId2Types dictonnary that tells the type of a fact and gives it's relevant content
-            from globalobjects import FactId2Types            
-            if not FactId2Types:
-                    from graphs import JxParseFacts4Stats
-                    JxParseFacts4Stats()
-                    
-            # First find the id (and the sentence) of the facts of type 'sentence' which include the word (you gotta love list comprehension and the FactId2Types dictionnary)
-            List = [(Id,Content) for (Id,Couple) in FactId2Types.iteritems() for (Name,Type,Content) in Couple[0] if Type == 'Sentence' and JxW in Content]
-            
-            # then, query the database (this is the slow part) to get the meaning and the reading that ar coupled with the relevant content  
-            Query = """select meaning.factId, meaning.value, reading.value from fields as reading, fields as meaning, fieldModels as fmreading, fieldModels as fmmeaning where  
-            reading.fieldModelId= fmreading.id and fmreading.name="Reading" and 
-            meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and 
-            meaning.factId = reading.factId and meaning.factId in ('%s')""" % "','".join([Id for (Id,Content) in List])
-            # now we got to merge the two tables and display the result (this behaves a bit like a database but should be faster)
-            JxAnswerDict['W-Sentences'] = JxTableDisplay([(Content,Meaning,Reading) for (Id,Meaning,Reading) in mw.deck.s.all(Query) for (FactId,Content) in List if FactId == Id],'W-Sentences')    
-      
+            Query = """select expression.factId, expression.value, meaning.value, reading.value from 
+            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name in ("%s") and reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and
+            expression.factId != "%s" and
+            expression.value like "%%%s%%" """ % ('","'.join(JxTypeHash[u'Sentence'])+'","'.join(JxTypeHash[u'Word'])+'","'+'","'+JxExpression,Card.factId,JxW)
+            result=mw.deck.s.all(Query)
+            JxAnswerDict['W-Sentences'] = JxTableDisplay(result,'W-Sentences',u'Sentence')    
+            JxAnswerDict['W-Words'] = JxTableDisplay(result,'W-Words',u'Word') #for idioms and compound words    
 
     if JxK:
             try:        # ${K:JLPT}
@@ -514,10 +506,13 @@ def append_JxPlugin(Answer,Card):
                     JxAnswerDict['K-Freq'] = '%s'  % MapFreqKanji.Value(JxK, lambda x:int((log(x+1,2)-log(Jx_Kanji_MaxOccurences+1,2))*10+100))
             except KeyError:pass      	       
             
-            Query = """select expression.value, meaning.value, reading.value from 
-            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name="Expression" and reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and 
-            expression.value like "%%%s%%" """ % JxK
-            JxAnswerDict['K-Words'] = JxTableDisplay(mw.deck.s.all(Query),'K-Words')    
+            Query = """select expression.factId, expression.value, meaning.value, reading.value from 
+            fields as expression, fields as reading, fields as meaning, fieldModels as fmexpression, fieldModels as fmreading, fieldModels as fmmeaning where expression.fieldModelId= fmexpression.id and fmexpression.name in ("%s") and reading.fieldModelId= fmreading.id and fmreading.name="Reading" and reading.factId=expression.factId and meaning.fieldModelId= fmmeaning.id and fmmeaning.name="Meaning" and meaning.factId=expression.factId and
+            expression.factId != "%s" and
+            expression.value like "%%%s%%" """ % ('","'.join(JxTypeHash[u'Sentence'])+'","'+'","'.join(JxTypeHash[u'Word'])+'","'+JxExpression,Card.factId,JxK)
+            result=mw.deck.s.all(Query)
+            JxAnswerDict['K-Words'] = JxTableDisplay(result,'K-Words',u'Word')    
+            JxAnswerDict['K-Sentences'] = JxTableDisplay(result,'K-Sentences',u'Sentence')    
 
     
     from controls import JxSettings
