@@ -35,6 +35,7 @@ def striphtml(s):
     s = s.replace("<br>", "|")
     s = s.replace("<br/>", "|")
     s = s.replace("<br />", "|")
+    s = s.replace("\n", "")
     s = s.replace("\t", "    ")
     r = re.compile("<[\s\S]*?>")
     g = r.findall(s)
@@ -87,20 +88,38 @@ def Sync(c):
                     if i.count(':')==2:
                         id, ease, reps = i.split(':')
                         ScoreCard(int(id),int(ease),int(reps))
-        
-        s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 20")
+                        
+        # we prepare a list of cards to export, with the same function call used by AnkiMini and web Anki.                
+        Limit = 20                
+        Export = mw.deck.getCards(lambda x:(x[0],x[3],x[4]))
+        if Export['status'] == 'cardsAvailable':
+            # we make a card list out of the failed/rev/new cards
+            n = min(Limit, len(Export['fail']))
+            s = Export['fail'][0:n-1]
+            while n<=Limit:
+                # add review/new cards
+                if Export['acq'] and (n % Export['newCardModulus'] == 0):
+                        s.append(Export['acq'].pop(0))
+                elif Export['rev']:
+                        s.append(Export['rev'].pop(0))
+                elif Export['acq']:
+                        s.append(Export['acq'].pop(0))
+                else:
+                        break
+                n += 1               
+                        
+                
+        #s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 20")
 
         cards = []
-        for id in s:
-            cq = mw.deck.s.query(anki.cards.Card).get(id[0])
-            q = striphtml(cq.question).encode("utf-8")
-            a = striphtml(cq.answer).encode("utf-8")
-            cards.append((id[0], cq.due, cq.reps, q, a))
+        for (id, question, answer) in s:
+            cq = mw.deck.s.query(anki.cards.Card).get(id)# getCards doesn't return reps, so I'm stuck with this for the time being
+            q = striphtml(question).encode("utf-8")
+            a = striphtml(answer).encode("utf-8")
 
-        for (id,due,rep,question,answer) in cards:
-            f.append("%d\t%d\t%d\t%s\t%s" % (id, due, rep, question, answer))
+            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id), int(cq.due), int(cq.reps), q, a))
             
-        srs = '\n'.join(f)
+        srs = '\n'.join(cards)
         l = struct.pack("I", len(srs))
         c.sendall(l) 
         c.sendall(srs) 
