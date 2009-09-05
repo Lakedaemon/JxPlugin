@@ -18,10 +18,12 @@ JxLanguage="fre"
 
 # we don't care about lots of stuff : codepoint[cp], ...
 
+
 def start_element(Name,Attributes):
         global JxElement, JxAttributes,JxBuffer
         JxElement = Name
         JxAttributes = Attributes
+                
         if Name == 'entry':
                 # multiple container node -> list
                 JxBuffer = dict([('k_ele',[]),('r_ele',[]),('sense',[])])              
@@ -30,7 +32,9 @@ def char_data(Data):
         #global JxElement,JxAttributes,JxBuffer
         if Data != '\n':
                 #got to save the data in a buffer respecting the structure
-                if JxElement in ['ent_seq','keb','reb','re_nokanji','s_inf']:
+                if JxElement == 'ent_seq': 
+                        ent_seq = Data
+                elif JxElement in ['keb','reb','re_nokanji','s_inf']:
                         # unique node -> value
                         JxBuffer[JxElement] = Data
                 elif JxElement in ['ke_inf','ke_pri','re_inf','re_pri','r_restr','stagk','stagr','xref','ant','pos','field','misc','dial']:
@@ -112,13 +116,18 @@ else:
         from re import sub
         from globalobjects import JxInitProfile,JxProfile,JxShowProfile
         JxInitProfile('JMdict.py')
+        JMdic = sub(r'<info>.*?</info>','',JMdic)
         JMdicWithoutEntities = sub(r'<!ENTITY (.*?) ".*?">',lambda x:'<!ENTITY ' + x.group(1) + ' "${' + x.group(1) + '}">',JMdic)
+        
         JxProfile('re-place')
         import xml.parsers.expat
-        Jx_Parser_JMdic = xml.parsers.expat.ParserCreate()                
-        Jx_Parser_JMdic.StartElementHandler = start_element
-        Jx_Parser_JMdic.EndElementHandler = end_element
-        Jx_Parser_JMdic.CharacterDataHandler = char_data
+        Jx_Parser_JMdic = xml.parsers.expat.ParserCreate() 
+        JxStart = start_element
+        JxEnd = end_element
+        JxData = char_data
+        Jx_Parser_JMdic.StartElementHandler = JxStart
+        Jx_Parser_JMdic.EndElementHandler = JxEnd
+        Jx_Parser_JMdic.CharacterDataHandler = JxData
         JxProfile('Parser created')
         Jx_Parser_JMdic.Parse(JMdicWithoutEntities)
         JxProfile('JMdit parsed')
