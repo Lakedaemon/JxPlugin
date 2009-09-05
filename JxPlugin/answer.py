@@ -503,7 +503,7 @@ def append_JxPlugin(Answer,Card):
             JxAnswerDict['K-Words'] = JxTableDisplay(mw.deck.s.all(Query),'K-Words')    
 
     
-    from ui_menu import JxSettings
+    from controls import JxSettings
     JxAnswerDict['Css'] = '<style>%s</style>' % JxSettings.Get(u'Css')
     
     # ${<Field>}
@@ -522,7 +522,7 @@ def append_JxPlugin(Answer,Card):
     
     JxProfile("Substitutions")
                       
-    from ui_menu import JxSettings
+    from controls import JxSettings
     Mode=JxSettings.Get(u'Mode')
     if Mode == "Append": JxAnswer = Answer + JxAnswer
     elif Mode == "Prepend": JxAnswer += Answer

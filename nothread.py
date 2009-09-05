@@ -43,10 +43,12 @@ def striphtml(s):
     return s     
 
 class DSSyncThread(QThread):
+        
     def __init__(self,parent = None):
         QThread.__init__(self,parent)
         self.connect(self, SIGNAL("Sync"), Sync)
-        self.connect(self, SIGNAL("Start"), self.start)        
+        self.connect(self, SIGNAL("Start"), self.start)
+        
     def stop(self):
         self.Loop = False
         
@@ -62,85 +64,50 @@ class DSSyncThread(QThread):
                 if len(rd) != 0:
                     c = fd.accept()[0]
                     break
-            #self.exec_()
             if self.Loop:        
-                self.emit(SIGNAL("Sync"),c)
+                self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
             
 
         
 def Sync(c):        
-        global debug 
-        debug = ""
         l = struct.pack("I", len(mw.deck.name()))
         c.sendall(l)
         c.sendall(mw.deck.name())                  
-        Debug('<br>Receiving rep length :')
-        d = c.recv(4)
-        l = struct.unpack("i", d)[0]
-        Debug(str(l) +"<br>")       
+        d = c.recv(4)# maybee we should loop there too because we could get less than 4 bytes... it's quite unlikely though (besides, the ds buffers it's sends in a 8k stack)
+        l = struct.unpack("i", d)[0]    
         if l >0:
             r = 0
             data = ''
             while r < l:
-                Debug("While : "+str(l-r)+"<br>" )
                 d = c.recv(l-r)
                 r += len(d)
                 data += d                  
-            Debug(data.decode("utf-8"))
-            data = data.split('\n')
+            data = data.split('\n')# we could remove the trailing \n before splitting too....
             for i in data:
-                    Debug("(-"+ i+ "-)")
                     if i.count(':')==2:
                         id, ease, reps = i.split(':')
                         ScoreCard(int(id),int(ease),int(reps))
-        else:
-            Debug("no change to apply")
         
-        
-        f = []
         s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 20")
-        def csort(a, b):
-            a, b = a[1], b[1]
-            if a > b:
-                return 1
-            if a < b:
-                return -1
-            return 0
-        Debug(" query <br>")
+
         cards = []
-        status=0
         for id in s:
-            cq = mw.deck.s.query(anki.cards.Card).get(id[0])  #this is slow, speedup possible there
+            cq = mw.deck.s.query(anki.cards.Card).get(id[0])
             q = striphtml(cq.question).encode("utf-8")
             a = striphtml(cq.answer).encode("utf-8")
             cards.append((id[0], cq.due, cq.reps, q, a))
-            status+=1
-        Debug("filter html " + str(status) +"<br>")
-        cards.sort(csort)
-        Debug("sort<br>")
-        a =0
+
         for (id,due,rep,question,answer) in cards:
             f.append("%d\t%d\t%d\t%s\t%s" % (id, due, rep, question, answer))
-            a+=1
-        Debug("output" +str(a)+"<br>")
+            
         srs = '\n'.join(f)
-           
-        Debug("<br> Srs length : " + str(len(srs))  + "<br> srs : " + srs.decode("utf-8"))
         l = struct.pack("I", len(srs))
         c.sendall(l) 
         c.sendall(srs) 
-        Debug("done<br>")
-        c.shutdown(1)
+        
         c.close()
-        Debug('')
         mw.loadDeck(mw.deck.path, sync=False)  
             
-def Debug(text,*args):
-        global debug
-        debug += text
-        mw.help.showText(debug)
-        
-
         
 def ScoreCard(id, ease, reps):
         card = mw.deck.cardFromId(id)
@@ -150,36 +117,14 @@ def ScoreCard(id, ease, reps):
             return
         
         mw.deck.answerCard(card, ease)
-
-
- 
-def init_DsSync():
-        """Initialises the Anki GUI to present an option to invoke the plugin."""
-        from PyQt4 import QtGui, QtCore
-	
-	# creates menu entry
-	mw.mainWin.actionDsSync = QtGui.QAction('DsSync', mw)
-	mw.mainWin.actionDsSync.setStatusTip('Syncing through TCP/IP with AnkiDs')
-        mw.mainWin.actionDsSync.setEnabled(not not mw.deck)
-	mw.connect(mw.mainWin.actionDsSync, QtCore.SIGNAL('triggered()'), Sync)
-
-
-	# adds the plugin icons in the Anki Toolbar
-	
-	mw.mainWin.toolBar.addAction(mw.mainWin.actionDsSync)
-	
-	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("DsSync",)
 	
 	
-# adds JxPlugin to the list of plugin to process in Anki 
-mw.addHook('init', init_DsSync)
 mw.registerPlugin("Sincyng with AnkiDs", 667)
 print 'DsSync Plugin loaded'
 
 mythread=DSSyncThread(mw)
-
-mythread.start()
+# should ovrload opening of deck/closing of deck and make it run/stop there
+mythread.start()# for the time being, it runs and never stops...
 
 
 
