@@ -89,7 +89,7 @@ def Sync(c):
                         id, ease, reps = i.split(':')
                         ScoreCard(int(id),int(ease),int(reps))
                         
-        # we prepare a list of cards to export, with the same function call used by AnkiMini and web Anki.                
+        """"# we prepare a list of cards to export, with the same function call used by AnkiMini and web Anki.                
         Limit = 20                
         Export = mw.deck.getCards(lambda x:(x[0],x[3],x[4]))
         if Export['status'] == 'cardsAvailable':
@@ -106,18 +106,25 @@ def Sync(c):
                         s.append(Export['acq'].pop(0))
                 else:
                         break
-                n += 1               
+                n += 1  """             
                         
                 
-        #s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 20")
-
+        s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 500")
         cards = []
+        for id in s:
+            cq = mw.deck.s.query(anki.cards.Card).get(id[0])# getCards doesn't return reps, so I'm stuck with this for the time being
+            q = striphtml(cq.question).encode("utf-8")
+            a = striphtml(cq.answer).encode("utf-8")
+
+            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id[0]), int(cq.due), int(cq.reps), q, a))
+            
+        """cards = []
         for (id, question, answer) in s:
             cq = mw.deck.s.query(anki.cards.Card).get(id)# getCards doesn't return reps, so I'm stuck with this for the time being
             q = striphtml(question).encode("utf-8")
             a = striphtml(answer).encode("utf-8")
 
-            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id), int(cq.due), int(cq.reps), q, a))
+            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id), int(cq.due), int(cq.reps), q, a))"""
             
         srs = '\n'.join(cards)
         l = struct.pack("I", len(srs))
