@@ -14,7 +14,7 @@ from loaddata import *
 from answer import *
 from stats import *
 from tools import *
-import jmdic
+#import jmdic
 #import kanjidic
 
 
