@@ -42,20 +42,35 @@ def striphtml(s):
         s = s.replace(i, "")
     return s     
 
+class DSSyncThread(QThread):
+    def __init__(self,parent = None):
+        QThread.__init__(self,parent)
+        self.connect(self, SIGNAL("Sync"), Sync)
+        self.connect(self, SIGNAL("Start"), self.start)        
+    def stop(self):
+        self.Loop = False
         
-def run():        
-      global debug
-      fd = socket.socket()#socket.AF_INET, socket.SOCK_STREAM)
-      fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      fd.bind(("", 24550))
-      fd.listen(5)
-      while True:
-        debug =''
-        while True:
-            rd,wr,er = select.select([fd],[],[], 30)         
-            if len(rd) != 0:
-                c = fd.accept()[0]
-                break       
+    def run(self):
+        fd = socket.socket()#socket.AF_INET, socket.SOCK_STREAM)
+        fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        fd.bind(("", 24550))
+        fd.listen(5)
+        self.Loop = True
+        while self.Loop:
+            while self.Loop:
+                rd,wr,er = select.select([fd],[],[], 30)         
+                if len(rd) != 0:
+                    c = fd.accept()[0]
+                    break
+            #self.exec_()
+            if self.Loop:        
+                self.emit(SIGNAL("Sync"),c)
+            
+
+        
+def Sync(c):        
+        global debug 
+        debug = ""
         l = struct.pack("I", len(mw.deck.name()))
         c.sendall(l)
         c.sendall(mw.deck.name())                  
@@ -80,7 +95,6 @@ def run():
                         ScoreCard(int(id),int(ease),int(reps))
         else:
             Debug("no change to apply")
-        mw.help.showText(debug)
         
         
         f = []
@@ -92,8 +106,7 @@ def run():
             if a < b:
                 return -1
             return 0
-        debug += " query <br>"
-        mw.help.showText(debug)
+        Debug(" query <br>")
         cards = []
         status=0
         for id in s:
@@ -102,24 +115,21 @@ def run():
             a = striphtml(cq.answer).encode("utf-8")
             cards.append((id[0], cq.due, cq.reps, q, a))
             status+=1
-        debug += "filter html " + str(status) +"<br>"
-        mw.help.showText(debug)       
+        Debug("filter html " + str(status) +"<br>")
         cards.sort(csort)
-        debug += "sort<br>"
-        mw.help.showText(debug)     
+        Debug("sort<br>")
         a =0
         for (id,due,rep,question,answer) in cards:
             f.append("%d\t%d\t%d\t%s\t%s" % (id, due, rep, question, answer))
             a+=1
-        debug += "output" +str(a)+"<br>"
-        mw.help.showText(debug)     
+        Debug("output" +str(a)+"<br>")
         srs = '\n'.join(f)
            
         Debug("<br> Srs length : " + str(len(srs))  + "<br> srs : " + srs.decode("utf-8"))
         l = struct.pack("I", len(srs))
         c.sendall(l) 
         c.sendall(srs) 
-        debug = "done<br>" + debug
+        Debug("done<br>")
         c.shutdown(1)
         c.close()
         Debug('')
@@ -151,7 +161,7 @@ def init_DsSync():
 	mw.mainWin.actionDsSync = QtGui.QAction('DsSync', mw)
 	mw.mainWin.actionDsSync.setStatusTip('Syncing through TCP/IP with AnkiDs')
         mw.mainWin.actionDsSync.setEnabled(not not mw.deck)
-	mw.connect(mw.mainWin.actionDsSync, QtCore.SIGNAL('triggered()'), run)
+	mw.connect(mw.mainWin.actionDsSync, QtCore.SIGNAL('triggered()'), Sync)
 
 
 	# adds the plugin icons in the Anki Toolbar
@@ -161,11 +171,15 @@ def init_DsSync():
 	# to enable or disable Jstats whenever a deck is opened/closed
 	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("DsSync",)
 	
+	
 # adds JxPlugin to the list of plugin to process in Anki 
 mw.addHook('init', init_DsSync)
 mw.registerPlugin("Sincyng with AnkiDs", 667)
 print 'DsSync Plugin loaded'
 
+mythread=DSSyncThread(mw)
+
+mythread.start()
 
 
 
