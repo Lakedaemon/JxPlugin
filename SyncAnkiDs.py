@@ -53,17 +53,21 @@ class DSSyncThread(QThread):
         self.connect(self, SIGNAL("Start"), self.start)
         
     def run(self):
-        fd = socket.socket()#socket.AF_INET, socket.SOCK_STREAM)
-        fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        fd.bind(("", 24550))
-        fd.listen(5)
-        while True:
-            rd,wr,er = select.select([fd],[],[], 30) 
-            if len(rd) != 0 and mw.deck:
-                c = fd.accept()[0]    
-                self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
+            fd = socket.socket()#socket.AF_INET, socket.SOCK_STREAM)
+            fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            fd.bind(("", 24550))
+            fd.listen(5)
+            while True:
+                rd,wr,er = select.select([fd],[],[], 30) 
+                if len(rd) != 0:
+                    c = fd.accept()[0] 
+                    self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
+
     
-def Sync(c):        
+def Sync(c):  
+    if not mw.deck:
+        c.close()
+    else:        
         l = struct.pack("I", len(mw.deck.name()))
         c.sendall(l)
         c.sendall(mw.deck.name())                  
