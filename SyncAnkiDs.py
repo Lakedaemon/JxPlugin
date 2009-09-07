@@ -26,10 +26,12 @@ import socket
 import select
 import struct
 
-DAY = 60*60*24
-DAYSAHEAD = DAY * 2
 
-debug = ""
+# limit to the number of cards, Anki.nds will download/review/sync
+Limit = 100
+# Anki.nds will download cards sheduled to be review for the next DaysAhead days
+DaysAhead = 2
+
     
 def striphtml(s):
     s = s.replace("<br>", "|")
@@ -41,7 +43,7 @@ def striphtml(s):
     g = r.findall(s)
     for i in g:
         s = s.replace(i, "")
-    return s     
+    return s.encode("utf-8")     
 
 class DSSyncThread(QThread):
         
@@ -50,26 +52,17 @@ class DSSyncThread(QThread):
         self.connect(self, SIGNAL("Sync"), Sync)
         self.connect(self, SIGNAL("Start"), self.start)
         
-    def stop(self):
-        self.Loop = False
-        
     def run(self):
         fd = socket.socket()#socket.AF_INET, socket.SOCK_STREAM)
         fd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         fd.bind(("", 24550))
         fd.listen(5)
-        self.Loop = True
-        while self.Loop:
-            while self.Loop:
-                rd,wr,er = select.select([fd],[],[], 30)         
-                if len(rd) != 0:
-                    c = fd.accept()[0]
-                    break
-            if self.Loop:        
+        while True:
+            rd,wr,er = select.select([fd],[],[], 30) 
+            if len(rd) != 0 and mw.deck:
+                c = fd.accept()[0]    
                 self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
-            
-
-        
+    
 def Sync(c):        
         l = struct.pack("I", len(mw.deck.name()))
         c.sendall(l)
@@ -89,42 +82,43 @@ def Sync(c):
                         id, ease, reps = i.split(':')
                         ScoreCard(int(id),int(ease),int(reps))
                         
-        """"# we prepare a list of cards to export, with the same function call used by AnkiMini and web Anki.                
-        Limit = 20                
-        Export = mw.deck.getCards(lambda x:(x[0],x[3],x[4]))
+        # we prepare a list of cards to export, with the same function call used by AnkiMini and web Anki.  
+        
+        Old_getCardTables = mw.deck._getCardTables# overiding the _getCardTables function to get rid of the hardcoded limits and to add one column to the table 
+        def New_getCardTables():
+                mw.deck.checkDue()
+                sel = """select id, factId, modified, question, answer, cardModelId,type, due, interval, factor, priority, reps from """
+                new = mw.deck.newCardTable()
+                rev = mw.deck.revCardTable()
+                d = {}
+                d['fail'] = mw.deck.s.all(sel + """cards where type = 0 and isDue = 1 and combinedDue <= :now limit %d""" % Limit, now = time.time() + DaysAhead * 24 * 3600)
+                d['rev'] = mw.deck.s.all(sel + rev + " limit %d" % Limit)
+                if mw.deck.newCountToday:
+                        d['acq'] = mw.deck.s.all(sel + """%s where factId in (select distinct factId from cards where factId in (select factId from %s limit %d))""" % (new, new, Limit))
+                else:
+                        d['acq'] = []
+                if (not d['fail'] and not d['rev'] and not d['acq']):
+                        d['fail'] = mw.deck.s.all(sel + "failedCards limit 30")
+                return d
+        mw.deck._getCardTables = New_getCardTables      
+        Export = mw.deck.getCards(lambda x:"%d\t%d\t%d\t%s\t%s" % (int(x[0]),int(x[7]),int(x[11]),striphtml(x[3]),striphtml(x[4])))
+        mw.deck._getCardTables = Old_getCardTables
+        
         if Export['status'] == 'cardsAvailable':
             # we make a card list out of the failed/rev/new cards
             n = min(Limit, len(Export['fail']))
-            s = Export['fail'][0:n-1]
+            cards = Export['fail'][0:n-1]
             while n<=Limit:
                 # add review/new cards
                 if Export['acq'] and (n % Export['newCardModulus'] == 0):
-                        s.append(Export['acq'].pop(0))
+                        cards.append(Export['acq'].pop(0))
                 elif Export['rev']:
-                        s.append(Export['rev'].pop(0))
+                        cards.append(Export['rev'].pop(0))
                 elif Export['acq']:
-                        s.append(Export['acq'].pop(0))
+                        cards.append(Export['acq'].pop(0))
                 else:
                         break
-                n += 1  """             
-                        
-                
-        s = mw.deck.s.all("select id from cards where due < " + str(time.time() + DAYSAHEAD) + " order by due limit 500")
-        cards = []
-        for id in s:
-            cq = mw.deck.s.query(anki.cards.Card).get(id[0])# getCards doesn't return reps, so I'm stuck with this for the time being
-            q = striphtml(cq.question).encode("utf-8")
-            a = striphtml(cq.answer).encode("utf-8")
-
-            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id[0]), int(cq.due), int(cq.reps), q, a))
-            
-        """cards = []
-        for (id, question, answer) in s:
-            cq = mw.deck.s.query(anki.cards.Card).get(id)# getCards doesn't return reps, so I'm stuck with this for the time being
-            q = striphtml(question).encode("utf-8")
-            a = striphtml(answer).encode("utf-8")
-
-            cards.append("%d\t%d\t%d\t%s\t%s" % (int(id), int(cq.due), int(cq.reps), q, a))"""
+                n += 1                                   
             
         srs = '\n'.join(cards)
         l = struct.pack("I", len(srs))
