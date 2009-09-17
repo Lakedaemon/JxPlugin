@@ -189,7 +189,7 @@ def init_JxPlugin():
 # adds JxPlugin to the list of plugin to process in Anki 
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
-print 'Japanese Extended Plugin loaded'
+
 
  
 # The main JxPlugin Windows # funny, you cannot import stuff after these statements

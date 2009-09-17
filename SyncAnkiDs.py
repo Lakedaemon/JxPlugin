@@ -28,7 +28,7 @@ import struct
 
 
 # limit to the number of cards, Anki.nds will download/review/sync
-Limit = 100
+Limit = 400
 # Anki.nds will download cards sheduled to be review for the next DaysAhead days
 DaysAhead = 2
 
@@ -102,7 +102,7 @@ def Sync(c):
                 else:
                         d['acq'] = []
                 if (not d['fail'] and not d['rev'] and not d['acq']):
-                        d['fail'] = mw.deck.s.all(sel + "failedCards limit 30")
+                        d['fail'] = mw.deck.s.all(sel + "failedCards limit %d" % Limit)
                 return d
         mw.deck._getCardTables = New_getCardTables      
         Export = mw.deck.getCards(lambda x:"%d\t%d\t%d\t%s\t%s" % (int(x[0]),int(x[7]),int(x[11]),striphtml(x[3]),striphtml(x[4])))
@@ -114,11 +114,11 @@ def Sync(c):
             cards = Export['fail'][0:n-1]
             while n<=Limit:
                 # add review/new cards
-                if Export['acq'] and (n % Export['newCardModulus'] == 0):
+                if Export['acq'] and Export['newCardModulus'] and (n % Export['newCardModulus'] == 0):
                         cards.append(Export['acq'].pop(0))
                 elif Export['rev']:
                         cards.append(Export['rev'].pop(0))
-                elif Export['acq']:
+                elif Export['acq'] and Export['newCardModulus']:
                         cards.append(Export['acq'].pop(0))
                 else:
                         break
