@@ -28,7 +28,7 @@ import struct
 
 
 # limit to the number of cards, Anki.nds will download/review/sync
-Limit = 400
+Limit = 600
 # Anki.nds will download cards sheduled to be review for the next DaysAhead days
 DaysAhead = 2
 
@@ -63,7 +63,24 @@ class DSSyncThread(QThread):
                     c = fd.accept()[0] 
                     self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
 
-    
+
+def Shuffle(Rows):# for now, let's strip the cards that are too close with the same factid
+        from random import randint
+        Seen={}
+        ShuffledRows = []
+        Rank = 0
+        for Row in Rows:
+                FactId = Row[1]
+                if FactId not in Seen:
+                        Seen[FactId] = Rank
+                        ShuffledRows.append(Row)
+                        Rank += 1
+                elif Rank > Seen[FactId]+30:
+                        Seen[FactId] = Rank
+                        ShuffledRows.append(Row)
+                        Rank += 1
+        return ShuffledRows:
+
 def Sync(c):  
     if not mw.deck:
         c.close()
@@ -95,14 +112,14 @@ def Sync(c):
                 new = mw.deck.newCardTable()
                 rev = mw.deck.revCardTable()
                 d = {}
-                d['fail'] = mw.deck.s.all(sel + """cards where type = 0 and isDue = 1 and combinedDue <= :now limit %d""" % Limit, now = time.time() + DaysAhead * 24 * 3600)
-                d['rev'] = mw.deck.s.all(sel + rev + " limit %d" % Limit)
+                d['fail'] = Shuffle(mw.deck.s.all(sel + """cards where type = 0 and isDue = 1 and combinedDue <= :now limit %d""" % Limit, now = time.time() + DaysAhead * 24 * 3600))
+                d['rev'] = Shuffle(mw.deck.s.all(sel + rev + " limit %d" % Limit))
                 if mw.deck.newCountToday:
-                        d['acq'] = mw.deck.s.all(sel + """%s where factId in (select distinct factId from cards where factId in (select factId from %s limit %d))""" % (new, new, Limit))
+                        d['acq'] = Shuffle(mw.deck.s.all(sel + """%s where factId in (select distinct factId from cards where factId in (select factId from %s limit %d))""" % (new, new, Limit)))
                 else:
                         d['acq'] = []
                 if (not d['fail'] and not d['rev'] and not d['acq']):
-                        d['fail'] = mw.deck.s.all(sel + "failedCards limit %d" % Limit)
+                        d['fail'] = Shuffle(mw.deck.s.all(sel + "failedCards limit %d" % Limit))
                 return d
         mw.deck._getCardTables = New_getCardTables      
         Export = mw.deck.getCards(lambda x:"%d\t%d\t%d\t%s\t%s" % (int(x[0]),int(x[7]),int(x[11]),striphtml(x[3]),striphtml(x[4])))
