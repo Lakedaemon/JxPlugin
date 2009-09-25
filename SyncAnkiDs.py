@@ -28,10 +28,11 @@ import struct
 
 
 # limit to the number of cards, Anki.nds will download/review/sync
-Limit = 600
+Limit = 100
 # Anki.nds will download cards sheduled to be review for the next DaysAhead days
 DaysAhead = 2
-
+# Anki.nds will try to space cards sharing the same factid by inserting Cards in between
+CardsInBetween = 30
     
 def striphtml(s):
     s = s.replace("<br>", "|")
@@ -64,22 +65,47 @@ class DSSyncThread(QThread):
                     self.emit(SIGNAL("Sync"),c)# Sync will be run outside the thread, in some event loop of the QTGui (you can't use widget in Qthreads...).
 
 
-def Shuffle(Rows):# for now, let's strip the cards that are too close with the same factid
-        from random import randint
+def Shuffle(Rows):# We try to have at least "Between" cards between 2 cards sharing the same FactId
+        if not Rows:
+                return Rows
         Seen={}
-        ShuffledRows = []
-        Rank = 0
-        for Row in Rows:
-                FactId = Row[1]
+        DelayedRows = []
+        Delayed = {}
+        From = 0
+        Into = 0
+        N = len(Rows)
+        while Into < N:
+                M = min(Delayed.keys()) if Delayed else N  
+                # first gobles a row with priority for delayed cards
+                if M <= Into:
+                        Current = Delayed[M].pop(0)
+                        if not Delayed[M]:
+                                del Delayed[M]
+                elif From < N:
+                        Current = From
+                        From +=1
+                else:
+                        Current = Delayed[M].pop(0)
+                        if not Delayed[M]:
+                                del Delayed[M]                        
+                FactId = Rows[Current][1]
                 if FactId not in Seen:
-                        Seen[FactId] = Rank
-                        ShuffledRows.append(Row)
-                        Rank += 1
-                elif Rank > Seen[FactId]+30:
-                        Seen[FactId] = Rank
-                        ShuffledRows.append(Row)
-                        Rank += 1
-        return ShuffledRows:
+                        # never seen a card with this factid before, appends and save output position
+                        Seen[FactId] = Into
+                        Into += 1
+                        DelayedRows.append(Rows[Current])
+                elif Into + CardsInBetween +1 >= N or Into > Seen[FactId] + CardsInBetween:
+                        # it is not possible to make this card respect the spacing or e have already seen this card but it is far enough from the preceeding occurence, appends and update new output position
+                        Seen[FactId] = Into
+                        Into += 1
+                        DelayedRows.append(Rows[Current])             
+                else:
+                        # already seen a card with this factid and it isn't far enough from the preceeding occurence, delay further.
+                        try:
+                                Delayed[Into + CardsInBetween + 1].append(Current)
+                        except KeyError:
+                                Delayed[Into + CardsInBetween + 1] = [Current]        
+        return DelayedRows
 
 def Sync(c):  
     if not mw.deck:
@@ -108,7 +134,7 @@ def Sync(c):
         Old_getCardTables = mw.deck._getCardTables# overiding the _getCardTables function to get rid of the hardcoded limits and to add one column to the table 
         def New_getCardTables():
                 mw.deck.checkDue()
-                sel = """select id, factId, modified, question, answer, cardModelId,type, due, interval, factor, priority, reps from """
+                sel = """select id, factId, modified, question, answer, cardModelId, type, due, interval, factor, priority, reps from """
                 new = mw.deck.newCardTable()
                 rev = mw.deck.revCardTable()
                 d = {}
@@ -125,6 +151,7 @@ def Sync(c):
         Export = mw.deck.getCards(lambda x:"%d\t%d\t%d\t%s\t%s" % (int(x[0]),int(x[7]),int(x[11]),striphtml(x[3]),striphtml(x[4])))
         mw.deck._getCardTables = Old_getCardTables
         
+        cards = []
         if Export['status'] == 'cardsAvailable':
             # we make a card list out of the failed/rev/new cards
             n = min(Limit, len(Export['fail']))
@@ -148,7 +175,6 @@ def Sync(c):
         
         c.close()
         mw.loadDeck(mw.deck.path, sync=False)  
-            
         
 def ScoreCard(id, ease, reps):
         card = mw.deck.cardFromId(id)
