@@ -8,9 +8,9 @@
 # Restart Anki after installation or removal for the changes to 
 # take effect.
 # ---------------------------------------------------------------------------
-# File:        ankidssync.py
-# Description: used to sync anki to the ds
-# Author:      Olivier Binda (I used lots of code from Jake Probst)
+# File:        Wifi-SyncAnki.py
+# Description: used to sync Anki with Anki.nds
+# Author:      Olivier Binda (I rewrote most of the original code) & Jack Probst
 # License:     GNU GPL
 # ---------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ import struct
 
 
 # limit to the number of cards, Anki.nds will download/review/sync
-Limit = 100
+Limit = 600
 # Anki.nds will download cards sheduled to be review for the next DaysAhead days
 DaysAhead = 2
 # Anki.nds will try to space cards sharing the same factid by inserting Cards in between
@@ -75,7 +75,10 @@ def Shuffle(Rows):# We try to have at least "Between" cards between 2 cards shar
         Into = 0
         N = len(Rows)
         while Into < N:
-                M = min(Delayed.keys()) if Delayed else N  
+                if Delayed:
+                        M = min(Delayed.keys()) 
+                else:
+                        M = N  
                 # first gobles a row with priority for delayed cards
                 if M <= Into:
                         Current = Delayed[M].pop(0)
@@ -180,13 +183,11 @@ def ScoreCard(id, ease, reps):
         card = mw.deck.cardFromId(id)
         
         # not equal means it was reviewed on anki at some point so ditch the change
-        if card.reps != reps:
-            return
-        
-        mw.deck.answerCard(card, ease)
+        if card.reps == reps:
+            mw.deck.answerCard(card, ease)
 	
 	
-mw.registerPlugin("Sincyng with AnkiDs", 667)
+mw.registerPlugin("Syncing with Anki.nds", 667)
 print 'DsSync Plugin loaded'
 
 mythread=DSSyncThread(mw)

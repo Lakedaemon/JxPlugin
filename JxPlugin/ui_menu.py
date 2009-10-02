@@ -107,8 +107,12 @@ from controls import Jx_Control_Tags
 
 def onJxMenu():
         from graphs import JxParseFacts4Stats
+        JxInitProfile('Start<br>')
         JxParseFacts4Stats() 
-        ComputeCount()        
+        JxProfile('ParseFacts')
+        ComputeCount() 
+        JxProfile('ComputeCount')
+        mw.help.showText(JxShowProfile())
         Jx_Control_Tags.Update()
         from html import Jx_Html_Menu
 	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
