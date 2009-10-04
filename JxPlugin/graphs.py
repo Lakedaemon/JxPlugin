@@ -216,76 +216,11 @@ def JxAffectFields4Stats(FieldNameContentList,Types):# could be optimized for Ro
 def JxJSon(CouplesList):
         return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
                     
-def JxNewAlgorythm():
-        global JxStateArray,JxStatsMap
-        JxProfile("NewAlgorythm Begins")
-        Rows = mw.deck.s.all("""
-                select facts.id,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-                from reviewHistory,cards,facts where facts.id=cards.factId and cards.id = reviewHistory.cardId 
-                order by facts.id,reviewHistory.cardId,reviewHistory.time
-                """) 
-        JxProfile("Query ended")  
-        #JxStatsMap = {'Word':[MapJLPTTango,MapZoneTango],'Kanji':[MapJLPTKanji,MapZoneKanji,MapJouyouKanji,MapKankenKanji],'Grammar':[],'Sentence':[]}
-        JxNowTime = time.time()
-        # The Graphs we can have
-        Length = len(Rows)
-        Index = 0
-        JxCardState = []
-        JxCardStateArray = []
-        JxStateArray = {}
-        # We will initialize other stuff on the fly !
-        while True:
-                # 0:FactId 1:CardId, 2:Time, 3: lastInterval, 4: next interval, 5:ease
-                (FactId,CardId,Time,Interval,NextInterval,Ease) = Rows[Index]                  
-                # first, we have to build a list of the days where status changes happened for this card (+ - + - + - ...)
-                if (Interval <= 21 and NextInterval > 21) or (Interval > 21 and Ease == 1):
-                        #Card Status Change
-                        Day = int((JxNowTime-Time) / 86400.0)
-                        JxCardState.append(Day)
-                Index += 1
-                if Index == Length: 
-                        # we have finished parsing the Entries.Flush the last Fact and break
-                        JxCardStateArray.append(JxCardState[:])
-                        JxFlushFacts(JxCardStateArray,CardId)
-                        break
-                        # we have finished parsing the Entries, flush the Status change
-                elif CardId == Rows[Index][1]:
-                        # Same Card : Though it does nothing, we put this here for speed purposes because it happens a lot.
-                        pass
-                elif FactId != Rows[Index][0]:                        
-                        # Fact change : Though it happens a bit less often than cardId change, we have to put it there or it won't be caught, flush the status change.
-                        JxCardStateArray.append(JxCardState[:])
-                        JxFlushFacts(JxCardStateArray,CardId)
-                        JxCardState = []
-                        JxCardStateArray = []
-                else:
-                        # CardId change happens just a little bit more often than fact changes (if deck has more than 3 card models;..). Store and intit the card status change
-                        JxCardStateArray.append(JxCardState[:])
-                        JxCardState = []
-        JxProfile("NewAlgorythm Ends")
-	mw.help.showText(JxShowProfile())
-        # return the array
-        JxGraphsJSon = {}
-        #global debug
-        #debug=""
-
-        for (Type,List) in JxStatsMap.iteritems():
-                for (k, Map) in enumerate(List):
-                        for (Key,String) in Map.Order +[('Other','Other')]:
-                                try:
-                                        List = JxStateArray[(Type,k,Key)]
-                                except:
-                                        List = [0]
-                                        #debug += "<br/>(" + Type+','+str(k)+','+str(Key)+') :'+str(List)
-
-                                JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day,sum(List[-Day:])) for Day in range(-len(List),1)]) 
-        return JxGraphsJSon
-
 #midnightOffset = time.timezone - self.deck.utcOffset
 #self.endOfDay = time.mktime(now) - midnightOffset
 #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
 
-def JxNewAlgorythm():
+def update_stats_cache():
     global JxStateArray,JxStatsMap
     JxProfile('Load Cache')
     JxCache = load_cache()
@@ -315,14 +250,18 @@ def JxNewAlgorythm():
         # 0:FactId 1:CardId, 2:Time, 3: lastInterval, 4: next interval, 5:ease
         (FactId,CardId,Time,Interval,NextInterval,Ease) = rows[index]                  
         # first, we have to build a list of the days where status changes happened for this card (+ - + - + - ...)
-        if (Interval <= 21 and NextInterval > 21) or (Interval > 21 and Ease == 1):
+        if (Interval <= 21 and NextInterval > 21): 
             #Card Status Change
             Day = int(Time / 86400.0)
             JxCardState.append(Day)
-            if StatusStart == 0 and Ease == 1:
-                StatusStart = -1
-            elif StatusStart == 0:
+            if StatusStart == 0:
                 StatusStart = 1
+        elif (Interval > 21 and Ease == 1):
+            #Card Status Change
+            Day = int(Time / 86400.0)
+            JxCardState.append(Day)
+            if StatusStart == 0:
+                StatusStart = -1		
         index += 1
         if index == length: 
             # we have finished parsing the Entries.Flush the last Fact and break
@@ -344,18 +283,21 @@ def JxNewAlgorythm():
             # CardId change happens just a little bit more often than fact changes (if deck has more than 3 card models;..). Store and intit the card status change
             JxCardStateArray.append((StatusStart,JxCardState[:]))
             JxCardState = []
+	    StatusStart = 0
 	    
     JxProfile("NewAlgorythm Ends")
     
     # now cache the updated graphs
     JxCache['StateArray'] = JxStateArray
-    JxCache['TimeCached'] = time.time() # among the few things that coul corrupt the cache : 
+    JxCache['TimeCached'] = time.time() # among the few things that could corrupt the cache : 
     # new entries in the database before the cache was saved...sigh...
     save_cache(JxCache)
     JxProfile("Saving Cache")
     
-    mw.help.showText(JxShowProfile())
-
+    mw.help.showText(JxShowProfile() + str(JxStateArray))
+    
+def stats_cache_into_json():
+    global JxStateArray,JxStatsMap
     Today = int(time.time() / 86400.0)
     JxGraphsJSon = {}
     for (Type,List) in JxStatsMap.iteritems():
@@ -364,7 +306,7 @@ def JxNewAlgorythm():
                 try:
                     Dict = JxStateArray[(Type,k,Key)]
                 except:
-			Dict = {Today:0}
+                    Dict = {Today:0}
                 if Today not in Dict:
                     Dict[Today] = 0
                 keys = Dict.keys()
@@ -373,7 +315,26 @@ def JxNewAlgorythm():
                 JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day-Today,sum([Dict[day] for day in keys if day <=Day])) for Day in range(min(keys), max(keys) + 1)]) 
     return JxGraphsJSon
 
-
+def extract_stats():
+    array = {}
+    for (Type,List) in JxStatsMap.iteritems():
+        for (k, Map) in enumerate(List):
+            for (Key,String) in Map.Order+[('Other','Other')]:  
+                try:
+                    Dict = JxStateArray[(Type,k,Key)]
+                except:
+                    Dict = {0:0}
+                Known = sum(Dict.values())		    
+                if k != 1:
+                    array[(Type,k,Key)] = (Known, 0, 0, 
+                    len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                elif Type =='Word':
+                    array[(Type,k,Key)] = (Known, 0, 0, sum([Jx_Word_Occurences[Item] 
+                    for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                else:
+                    array[(Type,k,Key)] = (Known, 0, 0, sum([Jx_Kanji_Occurences[Item] 
+                    for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+    return array
 
 
 
@@ -410,8 +371,8 @@ def flush_facts(JxCardStateArray,CardId):
                 except KeyError:
                     # got to initialize it
                     JxStateArray[(Type,k,Key)] = {}
-                    Dict = JxStateArray[(Type,k,Key)] #let's use a dict finally
-############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
+                    Dict = JxStateArray[(Type,k,Key)]
+############################################################################################################# upgrade this part to support "over-optimist", "optimist", "realist", "pessimist" modes                                        
                 #now, we got to flush the fact. Let's go for the realist model first
                 for (StatusStart,JxDaysList) in JxCardStateArray:
                     Status = (StatusStart>0)
@@ -430,68 +391,5 @@ def flush_facts(JxCardStateArray,CardId):
 ##############################################################################################################
     except KeyError:# we do nothing, this Fact has no type.
         pass
-
-    
-
-
-
-
-
-
-def JxFlushFacts(JxCardStateArray,CardId):
-        global JxStateArray,JxStatsMap
-        """Flush the fact stats into the state array"""
-        try:# get the card type and the number of shared cardsids by the fact
-                (CardInfo,CardsNumber) = CardId2Types[CardId]
-                CardWeight = 1.0/max(1,len(CardsNumber))
-                for (Type,Name,Content) in CardInfo:
-                        for (k, Map) in enumerate(JxStatsMap[Type]):
-                                try:
-                                        Key = Map.Value(Content)
-                                except KeyError:
-                                        Key = 'Other' 
-                                if k != 1:
-                                #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
-                                        Change = CardWeight
-                                elif Type == "Word":
-                                        #elif Map.From == 'Tango':
-                                        try:
-                                                Change = 100.0 * Jx_Word_Occurences[Content] * CardWeight / Jx_Word_SumOccurences 
-                                        except KeyError:
-                                                Change = 0
-                                else:
-                                        try:
-                                                Change = 100.0 * Jx_Kanji_Occurences[Content] * CardWeight / Jx_Kanji_SumOccurences
-                                        except KeyError:
-                                                Change = 0 
-                                # we have to update the graph of each type
-                                try:
-                                        List = JxStateArray[(Type,k,Key)]
-                                except KeyError:
-                                        # got to initialize it
-                                        List=[]
-############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
-                                #now, we got to flush the fact. Let's go for the realist model first
-                                for JxDaysList in JxCardStateArray:
-                                        Status = True
-                                        for JxDay in JxDaysList:
-                                                try: 
-                                                        if Status:
-                                                                List[JxDay] += Change
-                                                        else:
-                                                                List[JxDay] -= Change
-                                                except:# we have to update the size of List first
-                                                        List = List + [0 for a in range(len(List),JxDay+1)]
-                                                        # now, it should be okey
-                                                        if Status:
-                                                                List[JxDay] += Change
-                                                        else:
-                                                                List[JxDay] -= Change 
-                                        Status = not(Status)
-                                        # save the updated list                        
-                                        JxStateArray[(Type,k,Key)] = List[:] 
-##############################################################################################################
-        except KeyError:# we do nothing, this Fact has no type.
-                pass
         
  

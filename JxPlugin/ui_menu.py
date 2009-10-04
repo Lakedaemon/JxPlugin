@@ -102,45 +102,21 @@ def JxShowOut(Type,k):
 from controls import Jx_Control_Tags       
 
                 
-
-
-import cPickle, os
-import itertools  
-import gc
-file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","SpeedTest.pickle")    
+  
 def onJxMenu():
-        from graphs import JxParseFacts4Stats
-	gc.disable()
-        JxInitProfile('Start')
-        """JxFacts = mw.deck.s.all(""select id, modelId, created, modified, tags from facts"")
-        JxProfile('QueryLoaded')
-        List =[]
-        for id, modelId, created, modified, tags in JxFacts:
-		 List.append((int(id), int(modelId), int(created), int(modified), str(tags)))
-        JxProfile('List Created')
-        f = open(file_pickle, 'wb')
-        cPickle.dump(List, f, cPickle.HIGHEST_PROTOCOL)
-        f.close()
-        JxProfile('ListSaved')"""
-        f = open(file_pickle, 'rb')
-        List = cPickle.load(f)
-        f.close()
-        JxProfile('ListLoaded')
-        mw.help.showText(JxShowProfile())
-	gc.enable()
-        #return
-        JxParseFacts4Stats() 
-        JxProfile('ParseFacts')
-        ComputeCount() 
-        JxProfile('ComputeCount')
-        mw.help.showText(JxShowProfile())
+    from graphs import JxParseFacts4Stats, update_stats_cache
+    JxParseFacts4Stats() 
+    JxProfile('ParseFacts')
+    update_stats_cache()
+    #ComputeCount() 
+    JxProfile('ComputeCount')
+    mw.help.showText(JxShowProfile())
 
-        Jx_Control_Tags.Update()
-        from html import Jx_Html_Menu
-	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
-                'Jouyou':JxStats('Jouyou')})
-        JxWindow.setHtml(JxHtml,JxResourcesUrl)
-        JxWindow.show()
+    Jx_Control_Tags.Update()
+    from html import Jx_Html_Menu
+    JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
+    JxWindow.setHtml(JxHtml,JxResourcesUrl)
+    JxWindow.show()
 
 
 
@@ -159,16 +135,17 @@ def JxBrowse():
 	JxPreview.show()
 
 def onJxGraphs():
-        from graphs import JxParseFacts4Stats, JxNewAlgorythm
-        if not CardId2Types:
-                JxParseFacts4Stats() 
-        JxGraphsJSon =JxNewAlgorythm()
-        from html import Jx_Html_Graphs
-        JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
-        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
-        JxPreview.setWindowTitle(u"Japanese related Graphs")
-        JxPreview.activateWindow()
-        JxPreview.show() 
+    from graphs import JxParseFacts4Stats, update_stats_cache, stats_cache_into_json
+    if not CardId2Types:
+        JxParseFacts4Stats() 
+    update_stats_cache()
+    JxGraphsJSon = stats_cache_into_json()
+    from html import Jx_Html_Graphs
+    JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
+    JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+    JxPreview.setWindowTitle(u"Japanese related Graphs")
+    JxPreview.activateWindow()
+    JxPreview.show() 
 
 
 

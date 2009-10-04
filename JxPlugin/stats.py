@@ -191,10 +191,12 @@ def JxFlushFactStats(CardState,CardId):
                 NoType +=1
          
 
+		    	
+
 
 def HtmlReport(Type,k):
-        global JxStatsArray
-        from graphs import JxParseFacts4Stats
+        from graphs import JxParseFacts4Stats, extract_stats
+	JxStatsArray = extract_stats()
         Map = JxStatsMap[Type][k]
 	JxStatsHtml = """<style>
 	.BackgroundHeader {background-color: #eee8d4;}
@@ -238,10 +240,10 @@ def JxFormat(Float):
                 return "%.3g" % Float               
  
 def JxWidgetAccumulatedReport(Type,k):
-        global JxStatsArray
-        from graphs import JxParseFacts4Stats
+        from graphs import JxParseFacts4Stats, extract_stats
+        JxStatsArray = extract_stats()
         Map = JxStatsMap[Type][k]
-	JxStatsHtml = """<style>
+        JxStatsHtml = """<style>
 	.BackgroundHeader {background-color: #817865;}
 	.Background {background-color: #fece2f;}
         .JxStats td{align:center;text-align:center;}
