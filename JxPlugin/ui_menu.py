@@ -104,15 +104,37 @@ from controls import Jx_Control_Tags
                 
 
 
-
+import cPickle, os
+import itertools  
+import gc
+file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","SpeedTest.pickle")    
 def onJxMenu():
         from graphs import JxParseFacts4Stats
-        JxInitProfile('Start<br>')
+	gc.disable()
+        JxInitProfile('Start')
+        """JxFacts = mw.deck.s.all(""select id, modelId, created, modified, tags from facts"")
+        JxProfile('QueryLoaded')
+        List =[]
+        for id, modelId, created, modified, tags in JxFacts:
+		 List.append((int(id), int(modelId), int(created), int(modified), str(tags)))
+        JxProfile('List Created')
+        f = open(file_pickle, 'wb')
+        cPickle.dump(List, f, cPickle.HIGHEST_PROTOCOL)
+        f.close()
+        JxProfile('ListSaved')"""
+        f = open(file_pickle, 'rb')
+        List = cPickle.load(f)
+        f.close()
+        JxProfile('ListLoaded')
+        mw.help.showText(JxShowProfile())
+	gc.enable()
+        #return
         JxParseFacts4Stats() 
         JxProfile('ParseFacts')
         ComputeCount() 
         JxProfile('ComputeCount')
         mw.help.showText(JxShowProfile())
+
         Jx_Control_Tags.Update()
         from html import Jx_Html_Menu
 	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),

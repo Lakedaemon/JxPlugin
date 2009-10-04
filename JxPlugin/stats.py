@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
+from time import time
 from os import path
 from ankiqt import mw
 #from ankiqt.ui.utils import getSaveFile, askUser
@@ -11,6 +12,7 @@ from answer import Tango2Dic
 from loaddata import *
 from graphs import CardId2Types
 from globalobjects import JxStatsMap
+from cache import load_cache, save_cache
 ######################################################################
 #
 #                      JxStats : Stats
@@ -21,7 +23,6 @@ JxStatsArray = {}
 JxPartitionLists = {}
 def ComputeCount(): 
         global JxStatsArray,JxPartitionLists,NoType
-	"""compute and Display an HTML report of the result of a Query against a Map"""
         Rows = mw.deck.s.all("""select cards.factId,cards.id,cards.reps,cards.Interval from cards order by cards.factId""")  
         # we can compute known/seen/in deck/total stats for each value of each map depending of the type
         NoType = 0 # known/seen/in deck
@@ -62,6 +63,76 @@ def ComputeCount():
                         JxFlushFactStats(CardState,CardId)
                         CardState = []
 
+###############################################################################
+def compute_count(): 
+    """Computes the stats"""
+    
+    global JxStatsArray,JxPartitionLists,NoType
+    
+    JxCache = load_cache()
+    try:
+        Query = """select cards.factId, cards.id, cards.reps, cards.interval from cards, 
+	cards as mCards where mCards.modified>%s and cards.factId=mCards.factId 
+	group by cards.id order by cards.factId""" % JxCache['TimeCached']
+        JxStatsArray = JxCache['Stats']
+        JxPartitionLists = JxCache['Partitions']
+        NoType = JxCache['NoType']
+    except:
+        Query = """select factId, id, reps, interval from cards order by factId"""
+        NoType = 0 # known/seen/in deck
+        for (Type,List) in JxStatsMap.iteritems():
+            for (k, Map) in enumerate(List):
+                for (Key,String) in Map.Order+[('Other','Other')]:
+                    if k != 1:
+                        JxStatsArray[(Type,k,Key)] = (0, 0, 0, 
+			        len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                    elif Type =='Word':
+                        JxStatsArray[(Type,k,Key)] = (0, 0, 0, sum([Jx_Word_Occurences[Item] 
+				for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                    else:
+                        JxStatsArray[(Type,k,Key)] = (0, 0, 0, sum([Jx_Kanji_Occurences[Item] 
+			        for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                    for Label in ['Known','Seen','InDeck']:
+                        JxPartitionLists[(Type,k,Key,Label)] = []	
+			
+    # we compute known/seen/in deck/total stats for each value of each map and each type
+    Rows = mw.deck.s.all(Query)  
+    CardState = []
+    Length = len(Rows)
+    Index = 0
+    while True and Index<Length:
+        (FactId,CardId,CardRep,Interval) = Rows[Index]
+        # set the card's status                       
+        if Interval > 21 and CardRep:
+            CardState.append(0)
+        elif CardRep:
+            CardState.append(1)
+        else:
+            CardState.append(2)
+        Index += 1
+        if Index == Length: 
+            # we have finished parsing the Entries.Flush the last Fact and break
+            JxFlushFactStats(CardState,CardId)
+            break
+            # we have finished parsing the Entries, flush the Status change
+        elif FactId == Rows[Index][0]:
+            # Same Fact : Though it does nothing, we put this here for speed purposes because it happens a lot.
+            pass
+        else:                        
+            # Fact change
+            JxFlushFactStats(CardState,CardId)
+            CardState = []
+	    
+    # now cache the updated stats  
+    JxCache['Stats'] = JxStatsArray
+    JxCache['Partitions'] = JxPartitionLists
+    JxCache['NoType'] = NoType
+    JxCache['TimeCached'] = time() # among the few things that coul corrupt the cache : 
+    # new entries in the database before the cache was saved...sigh...
+    save_cache(JxCache)
+			
+			
+
 def JxVal(Dict,x):
         try:
                 return  Dict[x]
@@ -98,7 +169,7 @@ def JxFlushFactStats(CardState,CardId):
                                 # we have to update the stats of each type
                                 (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)] 
                                 (OldKnown,OldSeen,OldInDeck) = (Known,Seen,InDeck)
-############################################################################################################# upgrade this part to support "over-ooptimist", "optimist", "realist", "pessimist" modes                                        
+############################################################################################################# upgrade this part to support "over-optimist", "optimist", "realist", "pessimist" modes                                        
                                 #now, we got to flush the fact. Let's go for the realist model first
                                 for State in CardState:
                                         InDeck += Change
