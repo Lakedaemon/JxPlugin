@@ -294,7 +294,7 @@ def update_stats_cache():
     save_cache(JxCache)
     JxProfile("Saving Cache")
     
-    mw.help.showText(JxShowProfile() + str(JxStateArray))
+    mw.help.showText(JxShowProfile())
     
 def stats_cache_into_json():
     global JxStateArray,JxStatsMap
@@ -309,9 +309,7 @@ def stats_cache_into_json():
                     Dict = {Today:0}
                 if Today not in Dict:
                     Dict[Today] = 0
-                keys = Dict.keys()
-                keys.sort()
-                #mw.help.showText(str([(Day,sum([Dict[day] for day in keys if day <=Day])) for Day in range(min(keys), max(keys)+1)]))		
+                keys = Dict.keys()		
                 JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day-Today,sum([Dict[day] for day in keys if day <=Day])) for Day in range(min(keys), max(keys) + 1)]) 
     return JxGraphsJSon
 
