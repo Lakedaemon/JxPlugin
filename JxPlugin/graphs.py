@@ -219,7 +219,7 @@ def JxJSon(CouplesList):
 #midnightOffset = time.timezone - self.deck.utcOffset
 #self.endOfDay = time.mktime(now) - midnightOffset
 #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
-
+Facts = {}
 def update_stats_cache():
     global JxStateArray,JxStatsMap
     JxProfile('Load Cache')
@@ -287,6 +287,78 @@ def update_stats_cache():
 	    
     JxProfile("NewAlgorythm Ends")
     
+    
+    # let's partition the deck now
+    #try:
+        #query = """select id, factId, interval, reps from cards where modified>%s order by factId""" % dJxCache['TimeCached']
+    #except:
+    query = """select id, factId, interval, reps from cards order by factId"""
+
+    rows = mw.deck.s.all(query)
+    # let's create a list of Facts with all associated cards and their state : Known/Seen and produce the equivalent list for facts
+
+    def munge_row(x):
+            if x[2] > 21:
+                y = (x[0], 1) # Known
+            elif x[3] > 0:
+                y = (x[0], -1) # Seen
+            else:
+                y = (x[0], 0) # In Deck
+            try:
+                Facts[x[1]].append(y)
+            except KeyError:
+                Facts[x[1]] = [y]
+    map(munge_row,rows)
+    
+    # now update the fact list to include the fact state 
+    def partition(x):
+            L = zip(*x[1])[1]
+            if sum(L)>0:
+                Facts[x[0]]= (0, x[1])# Known
+            elif any(L):
+                Facts[x[0]]= (1, x[1])# Seen
+            else:
+                Facts[x[0]]= (2, x[1])# InDeck
+    map(partition,Facts.iteritems())          
+    JxProfile(str(len(filter(lambda x:(x[0]==0),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==1),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==2),Facts.values()))))    
+    """
+    # now let's create sets containing all Known/Seen/InDeck facts
+    Known=set()
+    Seen = set()
+    InDeck = set()
+    def partition(x):
+            L = zip(*x[1])[1]
+            if sum(L)>0:
+                Known.add(x[0])
+            elif any(L):
+                Seen.add(x[0])
+            else:
+                InDeck.add(x[0])
+    map(partition,Facts.iteritems())          
+    JxProfile(str(len(Known))+" "+str(len(Seen))+" "+str(len(InDeck)))
+
+    Tally = {}
+    for (Type,List) in JxStatsMap.iteritems():
+        for (k, Map) in enumerate(List):
+            #for (Key,String) in Map.Order +[('Other','Other')]:
+            def partition(x):
+                for (type, name, content) in FactId2Types[x][0]:
+                    if Type == type:
+                        try:
+                            Key = Map.Dict[content]
+                        except KeyError:
+                            Key = 'Other'
+                        try: 
+                            Tally[(Type,k,s,Key)] += 1
+                        except KeyError:
+                            Tally[(Type,k,s,Key)] = 1
+            for (s,Set) in enumerate([Known,Seen,InDeck]):
+                map(partition,Set)
+               
+    JxProfile(str(Tally))"""
+
+    
+    
     # now cache the updated graphs
     JxCache['StateArray'] = JxStateArray
     JxCache['TimeCached'] = time.time() # among the few things that could corrupt the cache : 
@@ -294,8 +366,58 @@ def update_stats_cache():
     save_cache(JxCache)
     JxProfile("Saving Cache")
     
-    mw.help.showText(JxShowProfile())
+    #mw.help.showText(JxShowProfile())
     
+
+
+def extract_stats():
+    array = {}
+    for (Type,List) in JxStatsMap.iteritems():
+        for (k, Map) in enumerate(List):
+            for (Key,String) in Map.Order+[('Other','Other')]:  
+                try:
+                    Dict = JxStateArray[(Type,k,Key)]
+                except:
+                    Dict = {0:0}
+                Known = sum(Dict.values())
+                
+                def filtering(x):
+                        for (type, name,content) in FactId2Types[x[0]][0]:
+                                if Type == type:
+                                        try: 
+                                            if Map.Dict[content] == Key: 
+                                                return True
+                                        except KeyError:
+                                            if Key == 'Other':
+                                                return True            
+                        return False
+                def evaluating_word(x):
+                        for (type, name,content) in FactId2Types[x[0]][0]:
+                                if Type == type:
+                                        try: 
+                                            return Jx_Word_Occurences[content]
+                                        except KeyError:
+                                            return 0           
+                        return 0   
+                def evaluating_kanji(x):
+                        for (type, name,content) in FactId2Types[x[0]][0]:
+                                if Type == type:
+                                        try: 
+                                            return Jx_Kanji_Occurences[content]
+                                        except KeyError:
+                                            return 0           
+                        return 0                        
+                if k != 1:
+                        array[(Type,k,Key)] = (Known, len(filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems())), len(filter(filtering,Facts.iteritems())), 
+                    len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                elif Type =='Word':
+                        array[(Type,k,Key)] = (Known, sum(map(evaluating_word,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), sum(map(evaluating_word,filter(filtering,Facts.iteritems()))), sum([Jx_Word_Occurences[Item] 
+                    for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
+                else:
+                    array[(Type,k,Key)] = (Known,  sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), sum(map(evaluating_kanji,filter(filtering,Facts.iteritems()))), sum([Jx_Kanji_Occurences[Item] 
+                    for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+    return array
+
 def stats_cache_into_json():
     global JxStateArray,JxStatsMap
     Today = int(time.time() / 86400.0)
@@ -312,29 +434,6 @@ def stats_cache_into_json():
                 keys = Dict.keys()		
                 JxGraphsJSon[(Type,k,Key)] =  JxJSon([(Day-Today,sum([Dict[day] for day in keys if day <=Day])) for Day in range(min(keys), max(keys) + 1)]) 
     return JxGraphsJSon
-
-def extract_stats():
-    array = {}
-    for (Type,List) in JxStatsMap.iteritems():
-        for (k, Map) in enumerate(List):
-            for (Key,String) in Map.Order+[('Other','Other')]:  
-                try:
-                    Dict = JxStateArray[(Type,k,Key)]
-                except:
-                    Dict = {0:0}
-                Known = sum(Dict.values())		    
-                if k != 1:
-                    array[(Type,k,Key)] = (Known, 0, 0, 
-                    len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-                elif Type =='Word':
-                    array[(Type,k,Key)] = (Known, 0, 0, sum([Jx_Word_Occurences[Item] 
-                    for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
-                else:
-                    array[(Type,k,Key)] = (Known, 0, 0, sum([Jx_Kanji_Occurences[Item] 
-                    for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-    return array
-
-
 
 
 def flush_facts(JxCardStateArray,CardId):
