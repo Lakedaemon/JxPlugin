@@ -321,41 +321,7 @@ def update_stats_cache():
                 Facts[x[0]]= (2, x[1])# InDeck
     map(partition,Facts.iteritems())          
     JxProfile(str(len(filter(lambda x:(x[0]==0),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==1),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==2),Facts.values()))))    
-    """
-    # now let's create sets containing all Known/Seen/InDeck facts
-    Known=set()
-    Seen = set()
-    InDeck = set()
-    def partition(x):
-            L = zip(*x[1])[1]
-            if sum(L)>0:
-                Known.add(x[0])
-            elif any(L):
-                Seen.add(x[0])
-            else:
-                InDeck.add(x[0])
-    map(partition,Facts.iteritems())          
-    JxProfile(str(len(Known))+" "+str(len(Seen))+" "+str(len(InDeck)))
 
-    Tally = {}
-    for (Type,List) in JxStatsMap.iteritems():
-        for (k, Map) in enumerate(List):
-            #for (Key,String) in Map.Order +[('Other','Other')]:
-            def partition(x):
-                for (type, name, content) in FactId2Types[x][0]:
-                    if Type == type:
-                        try:
-                            Key = Map.Dict[content]
-                        except KeyError:
-                            Key = 'Other'
-                        try: 
-                            Tally[(Type,k,s,Key)] += 1
-                        except KeyError:
-                            Tally[(Type,k,s,Key)] = 1
-            for (s,Set) in enumerate([Known,Seen,InDeck]):
-                map(partition,Set)
-               
-    JxProfile(str(Tally))"""
 
     
     
@@ -364,20 +330,21 @@ def update_stats_cache():
     JxCache['TimeCached'] = time.time() # among the few things that could corrupt the cache : 
     # new entries in the database before the cache was saved...sigh...
     save_cache(JxCache)
-    JxProfile("Saving Cache")
+    JxProfile("Saving Cache" + str(JxStateArray))
     
     #mw.help.showText(JxShowProfile())
     
 
 
 def extract_stats():
+    global JxStatsMap
     array = {}
     for (Type,List) in JxStatsMap.iteritems():
         for (k, Map) in enumerate(List):
             for (Key,String) in Map.Order+[('Other','Other')]:  
                 try:
                     Dict = JxStateArray[(Type,k,Key)]
-                except:
+                except KeyError:
                     Dict = {0:0}
                 Known = sum(Dict.values())
                 
@@ -427,7 +394,7 @@ def stats_cache_into_json():
             for (Key,String) in Map.Order +[('Other','Other')]:
                 try:
                     Dict = JxStateArray[(Type,k,Key)]
-                except:
+                except KeyError:
                     Dict = {Today:0}
                 if Today not in Dict:
                     Dict[Today] = 0
@@ -454,12 +421,12 @@ def flush_facts(JxCardStateArray,CardId):
                 elif Type == "Word":
                 #elif Map.From == 'Tango':
                     try:
-                        Change = 100.0 * Jx_Word_Occurences[Content] * CardWeight / Jx_Word_SumOccurences 
+                        Change = Jx_Word_Occurences[Content] * CardWeight
                     except KeyError:
                         Change = 0
                 else:
                     try:
-                        Change = 100.0 * Jx_Kanji_Occurences[Content] * CardWeight / Jx_Kanji_SumOccurences
+                        Change = Jx_Kanji_Occurences[Content] * CardWeight
                     except KeyError:
                         Change = 0 
                         # we have to update the graph of each type
