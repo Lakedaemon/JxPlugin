@@ -145,7 +145,9 @@ def onJxGraphs():
     JxPreview.setHtml(JxHtml ,JxResourcesUrl)
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
-    JxPreview.show() 
+    JxPreview.show()
+    from database import build_JxFacts
+    build_JxFacts()
 
 
 

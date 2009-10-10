@@ -227,15 +227,14 @@ def update_stats_cache():
     JxProfile('Load Cache ended')
     try:
         query = """
-	select facts.id,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-	from reviewHistory,cards,facts where facts.id=cards.factId and cards.id = reviewHistory.cardId and cards.modified>%s 
-	order by facts.id,reviewHistory.cardId,reviewHistory.time""" % JxCache['TimeCached']
+	select cards.factId,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
+	from reviewHistory,cards where cards.id = reviewHistory.cardId and cards.modified>%s 
+	order by cards.factId,reviewHistory.cardId,reviewHistory.time""" % JxCache['TimeCached']
         JxStateArray = JxCache['StateArray']
     except:
         query = """
-	select facts.id,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
-	from reviewHistory,cards,facts where facts.id=cards.factId and cards.id = reviewHistory.cardId 
-	order by facts.id,reviewHistory.cardId,reviewHistory.time"""
+	select cards.factId ,reviewHistory.cardId, reviewHistory.time, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease 
+	from reviewHistory,cards where cards.id = reviewHistory.cardId order by cards.factId ,reviewHistory.cardId,reviewHistory.time"""
         JxStateArray = {}
     rows = mw.deck.s.all(query)	
     JxProfile("Query ended")
@@ -296,7 +295,8 @@ def update_stats_cache():
 
     rows = mw.deck.s.all(query)
     # let's create a list of Facts with all associated cards and their state : Known/Seen and produce the equivalent list for facts
-
+    
+    TempFacts={}
     def munge_row(x):
             if x[2] > 21:
                 y = (x[0], 1) # Known
@@ -305,21 +305,21 @@ def update_stats_cache():
             else:
                 y = (x[0], 0) # In Deck
             try:
-                Facts[x[1]].append(y)
+                TempFacts[x[1]].append(y)
             except KeyError:
-                Facts[x[1]] = [y]
+                TempFacts[x[1]] = [y]
     map(munge_row,rows)
     
     # now update the fact list to include the fact state 
     def partition(x):
             L = zip(*x[1])[1]
-            if sum(L)>0:
+            if not any(L):
+                Facts[x[0]]= (2, x[1])# InDeck                    
+            elif sum(L)>=0 :
                 Facts[x[0]]= (0, x[1])# Known
-            elif any(L):
-                Facts[x[0]]= (1, x[1])# Seen
             else:
-                Facts[x[0]]= (2, x[1])# InDeck
-    map(partition,Facts.iteritems())          
+                Facts[x[0]]= (1, x[1])# Seen
+    map(partition,TempFacts.iteritems())
     JxProfile(str(len(filter(lambda x:(x[0]==0),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==1),Facts.values())))+" "+str(len(filter(lambda x:(x[0]==2),Facts.values()))))    
 
 
@@ -330,7 +330,7 @@ def update_stats_cache():
     JxCache['TimeCached'] = time.time() # among the few things that could corrupt the cache : 
     # new entries in the database before the cache was saved...sigh...
     save_cache(JxCache)
-    JxProfile("Saving Cache" + str(JxStateArray))
+    JxProfile("Saving Cache")
     
     #mw.help.showText(JxShowProfile())
     
@@ -342,11 +342,11 @@ def extract_stats():
     for (Type,List) in JxStatsMap.iteritems():
         for (k, Map) in enumerate(List):
             for (Key,String) in Map.Order+[('Other','Other')]:  
-                try:
-                    Dict = JxStateArray[(Type,k,Key)]
-                except KeyError:
-                    Dict = {0:0}
-                Known = sum(Dict.values())
+                #try:
+                #    Dict = JxStateArray[(Type,k,Key)]
+                #except KeyError:
+                #    Dict = {0:0}
+                #Known = sum(Dict.values())
                 
                 def filtering(x):
                         for (type, name,content) in FactId2Types[x[0]][0]:
@@ -375,13 +375,18 @@ def extract_stats():
                                             return 0           
                         return 0                        
                 if k != 1:
-                        array[(Type,k,Key)] = (Known, len(filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems())), len(filter(filtering,Facts.iteritems())), 
-                    len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
+                        array[(Type,k,Key)] = (len(filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems())), 
+                                len(filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems())), len(filter(filtering,Facts.iteritems())), 
+                                len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
                 elif Type =='Word':
-                        array[(Type,k,Key)] = (Known, sum(map(evaluating_word,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), sum(map(evaluating_word,filter(filtering,Facts.iteritems()))), sum([Jx_Word_Occurences[Item] 
+                        array[(Type,k,Key)] = (sum(map(evaluating_word,filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems()))), 
+                                sum(map(evaluating_word,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), 
+                                sum(map(evaluating_word,filter(filtering,Facts.iteritems()))), sum([Jx_Word_Occurences[Item] 
                     for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
                 else:
-                    array[(Type,k,Key)] = (Known,  sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), sum(map(evaluating_kanji,filter(filtering,Facts.iteritems()))), sum([Jx_Kanji_Occurences[Item] 
+                    array[(Type,k,Key)] = (sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems()))),  
+                            sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), 
+                            sum(map(evaluating_kanji,filter(filtering,Facts.iteritems()))), sum([Jx_Kanji_Occurences[Item] 
                     for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
     return array
 
