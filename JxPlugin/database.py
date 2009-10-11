@@ -120,8 +120,80 @@ def build_JxFacts():
                 metadata[type] = (name,content) 
                 
                 
+    JxKnownThreshold = 21 
+    JxKnownCoefficient = 0.5
+    
+    rows = mw.deck.s.all("""select factId, id, interval, reps from cards""")      
+    def assign((factId,id,interval,reps)):
+        """sets the cards states in the Jx database JxDeck"""
+        if interval > JxKnownThreshold and reps:
+            status = 1# known
+        elif reps:
+            status = 0# seen
+        else:
+            status = -1# in deck
+        JxFacts[factId][2][id]= (status, [])	 
+    map(assign, rows)
+     
+    #midnightOffset = time.timezone - self.deck.utcOffset
+    #self.endOfDay = time.mktime(now) - midnightOffset
+    #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
+    
+    def assign((factId,id,interval,nextInterval,ease,time)):
+        """sets the cards status changes in the Jx database JxDeck"""
+        if (interval <= JxKnownThreshold  and nextInterval > JxKnownThreshold ) or (interval > JxKnownThreshold  and ease == 1): 
+            #Card Status Change
+            day = int(time / 86400.0)
+            JxFacts[factId][2][id][1].append(day)	
+
+    query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time 
+	from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
+    rows = mw.deck.s.all(query)
+    map(assign,rows)
+
+
+    def assign((id,(fields,metadata,cards,state,history))):
+        """sets the fact states and the fact history in the Jx database JxDeck"""
+        list = [status for (status,changes) in cards.values() if status>=0]
+        threshold = len(cards) * JxKnownCoefficient
+        if list and sum(list)>= threshold:
+            status = 1# in deck
+        elif list:
+            status = 0# seen
+        else:
+            status = -1# in deck
+            
+        if status >=0:    
+            stateArray = {}
+            for (status,changes) in cards.values():
+                boolean = True
+                for day in changes:
+                    try:
+                        if boolean:
+                            stateArray[day] += 1
+                        else:
+                            stateArray[day] -= 1 
+                    except KeyError:
+                        if boolean:
+                            stateArray[day] = 1
+                        else:
+                            stateArray[day] = -1  
+                    boolean = not(boolean)
                 
+            days = stateArray.keys()
+            days.sort()
+            boolean = True
+            for day in days:
+                if (boolean and stateArray[day] >=threshold ) or (not(boolean) and stateArray[day] < threshold): #xor
+                    history.append(day)
+                    boolean = not(boolean)
+            
+        JxFacts[id] = (fields, metadata, cards, status, history)	 
+        
+    map(assign, JxFacts.iteritems())        
+       
+       
     save_cache(JxFacts)
-    mw.help.showText(str(JxFacts))       
+    mw.help.showText(str(JxFacts))   
     
 
