@@ -8,7 +8,7 @@ from ankiqt import mw
 
 from cache import save_cache
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
-
+from loaddata import *
 JxModels = {} 
 def build_JxModels():
     """builds the JxModels dictionnary, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
@@ -117,7 +117,7 @@ def build_JxFacts():
         for (type,(name,ordinal,boolean)) in hints.iteritems():
             content = fields[ordinal]
             if boolean or type in GuessType(content):
-                metadata[type] = (name,content) 
+                metadata[type] = content
                 
                 
     JxKnownThreshold = 21 
@@ -192,8 +192,84 @@ def build_JxFacts():
         
     map(assign, JxFacts.iteritems())        
        
-       
+    build_JxStats()   
     save_cache(JxFacts)
-    mw.help.showText(str(JxFacts))   
-    
+    mw.help.showText(str(JxStats))   
 
+JxStatsTask = {
+'Word':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango},
+'Kanji':{'K-JLPT':MapJLPTKanji,'W-Freq':MapZoneKanji,'W-AFreq':MapZoneKanji,'W-Jouyou':MapJouyouKanji,'W-Kanken':MapKankenKanji}} 
+
+JxStats = {}      
+def build_JxStats():
+    
+    for type in ['Word','Kanji']:
+        def select((fields,types,cards,state,changelist)):
+            try:
+                return (types[type], state)
+            except KeyError:
+                return None
+        list = filter(lambda x: x != None, map(select,JxFacts.values()))
+        for (name,mapping) in JxStatsTask[type].iteritems():
+            
+            if  name == 'W-AFreq':
+                def assign_WAF((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Word_Occurences[content]
+                        try:
+                            JxStats[(name,state,value)] += increment
+                        except KeyError:
+                            JxStats[(name,state,value)] = increment
+                    except KeyError:
+                        pass    
+                        
+                map(assign_WAF,list)
+                def count_WAF((content,value)):
+                    zone = Word2Zone[content]
+                    try:
+                        JxStats[(name,'Total',zone)] += value
+                    except KeyError:
+                        JxStats[(name,'Total',zone)] = value                
+                map(count_WAF,Jx_Word_Occurences.iteritems())                    
+            elif name == 'K-AFreq':
+                
+                def assign_KAF((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Kanji_Occurences[content]
+                        try:
+                            JxStats[(name,state,value)] += increment
+                        except KeyError:
+                            JxStats[(name,state,value)] = increment
+                    except KeyError:
+                        pass        
+                map(assign_KAF,list)                    
+                def count_KAF((content,value)):
+                    zone = Kanji2Zone[content]
+                    try:
+                        JxStats[(name,'Total',zone)] += value
+                    except KeyError:
+                        JxStats[(name,'Total',zone)] = value                
+                map(count_KAF,Jx_Kanji_Occurences.iteritems())                
+            else:
+                
+                def assign((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                    except KeyError:
+                        value = 'Other'
+                    try:
+                        JxStats[(name,state,value)] += 1
+                    except KeyError:
+                        JxStats[(name,state,value)] = 1
+                map(assign,list)                  
+                def count(value):
+                    try:
+                        JxStats[(name,'Total',value)] += 1
+                    except KeyError:
+                        JxStats[(name,'Total',value)] = 1                
+                map(count,mapping.Dict.values())
+    
+    
+   
