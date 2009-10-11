@@ -8,57 +8,39 @@ from ankiqt import mw
 
 from cache import save_cache
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
-def build_JxFacts():
-    """builds JxFacts, the Jxplugin counterparts (with metadata) of the sqllite Facts, Cards, Fields and review history tables"""
-    JxFacts = {}
-    def assign(row):
-        """basically does factsDB[factId].update(ordinal=value)"""
-        try:
-            fields = JxFacts[row[0]]
-        except KeyError:
-            JxFacts[row[0]] = {}
-            fields = JxFacts[row[0]]
-        fields[row[1]] = row[2]
-    rows = mw.deck.s.all("""select factId,ordinal,value from fields""")
-    map(assign,rows)
-    save_cache(JxFacts)
-    build_JxModels()
-    
+
+JxModels = {} 
 def build_JxModels():
-    """builds JxModels, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
-    JxModels = {} 
+    """builds the JxModels dictionnary, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
     query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name from models,fieldModels where models.id = fieldModels.modelId"""
     rows = mw.deck.s.all(query)
-    def assign(row):
-        (id, name, tags, ordinal, fieldName) = row
+    def assign((id, name, tags, ordinal, fieldName)):
         try:
             fields = JxModels[id][2]
         except:
-            JxModels[id] = (name, tags, {}, [])
+            JxModels[id] = (name, tags, {}, {})
             fields = JxModels[id][2]
         fields[ordinal] = fieldName
     map(assign,rows)    
 
     # got to parse the model tags and maybee the model name
-    for (id, modelInfo) in JxModels.iteritems():
-        (modelName, tags, fields, hints) = modelInfo
-        #(modelId,modelTags,modelName,fieldName,fieldOrdinal) = row
+    for (modelName, tags, fields, hints) in JxModels.values():
         types = set()
         test = set(tags.split(" ")) # parses the model tags first
-        for (Key,List) in JxType:
-            if test.intersection(List):
-                types.update([Key]) 
+        for (key,list) in JxType:
+            if test.intersection(list):
+                types.update([key]) 
         if not(types): # checks the model name now
-            for (Key,List) in JxType:
-                if modelName in List:
-                    types.update([Key])
+            for (key,list) in JxType:
+                if modelName in list:
+                    types.update([key])
                     break # no need to parse further
         if not(types): # checks the Field's name now
             for (ordinal,name) in fields.iteritems():
-                for (Type,TypeList) in JxType:
-                                        if name in TypeList:
-                                                types.update([Type])
-                                                hints.append((Type, name, ordinal, True))
+                for (type,typeList) in JxType:
+                                        if name in typeList:
+                                                types.update([type])
+                                                hints[type] = (name, ordinal, True)
                                                 break # no need to parse this Field further
         if not(types): # Japanese Model ?
             test = set(tags.split(" ") + [modelName] + fields.values())   
@@ -67,32 +49,79 @@ def build_JxModels():
         # now, we got to set the action and build a Hint
         if types and not(hints):
             # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
-            for (Type,TypeList) in JxType:
-                if Type in types:
+            for (type,typeList) in JxType:
+                if type in types:
                         for (ordinal,name) in fields.iteritems():
-                                if name in TypeList:
-                                        hints.append((Type,name,ordinal,True)) 
+                                if name in typeList:
+                                        hints[type] = (name,ordinal,True) 
                                         break
             if len(hints) < len(types):
                 # for the still missing fields, we try to find an "Expression" field next and update the List
-                if hints:
-                    (Done,Arga,Argb,Argc) = zip(*hints)
-                else : 
-                    Done = []
-                TempList = []
-                for (Type,TypeList) in JxType:
-                    if Type in types and Type in Done:
-                        TempList.append(hints.pop(0))
-                    elif Type in types:
-                        
-
+                for (type,typeList) in JxType:
+                    if type in types and type not in hints:
                         for (ordinal, name) in fields.iteritems():
                             if name == 'Expression':
                                 if len(types) == 1:
-                                    TempList.append((Type,name,ordinal,True))
+                                    hints[type] = (name,ordinal,True)
                                 else:
-                                    TempList.append((Type,name,ordinal,False))                                                                        
-                                break 
-                hints = TempList
-                JxModels[id]=(modelName, tags, fields, hints[:])
+                                    hints[type] = (name,ordinal,False)                                                                        
+                                break
+            
+JxFacts = {}
+def build_JxFacts():
+    """builds JxFacts, the Jxplugin counterparts (with metadata) of the sqllite Facts, Cards, Fields and review history tables"""
+    build_JxModels()
+    def assign((id,value)):
+        """basically does factsDB[factId].update(ordinal=value)"""
+        try:
+            fields = JxFacts[id][0]
+        except KeyError:
+            JxFacts[id] = ({},{},{},0,[])
+            fields = JxFacts[id][0]
+        fields[len(fields)] = value# this is coded this way because in the anki database ordinal fields in fieldModels and fields aren't necessarily equals...
+    rows = mw.deck.s.all("""select factId,value from fields order by ordinal""")
+    map(assign,rows)
+
+    rows = mw.deck.s.all("""select id,tags,modelId from facts""") 
+    for (id,tags,modelId) in rows:
+        types = set()
+        test = set(tags.split(" "))
+        for (key,list) in JxType:
+            if test.intersection(list):
+                types.update([key])
+        if not(types): 
+            hints = JxModels[modelId][3]
+        else:
+            hints={}
+            modelFields = JxModels[modelId][2].iteritems()
+            # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
+            for (type,typeList) in JxType:
+                if type in types:
+                        for (ordinal,name) in modelFields:
+                                if name in typeList:
+                                        hint[type] = (name,ordinal,True) 
+                                        break
+            if len(hints) < len(types):
+                # for the still missing fields, we try to find an "Expression" field next and update the List
+                for (type,typeList) in JxType:
+                    if type in types and type not in hints:
+                        for (ordinal, name) in modelFields:
+                            if name == 'Expression':
+                                if len(types) == 1:
+                                    hints[type] = (name,ordinal,True)
+                                else:
+                                    hints[type] = (name,ordinal,False)                                                                        
+                                break          
+        fields = JxFacts[id][0]
+        metadata = JxFacts[id][1]
+        for (type,(name,ordinal,boolean)) in hints.iteritems():
+            content = fields[ordinal]
+            if boolean or type in GuessType(content):
+                metadata[type] = (name,content) 
                 
+                
+                
+    save_cache(JxFacts)
+    mw.help.showText(str(JxFacts))       
+    
+
