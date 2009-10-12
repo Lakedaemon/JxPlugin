@@ -204,7 +204,6 @@ def build_JxGraphs():
             except KeyError:
                 return None
         list = filter(lambda x: x != None, map(select,JxFacts.values()))
-        mw.help.showText(str(JxFacts)+str(list))
         tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
         
         for (name,mapping) in tasks[type].iteritems():  
@@ -300,8 +299,13 @@ def JxGraphs_into_json():
                 dict = {}
             if today not in dict:
                 dict[today] = 0
-            keys = dict.keys()		
-            dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])) for limit in range(min(keys), max(keys) + 1)]) 
+            keys = dict.keys()
+            if graph == 'W-AFreq':
+                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])*100.0/Jx_Word_SumOccurences) for limit in range(min(keys), max(keys) + 1)]) 
+            elif graph == 'K-AFreq':
+                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])*100.0/Jx_Kanji_SumOccurences) for limit in range(min(keys), max(keys) + 1)]) 
+            else:
+                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])) for limit in range(min(keys), max(keys) + 1)])                 
     return dict_json
     
 def JxJSon(CouplesList):

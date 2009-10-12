@@ -112,10 +112,10 @@ from controls import Jx_Control_Tags
   
 def onJxMenu():
     from database import build_JxDeck, build_JxGraphs
-    JxProfile('Before JxDeck')
+    #JxProfile('Before JxDeck')
     build_JxDeck()
-    JxProfile('After JxDeck')
-    mw.help.showText(JxShowProfile())
+    #JxProfile('After JxDeck')
+    #mw.help.showText(JxShowProfile())
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
@@ -139,13 +139,15 @@ def JxBrowse():
 	JxPreview.show()
 
 def onJxGraphs():
-    from database import build_JxDeck,build_JxGraphs
+    from database import build_JxDeck, JxGraphs_into_json
     build_JxDeck()
-    from database import JxGraphs_into_json
     JxGraphsJSon = JxGraphs_into_json()
     from html import Jx_Html_Graphs
-    tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
-    JxHtml = Jx_Html_Graphs % (dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()]))
+    tasks = {'W-JLPT':MapJLPTTango, 'K-JLPT':MapJLPTKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
+    dic = dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()])
+    tasks = {'W-AFreq':MapZoneTango, 'K-AFreq':MapZoneKanji}
+    dic.update([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order))]) +"]") for (graph,mapping) in tasks.iteritems()])
+    JxHtml = Jx_Html_Graphs % dic
     JxPreview.setHtml(JxHtml ,JxResourcesUrl)
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
