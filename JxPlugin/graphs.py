@@ -336,59 +336,6 @@ def update_stats_cache():
     
 
 
-def extract_stats():
-    global JxStatsMap
-    array = {}
-    for (Type,List) in JxStatsMap.iteritems():
-        for (k, Map) in enumerate(List):
-            for (Key,String) in Map.Order+[('Other','Other')]:  
-                #try:
-                #    Dict = JxStateArray[(Type,k,Key)]
-                #except KeyError:
-                #    Dict = {0:0}
-                #Known = sum(Dict.values())
-                
-                def filtering(x):
-                        for (type, name,content) in FactId2Types[x[0]][0]:
-                                if Type == type:
-                                        try: 
-                                            if Map.Dict[content] == Key: 
-                                                return True
-                                        except KeyError:
-                                            if Key == 'Other':
-                                                return True            
-                        return False
-                def evaluating_word(x):
-                        for (type, name,content) in FactId2Types[x[0]][0]:
-                                if Type == type:
-                                        try: 
-                                            return Jx_Word_Occurences[content]
-                                        except KeyError:
-                                            return 0           
-                        return 0   
-                def evaluating_kanji(x):
-                        for (type, name,content) in FactId2Types[x[0]][0]:
-                                if Type == type:
-                                        try: 
-                                            return Jx_Kanji_Occurences[content]
-                                        except KeyError:
-                                            return 0           
-                        return 0                        
-                if k != 1:
-                        array[(Type,k,Key)] = (len(filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems())), 
-                                len(filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems())), len(filter(filtering,Facts.iteritems())), 
-                                len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-                elif Type =='Word':
-                        array[(Type,k,Key)] = (sum(map(evaluating_word,filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems()))), 
-                                sum(map(evaluating_word,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), 
-                                sum(map(evaluating_word,filter(filtering,Facts.iteritems()))), sum([Jx_Word_Occurences[Item] 
-                    for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
-                else:
-                    array[(Type,k,Key)] = (sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<1) and filtering(x),Facts.iteritems()))),  
-                            sum(map(evaluating_kanji,filter(lambda x:(x[1][0]<2) and filtering(x),Facts.iteritems()))), 
-                            sum(map(evaluating_kanji,filter(filtering,Facts.iteritems()))), sum([Jx_Kanji_Occurences[Item] 
-                    for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-    return array
 
 def stats_cache_into_json():
     global JxStateArray,JxStatsMap

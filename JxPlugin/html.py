@@ -406,14 +406,14 @@ Jx_Html_Graphs = u"""
 	jQuery().ready(function(){
                $('.ui-button').button({checkButtonset:true});
                
-$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
-$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
-$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+$.plot($("#KanjiJLPT"),   %(JSon:K-JLPT)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
+$.plot($("#WordJLPT"),    %(JSon:W-JLPT)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
+$.plot($("#KanjiFreq"),   %(JSon:K-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});               
-$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+$.plot($("#WordFreq"),     %(JSon:W-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});  
-$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+$.plot($("#KanjiJouyou"), %(JSon:Jouyou)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
+$.plot($("#KanjiKanken"), %(JSon:Kanken)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
  
             
                

@@ -13,16 +13,11 @@ from loaddata import *
 JxKnownThreshold = 21 
 JxKnownCoefficient = 0.5
 
-def build_JxDeck():
-    build_JxModels()
-    build_JxFacts()
-    build_JxStats()
-    JxDeck = {'JxModels':JxModels,'JxFacts':JxFacts,'JxStats':JxStats}
-    save_cache(JxDeck)
-    mw.help.showText(str(JxStats))      
+  
     
 JxModels = {} 
 def build_JxModels():
+    global JxModels
     """builds the JxModels dictionnary, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
     query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name from models,fieldModels where models.id = fieldModels.modelId"""
     rows = mw.deck.s.all(query)
@@ -81,6 +76,7 @@ def build_JxModels():
             
 JxFacts = {}
 def build_JxFacts():
+    global JxModels, JxFacts
     """builds JxFacts, the Jxplugin counterparts (with metadata) of the sqllite Facts, Cards, Fields and review history tables"""
     def assign((id,value)):
         """basically does factsDB[factId].update(ordinal=value)"""
@@ -186,21 +182,134 @@ def build_JxFacts():
             days = stateArray.keys()
             days.sort()
             boolean = True
+            cumul=0
             for day in days:
-                if (boolean and stateArray[day] >=threshold ) or (not(boolean) and stateArray[day] < threshold): #xor
+                cumul += stateArray[day]
+                if (boolean and sum >=threshold ) or (not(boolean) and cumul < threshold): #xor
                     history.append(day)
                     boolean = not(boolean)
             
         JxFacts[id] = (fields, metadata, cards, status, history)	        
     map(assign, JxFacts.iteritems())        
+
+JxGraphs = {}
+def build_JxGraphs():
+    global JxFacts, JxGraphs
+    for type in ['Word', 'Kanji']:
+        def select((fields,metadata,cards,state,changelist)):
+            if state <0:
+                return None
+            try:
+                return (metadata[type], changelist)
+            except KeyError:
+                return None
+        list = filter(lambda x: x != None, map(select,JxFacts.values()))
+        mw.help.showText(str(JxFacts)+str(list))
+        tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
         
-
-JxStatsTask = {
-'Word':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango},
-'Kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-
+        for (name,mapping) in tasks[type].iteritems():  
+            if  name == 'W-AFreq':
+                def assign_WAF((content,days)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Word_Occurences[content]
+                        try:
+                            stateArray = JxGraphs[(name,value)]
+                        except KeyError:
+                            JxGraphs[(name,value)] = {}
+                            stateArray = JxGraphs[(name,value)]
+                        boolean = True
+                        for day in days:
+                            try:
+                                if boolean:
+                                    stateArray[day] += increment
+                                else:
+                                    stateArray[day] -= increment 
+                            except KeyError:
+                                if boolean:
+                                    stateArray[day] = increment
+                                else:
+                                    stateArray[day] = -increment 
+                            boolean = not(boolean)  
+                    except KeyError:
+                        pass                     
+                map(assign_WAF,list)                    
+            elif name == 'K-AFreq':                
+                def assign_KAF((content,days)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Kanji_Occurences[content]
+                        try:
+                            stateArray = JxGraphs[(name,value)]
+                        except KeyError:
+                            JxGraphs[(name,value)] = {}
+                            stateArray = JxGraphs[(name,value)]
+                        boolean = True
+                        for day in days:
+                            try:
+                                if boolean:
+                                    stateArray[day] += increment
+                                else:
+                                    stateArray[day] -= increment 
+                            except KeyError:
+                                if boolean:
+                                    stateArray[day] = increment
+                                else:
+                                    stateArray[day] = -increment 
+                            boolean = not(boolean)  
+                    except KeyError:
+                        pass   
+                map(assign_KAF,list)                            
+            else:               
+                def assign((content,days)):
+                    boolean = True
+                    try:
+                        value = mapping.Value(content)
+                    except KeyError:
+                        value = 'Other'
+                    try:
+                        stateArray = JxGraphs[(name,value)]
+                    except KeyError:
+                        JxGraphs[(name,value)] = {}
+                        stateArray = JxGraphs[(name,value)]
+                    for day in days:
+                        try:
+                            if boolean:
+                                stateArray[day] += 1
+                            else:
+                                stateArray[day] -= 1 
+                        except KeyError:
+                            if boolean:
+                                stateArray[day] = 1
+                            else:
+                                stateArray[day] = -1  
+                        boolean = not(boolean)
+                map(assign,list)    
+                
+import time
+def JxGraphs_into_json():
+    global JxGraphs
+    today = int(time.time() / 86400.0)
+    dict_json = {}
+    tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
+    for (graph,mapping) in tasks.iteritems():
+        for (key,string) in mapping.Order +[('Other','Other')]:
+            try:
+                dict = JxGraphs[(graph,key)]
+            except KeyError:
+                dict = {}
+            if today not in dict:
+                dict[today] = 0
+            keys = dict.keys()		
+            dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])) for limit in range(min(keys), max(keys) + 1)]) 
+    return dict_json
+    
+def JxJSon(CouplesList):
+        return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
+        
 JxStats = {}      
 def build_JxStats():
+    global JxFacts, JxStats
     for type in ['Word','Kanji']:
         def select((fields,types,cards,state,changelist)):
             try:
@@ -208,7 +317,10 @@ def build_JxStats():
             except KeyError:
                 return None
         list = filter(lambda x: x != None, map(select,JxFacts.values()))
-        for (name,mapping) in JxStatsTask[type].iteritems():           
+        
+        JxStatTasks = {'Word':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+        
+        for (name,mapping) in JxStatTasks[type].iteritems():           
             if  name == 'W-AFreq':
                 def assign_WAF((content,state)):
                     try:
@@ -402,3 +514,16 @@ def JxFormat(Float):
         return "%.2g" % Float                            
     else:                                       # 4.00 -> 4          4.10 -> 4           4.1678 -> 4.17           15.28 -> 15.3
         return "%.3g" % Float    
+        
+def build_JxDeck():
+    global JxModels, JxFacts, JxStats, JxGraphs
+    JxModels = {} 
+    build_JxModels()
+    JxFacts = {} 
+    build_JxFacts()
+    JxStats = {} 
+    build_JxStats()
+    JxGraphs = {} 
+    build_JxGraphs()
+    JxDeck = {'JxModels':JxModels,'JxFacts':JxFacts,'JxStats':JxStats,'JxGraph':JxGraphs}
+    save_cache(JxDeck) 

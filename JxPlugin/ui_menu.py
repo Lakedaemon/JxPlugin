@@ -19,13 +19,13 @@ from tools import *
 
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
-
+"""
 JxStatsMenu ={
 'JLPT':[('Kanji',HtmlReport,('Kanji',0)),('Words',HtmlReport,('Word',0))],
 'Frequency':[('Kanji',HtmlReport,('Kanji',2)),('Kanji',JxWidgetAccumulatedReport,('Kanji',1)),('Word',HtmlReport,('Word',2)),
 ('Words',JxWidgetAccumulatedReport,('Word',1))],
 'Kanken':[('Kanji',HtmlReport,('Kanji',4))],
-'Jouyou':[('Kanji',HtmlReport,('Kanji',3))]}
+'Jouyou':[('Kanji',HtmlReport,('Kanji',3))]}"""
 
 
 def onClick(url):
@@ -111,15 +111,11 @@ from controls import Jx_Control_Tags
                 
   
 def onJxMenu():
-    from graphs import JxParseFacts4Stats, update_stats_cache
-    JxParseFacts4Stats() 
-    JxProfile('ParseFacts')
-    update_stats_cache()
-    #ComputeCount() 
-    JxProfile('ComputeCount')
-    mw.help.showText(JxShowProfile())
-    from database import build_JxDeck
+    from database import build_JxDeck, build_JxGraphs
+    JxProfile('Before JxDeck')
     build_JxDeck()
+    JxProfile('After JxDeck')
+    mw.help.showText(JxShowProfile())
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
@@ -143,19 +139,18 @@ def JxBrowse():
 	JxPreview.show()
 
 def onJxGraphs():
-    from graphs import JxParseFacts4Stats, update_stats_cache, stats_cache_into_json
-    if not CardId2Types:
-        JxParseFacts4Stats() 
-    update_stats_cache()
-    JxGraphsJSon = stats_cache_into_json()
+    from database import build_JxDeck,build_JxGraphs
+    build_JxDeck()
+    from database import JxGraphs_into_json
+    JxGraphsJSon = JxGraphs_into_json()
     from html import Jx_Html_Graphs
-    JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
+    tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
+    JxHtml = Jx_Html_Graphs % (dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()]))
     JxPreview.setHtml(JxHtml ,JxResourcesUrl)
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
     JxPreview.show()
-    from database import build_JxDeck
-    build_JxDeck()
+
 
 
 

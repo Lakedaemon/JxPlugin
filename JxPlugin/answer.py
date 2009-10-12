@@ -146,7 +146,7 @@ def JxDefaultAnswer(Buffer,String,Dict):
     # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
     
 JxTypeJapanese = ["japanese","Japanese","JAPANESE",u"日本語",u"にほんご"]
-JxType=[(u'Kanji',[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
+JxType=[('Kanji',["kanji","Kanji","KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
 ('Sentence',["sentence","Sentence","SENTENCE",u"文",u"ぶん"]),('Grammar',["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"])]    
 JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
 JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
