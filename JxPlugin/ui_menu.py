@@ -19,14 +19,6 @@ from tools import *
 
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
-"""
-JxStatsMenu ={
-'JLPT':[('Kanji',HtmlReport,('Kanji',0)),('Words',HtmlReport,('Word',0))],
-'Frequency':[('Kanji',HtmlReport,('Kanji',2)),('Kanji',JxWidgetAccumulatedReport,('Kanji',1)),('Word',HtmlReport,('Word',2)),
-('Words',JxWidgetAccumulatedReport,('Word',1))],
-'Kanken':[('Kanji',HtmlReport,('Kanji',4))],
-'Jouyou':[('Kanji',HtmlReport,('Kanji',3))]}"""
-
 
 def onClick(url):
         String = unicode(url.toString())
@@ -50,61 +42,42 @@ JxStatsMenu ={
 ('Words',display_astats,'W-AFreq')],
 'Kanken':[('Kanji',display_stats,'Kanken')],
 'Jouyou':[('Kanji',display_stats,'Jouyou')]}
-def JxStats(Type):
 
+def JxStats(Type):
         html=""
-	for (title,func,stats) in JxStatsMenu[Type]:
+	for (title,func,stat) in JxStatsMenu[Type]:
 	        if func == display_stats:
 	                html += '<br/><center><b style="font-size:1.4em;">' + title.upper() + "</b></center>"
 	                html += """<center>
-	                <a href=py:JxShowIn('""" + stats +  """,'Known')>Known</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + stats +  """,'Seen')>Seen</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + stats +  """,'InDeck')>Deck</a>&nbsp;&nbsp;
-	                <a href=py:JxShowOut('""" + stats + """)>Missing</a>
+	                <a href=py:JxShowIn('""" + stat +  """',1)>Known</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stat +  """',0)>Seen</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stat +  """',-1)>Deck</a>&nbsp;&nbsp;
+	                <a href=py:JxShowOut('""" + stat + """')>Missing</a>
 	                </center><br/>"""
-                html += func(stats)
+                html += func(stat)
         return html
 
 
 
 
-
-def JxShowIn(Type,k,Label):
-        Map = JxStatsMap[Type][k]
-        Dict = None
-        if Type == 'Kanji':
-                Dict = Jx_Kanji_Occurences
-        elif Type == 'Word':
-                Dict = Jx_Word_Occurences
-        if Dict:
-                for (Key,String) in Map.Order + [('Other','Other')]: 
-                        JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
-        from html import Jx_Html_DisplayStuff
-        JxHtml = Jx_Html_DisplayStuff + JxShowPartition(Type,k,Label)+ """</body></html>"""
-        JxPreview.setHtml(JxHtml,JxResourcesUrl)
-        JxPreview.activateWindow()
-        JxPreview.setWindowTitle("Cards Report")
-        JxPreview.show()
+def JxShowIn(stat,label):
+    from database import display_partition
+    from html import Jx_Html_DisplayStuff
+    html = Jx_Html_DisplayStuff + display_partition(stat,label)+ """</body></html>"""
+    JxPreview.setHtml(html,JxResourcesUrl)
+    JxPreview.activateWindow()
+    JxPreview.setWindowTitle("Facts Report")
+    JxPreview.show()
         
 	
-def JxShowOut(Type,k):
-        Map = JxStatsMap[Type][k]
-        Dict = None
-        if Type == 'Kanji':
-                Dict = Jx_Kanji_Occurences
-        elif Type == 'Word':
-                Dict = Jx_Word_Occurences
-        for (Key,String) in Map.Order: 
-                Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
-                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
-                if Dict:               
-                        JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
-        from html import Jx_Html_DisplayStuff
-        JxHtml = Jx_Html_DisplayStuff + JxShowMissingPartition(Type,k) + """</body></html>"""
-        JxPreview.setHtml(JxHtml,JxResourcesUrl)
-        JxPreview.activateWindow()
-        JxPreview.setWindowTitle("Cards Report")
-        JxPreview.show()  
+def JxShowOut(stat):
+    from database import display_complement
+    from html import Jx_Html_DisplayStuff
+    html = Jx_Html_DisplayStuff + display_complement(stat)+ """</body></html>"""
+    JxPreview.setHtml(html,JxResourcesUrl)
+    JxPreview.activateWindow()
+    JxPreview.setWindowTitle("Facts Report")
+    JxPreview.show()
 		
 from controls import Jx_Control_Tags       
 
@@ -112,21 +85,12 @@ from controls import Jx_Control_Tags
   
 def onJxMenu():
     from database import build_JxDeck, build_JxGraphs
-    #JxProfile('Before JxDeck')
     build_JxDeck()
-    #JxProfile('After JxDeck')
-    #mw.help.showText(JxShowProfile())
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
     JxWindow.setHtml(JxHtml,JxResourcesUrl)
     JxWindow.show()
-
-
-
-
-
-
 
 def JxBrowse():
 	from controls import Jx__Model_CardModel_String	

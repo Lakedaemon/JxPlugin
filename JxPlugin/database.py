@@ -531,3 +531,101 @@ def build_JxDeck():
     build_JxGraphs()
     JxDeck = {'JxModels':JxModels,'JxFacts':JxFacts,'JxStats':JxStats,'JxGraph':JxGraphs}
     save_cache(JxDeck) 
+    
+def JxVal(Dict,x):
+    try:
+        return  Dict[x]
+    except KeyError:
+        return -1
+                
+def display_partition(stat,label):
+    """Returns an Html report of the label=known|seen|in deck stuff inside the list stat"""
+    from database import JxFacts
+    mappings = {'W-JLPT':MapJLPTTango, 'W-Freq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-Freq':MapZoneKanji,  'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji}
+    mapping = mappings[stat]
+    partition = {}
+    for (key,string) in mapping.Order+ [('Other','Other')]:
+        partition[key] = []
+    if stat == 'W-JLPT' or stat =='W-Freq':
+        dic = Jx_Word_Occurences
+        type = 'Word'
+    else:
+        dic = Jx_Kanji_Occurences
+        type = 'Kanji'
+    def assign((id,(fields,metadata,cards,state,history))):
+        if state==label:
+            try:
+                content = metadata[type]
+                try:
+                    key = mapping.Dict[content]
+                except KeyError:
+                    key = 'Other'
+                partition[key].append((content,id))
+            except KeyError:
+                pass
+    map(assign, JxFacts.iteritems())
+
+
+    for (key,string) in mapping.Order+ [('Other','Other')]:
+        partition[key].sort(lambda x,y:JxVal(dic,y)-JxVal(dic,x))
+
+    color = dict([(key,True) for (key,string) in mapping.Order + [('Other','Other')]])
+    buffer = dict([(key,"") for (key,string) in mapping.Order + [('Other','Other')]])
+    for (key,string) in mapping.Order + [('Other','Other')]:
+        for (stuff,id) in partition[key]:
+            color[key] = not(color[key])			
+            if color[key]:
+                buffer[key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":stuff,"Id":id}
+            else:
+                buffer[key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":stuff,"Id":id}
+    html = ''
+    for (key,string) in mapping.Order:
+        if buffer[key]:
+            html += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (string,buffer[key])
+    if buffer['Other']:
+        html += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % buffer['Other']
+    return html
+
+def display_complement(stat):
+    """Returns an Html report of the missing seen stuff in the stat list"""
+    from database import JxFacts
+    mappings = {'W-JLPT':MapJLPTTango, 'W-Freq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-Freq':MapZoneKanji,  'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji}
+    mapping = mappings[stat]
+    partition = {}
+    def assign((key,value)):
+        try:
+            partition[value].add(key)
+        except KeyError:
+            partition[value] = set(key)
+    map(assign, mapping.Dict.iteritems())
+    if stat == 'W-JLPT' or stat =='W-Freq':
+        dic = Jx_Word_Occurences
+        type = 'Word'
+    else:
+        dic = Jx_Kanji_Occurences
+        type = 'Kanji'
+    def assign((id,(fields,metadata,cards,state,history))):
+            try:
+                content = metadata[type]
+                key = mapping.Dict[content]
+                partition[key].discard(content)
+            except KeyError:
+                pass
+    map(assign, JxFacts.iteritems())
+    for (key,string)in mapping.Order:
+        partition[key] = sorted(partition[key],lambda x,y:JxVal(dic,y)-JxVal(dic,x))
+    color = dict([(key,True) for (key,string) in mapping.Order])
+    buffer = dict([(key,"") for (key,string) in mapping.Order])
+    for (key,string) in mapping.Order:
+        for stuff in partition[key]:
+            color[key] = not(color[key])			
+            if color[key]:
+                buffer[key] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":stuff}
+            else:
+                buffer[key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":stuff}
+    html = ''
+    for (key,string) in mapping.Order:
+        if buffer[key]:
+            html += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (string,buffer[key])
+    return html
+

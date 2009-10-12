@@ -194,29 +194,6 @@ def JxFlushFactStats(CardState,CardId):
 		    	
 
 
-
-	
-def JxShowPartition(Type,k,Label):
-        global JxPartitionLists
-        """Returns an Html report of the seen stuff of Type/k/Label"""
-        Map = JxStatsMap[Type][k]
-	Color = dict([(Key,True) for (Key,String) in Map.Order + [('Other','Other')]])
-	Buffer = dict([(Key,"") for (Key,String) in Map.Order + [('Other','Other')]])
-	for (Key,String) in Map.Order + [('Other','Other')]:
-	        for (Stuff,Id) in JxPartitionLists[(Type,k,Key,Label)]:
-			Color[Key] = not(Color[Key])			
-			if Color[Key]:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-			else:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":Stuff,"Id":Id}
-	HtmlBuffer = u""
-	for (Key,Value) in Map.Order:
-                if Buffer[Key]:
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-        if Buffer['Other']:
-			HtmlBuffer += u"""<h2  align="center">Other</h2><p><font size=+2>%s</font></p>""" % Buffer['Other']
-	return HtmlBuffer
-
 def JxShowMissingPartition(Type,k):
         global JxPartitionLists
         """Returns an Html report of the seen stuff corresponding to Map and Query """
