@@ -43,20 +43,27 @@ def JxHelp():
         JxPreview.activateWindow()
         JxPreview.show()
 
-
+from database import display_stats, display_astats
+JxStatsMenu ={
+'JLPT':[('Kanji',display_stats,'K-JLPT'),('Words',display_stats,'W-JLPT')],
+'Frequency':[('Kanji',display_stats,'K-Freq'),('Kanji',display_astats,'K-AFreq'),('Word',display_stats,'W-Freq'),
+('Words',display_astats,'W-AFreq')],
+'Kanken':[('Kanji',display_stats,'Kanken')],
+'Jouyou':[('Kanji',display_stats,'Jouyou')]}
 def JxStats(Type):
-        JxHtml=""
-	for (Title,Func,Couple) in JxStatsMenu[Type]:
-	        if Func == HtmlReport:
-	                JxHtml += '<br/><center><b style="font-size:1.4em;">' + Title.upper() + "</b></center>"
-	                JxHtml += """<center>
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Known')>Known</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Seen')>Seen</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>&nbsp;&nbsp;
-	                <a href=py:JxShowOut('""" + Couple[0] + "'," + str(Couple[1])+ """)>Missing</a>
+
+        html=""
+	for (title,func,stats) in JxStatsMenu[Type]:
+	        if func == display_stats:
+	                html += '<br/><center><b style="font-size:1.4em;">' + title.upper() + "</b></center>"
+	                html += """<center>
+	                <a href=py:JxShowIn('""" + stats +  """,'Known')>Known</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stats +  """,'Seen')>Seen</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stats +  """,'InDeck')>Deck</a>&nbsp;&nbsp;
+	                <a href=py:JxShowOut('""" + stats + """)>Missing</a>
 	                </center><br/>"""
-                JxHtml += Func(Couple[0],Couple[1])
-        return JxHtml
+                html += func(stats)
+        return html
 
 
 
@@ -111,7 +118,8 @@ def onJxMenu():
     #ComputeCount() 
     JxProfile('ComputeCount')
     mw.help.showText(JxShowProfile())
-
+    from database import build_JxDeck
+    build_JxDeck()
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
@@ -146,8 +154,8 @@ def onJxGraphs():
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
     JxPreview.show()
-    from database import build_JxFacts
-    build_JxFacts()
+    from database import build_JxDeck
+    build_JxDeck()
 
 
 

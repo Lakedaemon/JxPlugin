@@ -229,6 +229,9 @@ def HtmlReport(Type,k):
         JxStatsHtml += "</table>"
         return JxStatsHtml
 
+
+
+
 def JxFormat(Float):
         if Float < 0.01:                            # 0.001 -> 0
                 return "0"
@@ -269,7 +272,7 @@ def JxWidgetAccumulatedReport(Type,k):
         JxStatsHtml += """
         <tr class="Border BackgroundHeader"><td><b>%s</b></td><td>%s%%</td><td>%s%%</td><td>%s%%</td><td class="BorderRight">%s%%</td></tr>
 		""" % ('Total',JxFormat(SumKnown*100.0/max(1,JxSumTotal)),JxFormat(SumSeen*100.0/max(1,JxSumTotal)),JxFormat(SumInDeck*100.0/max(1,JxSumTotal)),100)        
-        (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,'Other')]              
+          
 
         JxStatsHtml += "</table>"
         return JxStatsHtml       
