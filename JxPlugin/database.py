@@ -29,7 +29,7 @@ def build_JxModels():
             fields = JxModels[id][2]
         fields[ordinal] = fieldName
         return max(created,modified)
-    JxDeck['ModelsCached'] = max(map(assign,rows))
+    JxDeck['ModelsCached'] = max(map(assign,rows),0)
     
     # got to parse the model tags and maybee the model name
     for (modelName, tags, fields, hints) in JxModels.values():
@@ -129,7 +129,7 @@ def build_JxFacts():
             if boolean or type in GuessType(content):
                 metadata[type] = content 
         return max(created,modified)
-    JxDeck['FactsCached'] = max(map(assign,rows))      
+    JxDeck['FactsCached'] = max(map(assign,rows),0)      
     
     rows = mw.deck.s.all("""select factId, id, interval, reps, created, modified from cards""")      
     def assign((factId,id,interval,reps,created,modified)):
@@ -142,7 +142,7 @@ def build_JxFacts():
             status = -1# in deck
         JxFacts[factId][2][id]= (status, [])	 
         return max(created,modified)
-    JxDeck['CardsCached'] = max(map(assign, rows))
+    JxDeck['CardsCached'] = max(map(assign, rows),0)
      
     #midnightOffset = time.timezone - self.deck.utcOffset
     #self.endOfDay = time.mktime(now) - midnightOffset
@@ -158,7 +158,7 @@ def build_JxFacts():
             JxFacts[factId][2][id][1].append(day)
         return time
     rows = mw.deck.s.all(query)
-    JxDeck['HistoryCached'] = max(map(assign,rows))
+    JxDeck['HistoryCached'] = max(map(assign,rows),0)
     
     def assign((id,(fields,metadata,cards,state,history))):
         """sets the fact states and the fact history in the Jx database JxDeck"""
@@ -541,7 +541,7 @@ def build_JxDeck():
     build_JxStats()
     JxGraphs = {} 
     build_JxGraphs()
-    save_cache(JxDeck) 
+    #save_cache(JxDeck) 
     
 def JxVal(Dict,x):
     try:
