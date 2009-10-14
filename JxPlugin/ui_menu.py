@@ -84,8 +84,7 @@ from controls import Jx_Control_Tags
                 
   
 def onJxMenu():
-    from database import build_JxDeck, build_JxGraphs
-    build_JxDeck()
+    #build_JxDeck()
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
@@ -103,8 +102,7 @@ def JxBrowse():
 	JxPreview.show()
 
 def onJxGraphs():
-    from database import build_JxDeck, JxGraphs_into_json
-    build_JxDeck()
+    from database import JxGraphs_into_json
     JxGraphsJSon = JxGraphs_into_json()
     from html import Jx_Html_Graphs
     tasks = {'W-JLPT':MapJLPTTango, 'K-JLPT':MapJLPTKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
@@ -164,8 +162,17 @@ def init_JxPlugin():
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
 
+# let's overload the loadDeck function as there isn't any hook
+oldLoadDeck = mw.loadDeck
 
- 
+def newLoadDeck(deckPath, sync=True, interactive=True, uprecent=True,media=None):
+    code = oldLoadDeck(deckPath, sync, interactive, uprecent,media)
+    if code and mw.deck:
+        from database import build_JxDeck
+        build_JxDeck()
+    return code
+
+mw.loadDeck = newLoadDeck
 # The main JxPlugin Windows # funny, you cannot import stuff after these statements
 from controls import JxWindow
 from controls import JxPreview        

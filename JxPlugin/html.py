@@ -180,7 +180,7 @@ $(document).ready(function(){
 <div id="Settings" style="padding:3px;">
 	<h3><a href="#">About</a></h3>
 	<div>
-        The Japanese eXtended Plugin (V 1.14) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
+        The Japanese eXtended Plugin (V 1.15) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
                 <p>Written by Olivier Binda with patches from Robert Hebler.</p>
                 <div><a style="display:block;" align="center" href='http://www.pledgie.com/campaigns/5354'><img alt='Click here to lend your support to: JxPlugin and make a donation at www.pledgie.com !' src='http://www.pledgie.com/campaigns/5354.png?skin_name=chrome' border='0' /></a></div>
                 <p>

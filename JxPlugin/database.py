@@ -14,22 +14,23 @@ JxKnownThreshold = 21
 JxKnownCoefficient = 0.5
 
   
-    
+JxDeck = {}
 JxModels = {} 
 def build_JxModels():
     global JxModels
     """builds the JxModels dictionnary, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
-    query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name from models,fieldModels where models.id = fieldModels.modelId"""
+    query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,created,modified from models,fieldModels where models.id = fieldModels.modelId"""
     rows = mw.deck.s.all(query)
-    def assign((id, name, tags, ordinal, fieldName)):
+    def assign((id, name, tags, ordinal, fieldName, created,modified)):
         try:
             fields = JxModels[id][2]
         except:
             JxModels[id] = (name, tags, {}, {})
             fields = JxModels[id][2]
         fields[ordinal] = fieldName
-    map(assign,rows)    
-
+        return max(created,modified)
+    JxDeck['ModelsCached'] = max(map(assign,rows))
+    
     # got to parse the model tags and maybee the model name
     for (modelName, tags, fields, hints) in JxModels.values():
         types = set()
@@ -73,11 +74,14 @@ def build_JxModels():
                                 else:
                                     hints[type] = (name,ordinal,False)                                                                        
                                 break
-            
+    JxDeck['Models'] = JxModels
+
+from anki.utils import stripHTML           
 JxFacts = {}
 def build_JxFacts():
     global JxModels, JxFacts
     """builds JxFacts, the Jxplugin counterparts (with metadata) of the sqllite Facts, Cards, Fields and review history tables"""
+    rows = mw.deck.s.all("""select factId,value from fields order by ordinal""")
     def assign((id,value)):
         """basically does factsDB[factId].update(ordinal=value)"""
         try:
@@ -86,11 +90,10 @@ def build_JxFacts():
             JxFacts[id] = ({},{},{},0,[])
             fields = JxFacts[id][0]
         fields[len(fields)] = value# this is coded this way because in the anki database ordinal fields in fieldModels and fields aren't necessarily equals...
-    rows = mw.deck.s.all("""select factId,value from fields order by ordinal""")
     map(assign,rows)
 
-    rows = mw.deck.s.all("""select id,tags,modelId from facts""") 
-    for (id,tags,modelId) in rows:
+    rows = mw.deck.s.all("""select id,tags,modelId, created, modified from facts""") 
+    def assign((id,tags,modelId, created, modified)):
         types = set()
         test = set(tags.split(" "))
         for (key,list) in JxType:
@@ -122,11 +125,14 @@ def build_JxFacts():
         fields = JxFacts[id][0]
         metadata = JxFacts[id][1]
         for (type,(name,ordinal,boolean)) in hints.iteritems():
-            content = fields[ordinal]
+            content = stripHTML(fields[ordinal])
             if boolean or type in GuessType(content):
-                metadata[type] = content                              
-    rows = mw.deck.s.all("""select factId, id, interval, reps from cards""")      
-    def assign((factId,id,interval,reps)):
+                metadata[type] = content 
+        return max(created,modified)
+    JxDeck['FactsCached'] = max(map(assign,rows))      
+    
+    rows = mw.deck.s.all("""select factId, id, interval, reps, created, modified from cards""")      
+    def assign((factId,id,interval,reps,created,modified)):
         """sets the cards states in the Jx database JxDeck"""
         if interval > JxKnownThreshold and reps:
             status = 1# known
@@ -135,22 +141,25 @@ def build_JxFacts():
         else:
             status = -1# in deck
         JxFacts[factId][2][id]= (status, [])	 
-    map(assign, rows)
+        return max(created,modified)
+    JxDeck['CardsCached'] = max(map(assign, rows))
      
     #midnightOffset = time.timezone - self.deck.utcOffset
     #self.endOfDay = time.mktime(now) - midnightOffset
     #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
-    
+
+    query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time 
+	from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
     def assign((factId,id,interval,nextInterval,ease,time)):
         """sets the cards status changes in the Jx database JxDeck"""
         if (interval <= JxKnownThreshold  and nextInterval > JxKnownThreshold ) or (interval > JxKnownThreshold  and ease == 1): 
             #Card Status Change
             day = int(time / 86400.0)
-            JxFacts[factId][2][id][1].append(day)	
-    query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time 
-	from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
+            JxFacts[factId][2][id][1].append(day)
+        return time
     rows = mw.deck.s.all(query)
-    map(assign,rows)
+    JxDeck['HistoryCached'] = max(map(assign,rows))
+    
     def assign((id,(fields,metadata,cards,state,history))):
         """sets the fact states and the fact history in the Jx database JxDeck"""
         list = [status for (status,changes) in cards.values() if status>=0]
@@ -191,6 +200,7 @@ def build_JxFacts():
             
         JxFacts[id] = (fields, metadata, cards, status, history)	        
     map(assign, JxFacts.iteritems())        
+    JxDeck['facts'] = JxFacts
 
 JxGraphs = {}
 def build_JxGraphs():
@@ -283,7 +293,8 @@ def build_JxGraphs():
                             else:
                                 stateArray[day] = -1  
                         boolean = not(boolean)
-                map(assign,list)    
+                map(assign,list) 
+    JxDeck['Graphs'] = JxGraphs
                 
 import time
 def JxGraphs_into_json():
@@ -380,7 +391,8 @@ def build_JxStats():
                     except KeyError:
                         JxStats[(name,'Total',value)] = 1                
                 map(count,mapping.Dict.values())
-
+    JxDeck['Stats'] = JxStats
+    
 def get_stat(key):
     try:
         return JxStats[key]
@@ -529,7 +541,6 @@ def build_JxDeck():
     build_JxStats()
     JxGraphs = {} 
     build_JxGraphs()
-    JxDeck = {'JxModels':JxModels,'JxFacts':JxFacts,'JxStats':JxStats,'JxGraph':JxGraphs}
     save_cache(JxDeck) 
     
 def JxVal(Dict,x):

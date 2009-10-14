@@ -19,49 +19,7 @@ from cache import load_cache, save_cache
 #
 ######################################################################
         
-JxStatsArray = {}
-JxPartitionLists = {}
-def ComputeCount(): 
-        global JxStatsArray,JxPartitionLists,NoType
-        Rows = mw.deck.s.all("""select cards.factId,cards.id,cards.reps,cards.Interval from cards order by cards.factId""")  
-        # we can compute known/seen/in deck/total stats for each value of each map depending of the type
-        NoType = 0 # known/seen/in deck
-        CardState = []
-        for (Type,List) in JxStatsMap.iteritems():
-                for (k, Map) in enumerate(List):
-                        for (Key,String) in Map.Order+[('Other','Other')]:
-                                if k != 1:
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,len([Item for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-                                elif Type =='Word':
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Word_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key]))
-                                else:
-                                        JxStatsArray[(Type,k,Key)] = (0,0,0,sum([Jx_Kanji_Occurences[Item] for (Item,Value) in Map.Dict.iteritems() if Value == Key])) 
-                                for Label in ['Known','Seen','InDeck']:
-                                        JxPartitionLists[(Type,k,Key,Label)] = []
-        Length = len(Rows)
-        Index = 0
-        while True:
-                (FactId,CardId,CardRep,Interval) = Rows[Index]
-                # set the card's status                       
-                if Interval > 21 and CardRep:
-                        CardState.append(0)
-                elif CardRep:
-                        CardState.append(1)
-                else:
-                        CardState.append(2)
-                Index += 1
-                if Index == Length: 
-                        # we have finished parsing the Entries.Flush the last Fact and break
-                        JxFlushFactStats(CardState,CardId)
-                        break
-                        # we have finished parsing the Entries, flush the Status change
-                elif FactId == Rows[Index][0]:
-                        # Same Fact : Though it does nothing, we put this here for speed purposes because it happens a lot.
-                        pass
-                else:                        
-                        # Fact change
-                        JxFlushFactStats(CardState,CardId)
-                        CardState = []
+
 
 ###############################################################################
 def compute_count(): 
@@ -140,78 +98,13 @@ def JxVal(Dict,x):
                 return -1
   
         
-def JxFlushFactStats(CardState,CardId):
-        """Flush the fact stats"""
-        global JxStatsArray,JxPartitionLists,JxStatsMap, NoType
-        try:# get the card type and the number of shared cardsids by the fact
-                (CardInfo,CardsNumber) = CardId2Types[CardId]
-                CardWeight = 1.0/max(1,len(CardsNumber))
-                for (Type,Name,Content) in CardInfo:
-                        for (k, Map) in enumerate(JxStatsMap[Type]):
-                                try:
-                                        Key = Map.Value(Content)
-                                except KeyError:
-                                        Key = 'Other' 
-                                if k != 1:
-                                #if Map.To != 'Occurences':    #something is wrong there, why do I have to comment that ? 
-                                        Change = CardWeight
-                                elif Type == "Word":
-                                        #elif Map.From == 'Tango':
-                                        try:
-                                                Change = Jx_Word_Occurences[Content] * CardWeight
-                                        except KeyError:
-                                                Change = 0
-                                else:
-                                        try:
-                                                Change = Jx_Kanji_Occurences[Content] * CardWeight
-                                        except KeyError:
-                                                Change = 0 
-                                # we have to update the stats of each type
-                                (Known,Seen,InDeck,Total) = JxStatsArray[(Type,k,Key)] 
-                                (OldKnown,OldSeen,OldInDeck) = (Known,Seen,InDeck)
-############################################################################################################# upgrade this part to support "over-optimist", "optimist", "realist", "pessimist" modes                                        
-                                #now, we got to flush the fact. Let's go for the realist model first
-                                for State in CardState:
-                                        InDeck += Change
-                                        if State < 2:
-                                                Seen += Change
-                                        if State == 0:
-                                                Known += Change
-                                # save the updated list                        #### this is probably a bit slow
-                                JxStatsArray[(Type,k,Key)] = (Known,Seen,InDeck,Total)
-                                if (Known-OldKnown) * 2 >= InDeck-OldInDeck: #Majority
-                                        JxPartitionLists[(Type,k,Key,'Known')].append((Content,CardId))
-                                elif (Known-OldKnown + Seen - OldSeen) > 0: # At least once
-                                        JxPartitionLists[(Type,k,Key,'Seen')].append((Content,CardId))
-                                else:
-                                        JxPartitionLists[(Type,k,Key,'InDeck')].append((Content,CardId))
-                                        
-##############################################################################################################     
-        except KeyError: # this fact has no type
-                NoType +=1
+
          
 
 		    	
 
 
-def JxShowMissingPartition(Type,k):
-        global JxPartitionLists
-        """Returns an Html report of the seen stuff corresponding to Map and Query """
-        Map = JxStatsMap[Type][k]
-	Color = dict([(Key,True) for (Key,String) in Map.Order])
-	Buffer = dict([(Key,"") for (Key,String) in Map.Order])
-	for (Key,String) in Map.Order:
-	        for Stuff in JxPartitionLists[(Type,k,Key,'Missing')]:
-			Color[Key] = not(Color[Key])			
-			if Color[Key]:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:black;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
-			else:
-				Buffer[Key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxDoNothing(u'%(Stuff)s')">%(Stuff)s</a>""" % {"Stuff":Stuff}
-	HtmlBuffer = u""
-	for (Key,Value) in Map.Order:
-                if Buffer[Key]:
-			HtmlBuffer += u"""<h2  align="center">%s</h2><p><font size=+2>%s</font></p>""" % (Value,Buffer[Key])
-	return HtmlBuffer
+
      
 def JxDoNothing(Stuff):
 	pass

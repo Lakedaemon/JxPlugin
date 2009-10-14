@@ -37,7 +37,7 @@ def JxIntReplace(Match):
         elif Char=="5": return"Five"
         elif Char=="6": return"Six"
         elif Char=="7": return"Seven"
-        elif Char=="8": return"Height"
+        elif Char=="8": return"Eight"
         elif Char=="9": return"Nine"
         
 def JxInt2Name(Int):
@@ -177,7 +177,8 @@ def JxMagicalGuess(Card):
         else:
                 return JxParseModelTags(Card)
                 # Tex-Like programmation, to avoid nested ifs
-                
+from anki.utils import stripHTML
+
 def JxAffectFields(Card,Types):
         # we now try to affect relevant fields for each type (first try fields with the name similar to the type)
         List=[]
@@ -185,7 +186,7 @@ def JxAffectFields(Card,Types):
                 if Type in Types:
                         for Field in Card.fact.model.fieldModels:
                                 if Field.name in TypeList:
-                                        List.append((Type,Field.name,Card.fact[Field.name])) 
+                                        List.append((Type,Field.name,stripHTML(Card.fact[Field.name]))) 
                                         break
 
         if len(List)<len(Types):
@@ -201,7 +202,7 @@ def JxAffectFields(Card,Types):
                         elif Type in Types:
                                 for Field in Card.fact.model.fieldModels:
                                         if Field.name == u"Expression":
-                                                TempList.append((Type,Field.name,Card.fact[Field.name])) 
+                                                TempList.append((Type,Field.name,stripHTML(Card.fact[Field.name]))) 
                                                 break 
                 List = TempList
         if len(List)<len(Types):
@@ -220,7 +221,7 @@ def JxFindTypeAndField(Card,Types):
                 if Type in Types:
                         for Field in Card.fact.model.fieldModels:
                                 if Field.name in TypeList:
-                                        List.append((Type,Field.name,Card.fact[Field.name]))
+                                        List.append((Type,Field.name,stripHTML(Card.fact[Field.name])))
                                         break
                                              
         if len(List)<len(Types):
@@ -235,8 +236,9 @@ def JxFindTypeAndField(Card,Types):
                                 TempList.append(List.pop(0))
                         elif Type in Types:
                                 for Field in Card.fact.model.fieldModels:
-                                        if Field.name == u"Expression" and Type in GuessType(Card.fact[u"Expression"]):
-                                                TempList.append((Type,Field.name,Card.fact[Field.name])) 
+                                        Content=stripHTML(Card.fact[u"Expression"])
+                                        if Field.name == u"Expression" and Type in GuessType(Content):
+                                                TempList.append((Type,Field.name,Content)) 
                                                 break 
                 List=TempList
                 
@@ -371,13 +373,13 @@ def JxParseForJapaneseCharacters(Card):
 JxAbbrev = {u'Kanji':u'K',u'Word':u'W',u'Sentence':u'S',u'Grammar':u'G'}
 
 JxFieldsDoc = [
-(u'F:Types',u'displays a list of triplets (Type,Field,Content) of possible Types for the Fact of this card, associated to the relevant Field, that holds Content'),
-(u'K',u'displays the Kanji of the Card, if it has a Kanji fact'), 
-(u'W',u'displays the (guessed) Word of the Card, if it has a Word fact'),
-(u'S',u'displays the (guessed) Sentence of the Card, if it has a Sentence fact'),
-(u'G',u'displays the Grammar point of the Card, if it has a Gramar fact'),
-(u'F',u'displays the content of the relevant field of the Fact, if it has one guessed type'),
-(u'<Field>',u'displays the content of the <Field> of the Fact')]
+('F:Types','displays a list of triplets (Type,Field,Content) of possible Types for the Fact of this card, associated to the relevant Field, that holds Content'),
+('K','displays the Kanji of the Card, if it has a Kanji fact'), 
+('W','displays the (guessed) Word of the Card, if it has a Word fact'),
+('S','displays the (guessed) Sentence of the Card, if it has a Sentence fact'),
+('G','displays the Grammar point of the Card, if it has a Grammar fact'),
+('F','displays the content of the relevant field of the Fact, if it has one guessed type'),
+('<Field>','displays the content of the <Field> of the Fact')]
 def JxDoc(Field,Code,DocString):
         """adds DocString as documentation for ${Field}"""
         pass
@@ -389,12 +391,12 @@ def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
     
-    JxProfile("Start")
+
     
     # Guess the type(s) and the relevant content(s) of the Fact
     JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
 
-    JxProfile("Guess")
+
     
     # Get and translate the new CardModel Template
     JxPrefix = u''
@@ -408,7 +410,7 @@ def append_JxPlugin(Answer,Card):
             except KeyError: 
                     return Answer
                     
-    JxProfile("Get Template")
+
 
     
     # Then create a dictionnary for all data replacement strings...
