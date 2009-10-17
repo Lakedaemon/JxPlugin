@@ -11,34 +11,37 @@ from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
 from loaddata import *
 
 JxKnownThreshold = 21 
-JxKnownCoefficient = 0.5
+JxKnownCoefficient = 0.70
 
   
 JxDeck = {}
 def build_JxDeck():
     global JxDeck, JxStats, JxGraphs
     JxDeck = load_cache() 
+    try:
+        JxStats = JxDeck['Stats']
+    except KeyError:
+        JxStats = {} 
+    try:
+        JxGraphs = JxDeck['Graphs']
+    except KeyError:    
+        JxGraphs = {} 
+        
+        
     modelsCached = set_models()
     factsCached = set_fields()
     # I'll have to downdate stats/graphs there 
     set_types()
     # I'll have to update stats/graphs there
-    cardsCached = set_states()
     historyCached = set_history()
+    cardsCached = set_states()
 
 
 
+    JxDeck['Facts'] = JxFacts
     
-    try:
-        JxStats = JxDeck['Stats']
-    except KeyError:
-        JxStats = {} 
     build_JxStats()
-    try:
-        JxGraphs = JxDeck['Graphs']
-    except KeyError:    
-        JxGraphs = {} 
-    build_JxGraphs()
+    #build_JxGraphs()
     JxDeck['ModelsCached'] = modelsCached
     JxDeck['FactsCached'] = factsCached
     JxDeck['CardsCached'] = cardsCached
@@ -219,7 +222,8 @@ def set_states():
         else:
             status = -1# in deck
         try:
-            JxFacts[factId][2][id][0]= status	 
+            (state, changes) = JxFacts[factId][2][id]
+            JxFacts[factId][2][id]= (status, changes)	 
         except KeyError:
             JxFacts[factId][2][id]= (status, [])	             
         return cached
@@ -257,7 +261,7 @@ def set_history():
         if (interval <= JxKnownThreshold  and nextInterval > JxKnownThreshold ) or (interval > JxKnownThreshold  and ease == 1): 
             #Card Status Change
             day = int(time / 86400.0)
-            JxFacts[factId][2][id][1].append(day)
+            #JxFacts[factId][2][id][1].append(day)
             try: 
                 cardsHistory = history[factId]
             except KeyError:
@@ -269,20 +273,21 @@ def set_history():
                 cardsHistory[id] = [day]
         return time
     historyCached= max(map(assign,mw.deck.s.all(query)) + [historyCached])
-    
+
     deltaHistory = {}
-    def compute((factId,dic)):
+    def compute((factId,cardsHistory)):
+        global debug
         stateArray = {}
         fact = JxFacts[factId]
         cards = fact[2]
-        factHistory = fact[4]
-        threshold = len(cards) * JxKnownCoefficient
+        #factHistory = fact[4]
+        threshold = len(history[factId]) * JxKnownCoefficient
         deltaHistory[factId] = []
-        for (id,changes) in dic.iteritems():
-            try: 
-                boolean = (cards[id][0]  != 1)
-            except KeyError:
-                boolean = True
+        for (id,changes) in cardsHistory.iteritems():
+            #try: 
+                #boolean = (cards[id][0]  != 1)
+            #except KeyError:
+            boolean = True
             for day in changes:
                 try:
                     if boolean:
@@ -296,17 +301,19 @@ def set_history():
                         stateArray[day] = -1  
                 boolean = not(boolean)
                 
-            days = stateArray.keys()
-            days.sort()
-            boolean = (fact[3] != 1)
-            cumul = len([1 for (state, changes) in cards.values() if state ==1])
-            for day in days:
-                cumul += stateArray[day]
-                if (boolean and cumul >=threshold ) or (not(boolean) and cumul < threshold): #xor
-                    factHistory.append(day)
-                    deltaHistory[factId].append(day)
-                    boolean = not(boolean)   
-                    
+        days = stateArray.keys()
+        days.sort()
+        #boolean = (fact[3] != 1)
+        boolean=True
+        #cumul = len([1 for (state, changes) in cards.values() if state ==1])
+        cumul = 0
+        for day in days:
+            cumul += stateArray[day]
+            if (boolean and cumul >=threshold ) or (not(boolean) and cumul < threshold): #xor
+                #factHistory.append(day)
+                deltaHistory[factId].append(day)
+                boolean = not(boolean)   
+                
     map(compute, history.iteritems())
     update_graphs(deltaHistory)
         
@@ -314,13 +321,14 @@ def set_history():
 
 JxGraphs = {}
 def update_graphs(dic, add=True):
-    for type in ['Word', 'Kanji']:
+    for type in ['Word','Kanji']:
         def select((id,changelist)):
             try:
                 return (JxFacts[id][1][type], changelist)
             except KeyError:
                 return None
         list = filter(lambda x: x != None, map(select,dic.iteritems()))
+
         tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
         
         for (name,mapping) in tasks[type].iteritems():  
