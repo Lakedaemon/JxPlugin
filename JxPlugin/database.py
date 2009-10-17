@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 from ankiqt import mw
 
-from cache import save_cache
+from cache import load_cache,save_cache
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
 from loaddata import *
 
@@ -15,24 +15,65 @@ JxKnownCoefficient = 0.5
 
   
 JxDeck = {}
-JxModels = {} 
-def build_JxModels():
-    global JxModels
-    """builds the JxModels dictionnary, the Jxplugin counterparts (with metadata) of the sqllite model & fieldmodel tables"""
-    query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,created,modified from models,fieldModels where models.id = fieldModels.modelId"""
-    rows = mw.deck.s.all(query)
-    def assign((id, name, tags, ordinal, fieldName, created,modified)):
-        try:
-            fields = JxModels[id][2]
-        except:
-            JxModels[id] = (name, tags, {}, {})
-            fields = JxModels[id][2]
-        fields[ordinal] = fieldName
-        return max(created,modified)
-    JxDeck['ModelsCached'] = max(map(assign,rows),0)
+def build_JxDeck():
+    global JxDeck, JxStats, JxGraphs
+    JxDeck = load_cache() 
+    modelsCached = set_models()
+    factsCached = set_fields()
+    # I'll have to downdate stats/graphs there 
+    set_types()
+    # I'll have to update stats/graphs there
+    cardsCached = set_states()
+    historyCached = set_history()
+
+
+
     
-    # got to parse the model tags and maybee the model name
-    for (modelName, tags, fields, hints) in JxModels.values():
+    try:
+        JxStats = JxDeck['Stats']
+    except KeyError:
+        JxStats = {} 
+    build_JxStats()
+    try:
+        JxGraphs = JxDeck['Graphs']
+    except KeyError:    
+        JxGraphs = {} 
+    build_JxGraphs()
+    JxDeck['ModelsCached'] = modelsCached
+    JxDeck['FactsCached'] = factsCached
+    JxDeck['CardsCached'] = cardsCached
+    JxDeck['HistoryCached'] = historyCached
+    save_cache(JxDeck) 
+ 
+
+JxModels = {} 
+def set_models():
+    """initializes JxModels and sets the models and hints"""
+    global JxModels
+    # first get the workload
+    try:
+        JxModels = JxDeck['Models']
+        modelsCached = JxDeck['ModelsCached'] 
+        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, max(created,modified) from models,fieldModels where models.id = fieldModels.modelId and max( created,modified)>%s""" % modelsCached 
+    except KeyError: 
+        JxModels = {}
+        modelsCached  = 0
+        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,max(created,modified) from models,fieldModels where models.id = fieldModels.modelId"""
+
+    # then set the JxModels name, tags, fieldsnames and ordinals     
+    dic = {}
+    def assign((id, name, tags, ordinal, fieldName, cached)):
+        try: 
+            model = dic[id]
+        except KeyError:
+            dic[id] = (name,tags,{},{})
+            model = dic[id]
+        model[2][ordinal]= fieldName
+        return cached
+    modelsCached = max(map(assign,mw.deck.s.all(query))+[modelsCached])
+    
+    # then compute types and hints
+    def compute((modelName, tags, fields, hints)):
         types = set()
         test = set(tags.split(" ")) # parses the model tags first
         for (key,list) in JxType:
@@ -74,26 +115,56 @@ def build_JxModels():
                                 else:
                                     hints[type] = (name,ordinal,False)                                                                        
                                 break
+    map(compute, dic.values())
+    
+    # overwrite the models
+    def copy((id, model)): 
+        JxModels[id] = model
+    map(copy, dic.iteritems()) 
+    
+    # save JxModels in the cache
     JxDeck['Models'] = JxModels
-
+    return modelsCached
+    
 from anki.utils import stripHTML           
 JxFacts = {}
-def build_JxFacts():
-    global JxModels, JxFacts
-    """builds JxFacts, the Jxplugin counterparts (with metadata) of the sqllite Facts, Cards, Fields and review history tables"""
-    rows = mw.deck.s.all("""select factId,value from fields order by ordinal""")
-    def assign((id,value)):
+def set_fields():
+    """initializes Jxfacts and sets the fields"""
+    global JxFacts
+    try:
+        JxFacts = JxDeck['Facts']
+        factsCached = JxDeck['FactsCached']
+        query = """select factId,value, max(created,modified) from fields, facts where fields.factId = facts.id and max(created,modified)>%s order by ordinal""" %  factsCached
+    except KeyError:
+        JxFacts = {}
+        factsCached = 0
+        query = """select factId,value, max(created,modified) from fields, facts where fields.factId = facts.id order by ordinal"""
+    
+    dic = {}
+    def assign((id,value,cached)):
         """basically does factsDB[factId].update(ordinal=value)"""
         try:
-            fields = JxFacts[id][0]
+            fields = dic[id]
         except KeyError:
-            JxFacts[id] = ({},{},{},0,[])
-            fields = JxFacts[id][0]
+            dic[id] = {}
+            fields = dic[id]
         fields[len(fields)] = value# this is coded this way because in the anki database ordinal fields in fieldModels and fields aren't necessarily equals...
-    map(assign,rows)
-
-    rows = mw.deck.s.all("""select id,tags,modelId, created, modified from facts""") 
-    def assign((id,tags,modelId, created, modified)):
+        return cached
+    factsCached = max(map(assign,mw.deck.s.all(query))+[factsCached])
+    
+    # overwrite the fields
+    def copy((id,fields)):
+        JxFacts[id] = (fields,{},{},0,[])
+    map(copy, dic.iteritems()) # I shouldn't overwrite the other fields...for JxStats/JxGraphs update purpose
+    return factsCached
+  
+def set_types():
+    try:
+        query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (max(facts.created,facts.modified)>%s or max(models.created,models.modified)>%s)""" %  (JxDeck['FactsCached'],JxDeck['ModelsCached'])  
+    except KeyError:
+        query = """select id, tags, modelId from facts"""
+        
+    def compute((id,tags,modelId)):
         types = set()
         test = set(tags.split(" "))
         for (key,list) in JxType:
@@ -107,10 +178,10 @@ def build_JxFacts():
             # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
             for (type,typeList) in JxType:
                 if type in types:
-                        for (ordinal,name) in modelFields:
-                                if name in typeList:
-                                        hint[type] = (name,ordinal,True) 
-                                        break
+                    for (ordinal,name) in modelFields:
+                            if name in typeList:
+                                    hint[type] = (name,ordinal,True) 
+                                    break
             if len(hints) < len(types):
                 # for the still missing fields, we try to find an "Expression" field next and update the List
                 for (type,typeList) in JxType:
@@ -123,16 +194,23 @@ def build_JxFacts():
                                     hints[type] = (name,ordinal,False)                                                                        
                                 break          
         fields = JxFacts[id][0]
-        metadata = JxFacts[id][1]
+        metadata = {}
         for (type,(name,ordinal,boolean)) in hints.iteritems():
             content = stripHTML(fields[ordinal])
             if boolean or type in GuessType(content):
                 metadata[type] = content 
-        return max(created,modified)
-    JxDeck['FactsCached'] = max(map(assign,rows),0)      
+        JxFacts[id] = (fields,metadata,{},0,[]) #overwrite the types ... bad for stats/graphs....
+    map(compute,mw.deck.s.all(query))
     
-    rows = mw.deck.s.all("""select factId, id, interval, reps, created, modified from cards""")      
-    def assign((factId,id,interval,reps,created,modified)):
+def set_states():    
+    try:
+        cardsCached = JxDeck['CardsCached']
+        query = """select cards.factId, cards.id, cards.interval, cards.reps, max(cards.created, cards.modified) from cards where max(cards.created,cards.modified)>%s""" % cardsCached
+    except KeyError:
+        cardsCached = 0
+        query = """select factId, id, interval, reps, max(created, modified) from cards"""      
+     
+    def assign((factId,id,interval,reps,cached)):
         """sets the cards states in the Jx database JxDeck"""
         if interval > JxKnownThreshold and reps:
             status = 1# known
@@ -140,67 +218,190 @@ def build_JxFacts():
             status = 0# seen
         else:
             status = -1# in deck
-        JxFacts[factId][2][id]= (status, [])	 
-        return max(created,modified)
-    JxDeck['CardsCached'] = max(map(assign, rows),0)
-     
+        try:
+            JxFacts[factId][2][id][0]= status	 
+        except KeyError:
+            JxFacts[factId][2][id]= (status, [])	             
+        return cached
+    cardscached = max(map(assign, mw.deck.s.all(query) ) + [cardsCached])
+
+    # compute the fact statuses
+    def compute((id,(fields,types,cards,state,history))):
+        list = [status for (status,changes) in cards.values() if status>=0]
+        threshold = len(cards) * JxKnownCoefficient
+        if list and sum(list)>= threshold:
+            status = 1# known
+        elif list:
+            status = 0# seen
+        else:
+            status = -1# in deck
+        JxFacts[id] = (fields,types,cards,status,history)
+    map(compute, JxFacts.iteritems())
+    return cardsCached
+    
     #midnightOffset = time.timezone - self.deck.utcOffset
     #self.endOfDay = time.mktime(now) - midnightOffset
     #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
 
-    query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time 
-	from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
+def set_history():    
+    try:
+        historyCached = JxDeck['HistoryCached']
+        query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%s  order by reviewHistory.cardId, reviewHistory.time""" %  historyCached
+    except KeyError:
+        historyCached = 0
+        query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
+        
+    history = {}    
     def assign((factId,id,interval,nextInterval,ease,time)):
         """sets the cards status changes in the Jx database JxDeck"""
         if (interval <= JxKnownThreshold  and nextInterval > JxKnownThreshold ) or (interval > JxKnownThreshold  and ease == 1): 
             #Card Status Change
             day = int(time / 86400.0)
             JxFacts[factId][2][id][1].append(day)
+            try: 
+                cardsHistory = history[factId]
+            except KeyError:
+                history[factId] = {}
+                cardsHistory = history[factId]
+            try:
+                cardsHistory[id].append(day)
+            except KeyError:
+                cardsHistory[id] = [day]
         return time
-    rows = mw.deck.s.all(query)
-    JxDeck['HistoryCached'] = max(map(assign,rows),0)
+    historyCached= max(map(assign,mw.deck.s.all(query)) + [historyCached])
     
-    def assign((id,(fields,metadata,cards,state,history))):
-        """sets the fact states and the fact history in the Jx database JxDeck"""
-        list = [status for (status,changes) in cards.values() if status>=0]
+    deltaHistory = {}
+    def compute((factId,dic)):
+        stateArray = {}
+        fact = JxFacts[factId]
+        cards = fact[2]
+        factHistory = fact[4]
         threshold = len(cards) * JxKnownCoefficient
-        if list and sum(list)>= threshold:
-            status = 1# in deck
-        elif list:
-            status = 0# seen
-        else:
-            status = -1# in deck
-            
-        if status >=0:    
-            stateArray = {}
-            for (status,changes) in cards.values():
+        deltaHistory[factId] = []
+        for (id,changes) in dic.iteritems():
+            try: 
+                boolean = (cards[id][0]  != 1)
+            except KeyError:
                 boolean = True
-                for day in changes:
-                    try:
-                        if boolean:
-                            stateArray[day] += 1
-                        else:
-                            stateArray[day] -= 1 
-                    except KeyError:
-                        if boolean:
-                            stateArray[day] = 1
-                        else:
-                            stateArray[day] = -1  
-                    boolean = not(boolean)
+            for day in changes:
+                try:
+                    if boolean:
+                        stateArray[day] += 1
+                    else:
+                        stateArray[day] -= 1 
+                except KeyError:
+                    if boolean:
+                        stateArray[day] = 1
+                    else:
+                        stateArray[day] = -1  
+                boolean = not(boolean)
                 
             days = stateArray.keys()
             days.sort()
-            boolean = True
-            cumul=0
+            boolean = (fact[3] != 1)
+            cumul = len([1 for (state, changes) in cards.values() if state ==1])
             for day in days:
                 cumul += stateArray[day]
-                if (boolean and sum >=threshold ) or (not(boolean) and cumul < threshold): #xor
-                    history.append(day)
-                    boolean = not(boolean)
-            
-        JxFacts[id] = (fields, metadata, cards, status, history)	        
-    map(assign, JxFacts.iteritems())        
-    JxDeck['facts'] = JxFacts
+                if (boolean and cumul >=threshold ) or (not(boolean) and cumul < threshold): #xor
+                    factHistory.append(day)
+                    deltaHistory[factId].append(day)
+                    boolean = not(boolean)   
+                    
+    map(compute, history.iteritems())
+    update_graphs(deltaHistory)
+        
+    return historyCached
+
+JxGraphs = {}
+def update_graphs(dic, add=True):
+    for type in ['Word', 'Kanji']:
+        def select((id,changelist)):
+            try:
+                return (JxFacts[id][1][type], changelist)
+            except KeyError:
+                return None
+        list = filter(lambda x: x != None, map(select,dic.iteritems()))
+        tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+        
+        for (name,mapping) in tasks[type].iteritems():  
+            if  name == 'W-AFreq':
+                def assign_WAF((content,days)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Word_Occurences[content]
+                        try:
+                            stateArray = JxGraphs[(name,value)]
+                        except KeyError:
+                            JxGraphs[(name,value)] = {}
+                            stateArray = JxGraphs[(name,value)]
+                        boolean = True
+                        for day in days:
+                            try:
+                                if boolean:
+                                    stateArray[day] += increment
+                                else:
+                                    stateArray[day] -= increment 
+                            except KeyError:
+                                if boolean:
+                                    stateArray[day] = increment
+                                else:
+                                    stateArray[day] = -increment 
+                            boolean = not(boolean)  
+                    except KeyError:
+                        pass                     
+                map(assign_WAF,list)                    
+            elif name == 'K-AFreq':                
+                def assign_KAF((content,days)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Kanji_Occurences[content]
+                        try:
+                            stateArray = JxGraphs[(name,value)]
+                        except KeyError:
+                            JxGraphs[(name,value)] = {}
+                            stateArray = JxGraphs[(name,value)]
+                        boolean = True
+                        for day in days:
+                            try:
+                                if boolean:
+                                    stateArray[day] += increment
+                                else:
+                                    stateArray[day] -= increment 
+                            except KeyError:
+                                if boolean:
+                                    stateArray[day] = increment
+                                else:
+                                    stateArray[day] = -increment 
+                            boolean = not(boolean)  
+                    except KeyError:
+                        pass   
+                map(assign_KAF,list)                            
+            else:               
+                def assign((content,days)):
+                    boolean = True
+                    try:
+                        value = mapping.Value(content)
+                    except KeyError:
+                        value = 'Other'
+                    try:
+                        stateArray = JxGraphs[(name,value)]
+                    except KeyError:
+                        JxGraphs[(name,value)] = {}
+                        stateArray = JxGraphs[(name,value)]
+                    for day in days:
+                        try:
+                            if boolean:
+                                stateArray[day] += 1
+                            else:
+                                stateArray[day] -= 1 
+                        except KeyError:
+                            if boolean:
+                                stateArray[day] = 1
+                            else:
+                                stateArray[day] = -1  
+                        boolean = not(boolean)
+                map(assign,list) 
+    JxDeck['Graphs'] = JxGraphs
 
 JxGraphs = {}
 def build_JxGraphs():
@@ -531,17 +732,7 @@ def JxFormat(Float):
     else:                                       # 4.00 -> 4          4.10 -> 4           4.1678 -> 4.17           15.28 -> 15.3
         return "%.3g" % Float    
         
-def build_JxDeck():
-    global JxModels, JxFacts, JxStats, JxGraphs
-    JxModels = {} 
-    build_JxModels()
-    JxFacts = {} 
-    build_JxFacts()
-    JxStats = {} 
-    build_JxStats()
-    JxGraphs = {} 
-    build_JxGraphs()
-    #save_cache(JxDeck) 
+
     
 def JxVal(Dict,x):
     try:
