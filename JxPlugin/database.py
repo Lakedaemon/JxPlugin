@@ -202,7 +202,7 @@ def set_types():
             content = stripHTML(fields[ordinal])
             if boolean or type in GuessType(content):
                 metadata[type] = content 
-        JxFacts[id] = (fields,metadata,{},0,[]) #overwrite the types ... bad for stats/graphs....
+        JxFacts[id] = [fields,metadata,{},0,[]] #overwrite the types ... bad for stats/graphs....
     map(compute,mw.deck.s.all(query))
     
 def set_states():    
@@ -216,18 +216,18 @@ def set_states():
     def assign((factId,id,interval,reps,cached)):
         """sets the cards states in the Jx database JxDeck"""
         if interval > JxKnownThreshold and reps:
-            status = 1# known
+            status = 1 # known
         elif reps:
-            status = 0# seen
+            status = 0 # seen
         else:
-            status = -1# in deck
+            status = -1 # in deck
         try:
             (state, changes) = JxFacts[factId][2][id]
-            JxFacts[factId][2][id]= (status, changes)	 
+            JxFacts[factId][2][id] = (status, changes)
         except KeyError:
-            JxFacts[factId][2][id]= (status, [])	             
+            JxFacts[factId][2][id] = (status, [])  
         return cached
-    cardscached = max(map(assign, mw.deck.s.all(query) ) + [cardsCached])
+    cardscached = max(map(assign, mw.deck.s.all(query)) + [cardsCached])
 
     # compute the fact statuses
     def compute((id,(fields,types,cards,state,history))):
@@ -246,6 +246,77 @@ def set_states():
     #midnightOffset = time.timezone - self.deck.utcOffset
     #self.endOfDay = time.mktime(now) - midnightOffset
     #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
+
+JxStats = {}      
+def set_stats():
+    global JxFacts, JxStats
+    for type in ['Word','Kanji']:
+        def select((fields,types,cards,state,changelist)):
+            try:
+                return (types[type], state)
+            except KeyError:
+                return None
+        list = filter(lambda x: x != None, map(select,JxFacts.values()))
+        
+        JxStatTasks = {'Word':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+        
+        for (name,mapping) in JxStatTasks[type].iteritems():           
+            if  name == 'W-AFreq':
+                def assign_WAF((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Word_Occurences[content]
+                        try:
+                            JxStats[(name,state,value)] += increment
+                        except KeyError:
+                            JxStats[(name,state,value)] = increment
+                    except KeyError:
+                        pass                         
+                map(assign_WAF,list)
+                def count_WAF((content,value)):
+                    zone = Word2Zone[content]
+                    try:
+                        JxStats[(name,'Total',zone)] += value
+                    except KeyError:
+                        JxStats[(name,'Total',zone)] = value                
+                map(count_WAF,Jx_Word_Occurences.iteritems())                    
+            elif name == 'K-AFreq':                
+                def assign_KAF((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                        increment = Jx_Kanji_Occurences[content]
+                        try:
+                            JxStats[(name,state,value)] += increment
+                        except KeyError:
+                            JxStats[(name,state,value)] = increment
+                    except KeyError:
+                        pass        
+                map(assign_KAF,list)                    
+                def count_KAF((content,value)):
+                    zone = Kanji2Zone[content]
+                    try:
+                        JxStats[(name,'Total',zone)] += value
+                    except KeyError:
+                        JxStats[(name,'Total',zone)] = value                
+                map(count_KAF,Jx_Kanji_Occurences.iteritems())                
+            else:               
+                def assign((content,state)):
+                    try:
+                        value = mapping.Value(content)
+                    except KeyError:
+                        value = 'Other'
+                    try:
+                        JxStats[(name,state,value)] += 1
+                    except KeyError:
+                        JxStats[(name,state,value)] = 1
+                map(assign,list)                  
+                def count(value):
+                    try:
+                        JxStats[(name,'Total',value)] += 1
+                    except KeyError:
+                        JxStats[(name,'Total',value)] = 1                
+                map(count,mapping.Dict.values())
+    JxDeck['Stats'] = JxStats
 
 def set_history():    
     try:
@@ -412,98 +483,7 @@ def update_graphs(dic, add=True):
     JxDeck['Graphs'] = JxGraphs
 
 JxGraphs = {}
-def build_JxGraphs():
-    global JxFacts, JxGraphs
-    for type in ['Word', 'Kanji']:
-        def select((fields,metadata,cards,state,changelist)):
-            if state <0:
-                return None
-            try:
-                return (metadata[type], changelist)
-            except KeyError:
-                return None
-        list = filter(lambda x: x != None, map(select,JxFacts.values()))
-        tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-        
-        for (name,mapping) in tasks[type].iteritems():  
-            if  name == 'W-AFreq':
-                def assign_WAF((content,days)):
-                    try:
-                        value = mapping.Value(content)
-                        increment = Jx_Word_Occurences[content]
-                        try:
-                            stateArray = JxGraphs[(name,value)]
-                        except KeyError:
-                            JxGraphs[(name,value)] = {}
-                            stateArray = JxGraphs[(name,value)]
-                        boolean = True
-                        for day in days:
-                            try:
-                                if boolean:
-                                    stateArray[day] += increment
-                                else:
-                                    stateArray[day] -= increment 
-                            except KeyError:
-                                if boolean:
-                                    stateArray[day] = increment
-                                else:
-                                    stateArray[day] = -increment 
-                            boolean = not(boolean)  
-                    except KeyError:
-                        pass                     
-                map(assign_WAF,list)                    
-            elif name == 'K-AFreq':                
-                def assign_KAF((content,days)):
-                    try:
-                        value = mapping.Value(content)
-                        increment = Jx_Kanji_Occurences[content]
-                        try:
-                            stateArray = JxGraphs[(name,value)]
-                        except KeyError:
-                            JxGraphs[(name,value)] = {}
-                            stateArray = JxGraphs[(name,value)]
-                        boolean = True
-                        for day in days:
-                            try:
-                                if boolean:
-                                    stateArray[day] += increment
-                                else:
-                                    stateArray[day] -= increment 
-                            except KeyError:
-                                if boolean:
-                                    stateArray[day] = increment
-                                else:
-                                    stateArray[day] = -increment 
-                            boolean = not(boolean)  
-                    except KeyError:
-                        pass   
-                map(assign_KAF,list)                            
-            else:               
-                def assign((content,days)):
-                    boolean = True
-                    try:
-                        value = mapping.Value(content)
-                    except KeyError:
-                        value = 'Other'
-                    try:
-                        stateArray = JxGraphs[(name,value)]
-                    except KeyError:
-                        JxGraphs[(name,value)] = {}
-                        stateArray = JxGraphs[(name,value)]
-                    for day in days:
-                        try:
-                            if boolean:
-                                stateArray[day] += 1
-                            else:
-                                stateArray[day] -= 1 
-                        except KeyError:
-                            if boolean:
-                                stateArray[day] = 1
-                            else:
-                                stateArray[day] = -1  
-                        boolean = not(boolean)
-                map(assign,list) 
-    JxDeck['Graphs'] = JxGraphs
+
                 
 import time
 def JxGraphs_into_json():
