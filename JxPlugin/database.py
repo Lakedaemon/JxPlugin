@@ -568,19 +568,15 @@ def get_ancient_stat(key):
     try:
         return JxSavedStats[key]
     except KeyError:
-        return None
+        return 0
 
-def get_report(number,key):
-    new = get_stat(key) 
-    ancient = get_ancient_stat(key) 
-    if ancient == None: 
-        return "%.0f" % number
+def get_report(new,ancient) :
+    if not(JxSavedStats) or new == ancient:
+        return "%.0f" % new
     elif ancient < new:
-        return """%.0f<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+%d</font></sup>""" % (number,new-ancient)
-    elif ancient == new:
-        return "%.0f" % number
+        return """%.0f<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+%d</font></sup>""" % (new,new-ancient)
     else:
-        return """%.0f<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-%d</font></sup>""" % (number,ancient-new)    
+        return """%.0f<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-%d</font></sup>""" % (new,ancient-new)    
 
 def JxVal(Dict,x):
     try:
@@ -614,6 +610,7 @@ def display_stats(stats):
 	    </tr>
 	""" % mapping.To
     (sumKnown, sumSeen, sumInDeck, sumTotal)=(0,0,0,0)
+    (AsumKnown, AsumSeen, AsumInDeck)=(0,0,0)
     for (key,value) in mapping.Order:
         known = get_stat((stats,1,key))
         seen = known + get_stat((stats,0,key))
@@ -622,10 +619,21 @@ def display_stats(stats):
         sumKnown += known
         sumSeen += seen
         sumInDeck += inDeck
-        sumTotal += total    
-        knownString = get_report(known, (stats,1,key))
-        seenString = get_report(seen, (stats,0,key))
-        inDeckString = get_report(inDeck, (stats,-1,key))        
+        sumTotal += total
+        if JxSavedStats:
+            Aknown = get_ancient_stat((stats,1,key))
+            Aseen = Aknown + get_ancient_stat((stats,0,key))
+            AinDeck = Aseen + get_ancient_stat((stats,-1,key))
+        else:
+            Aknown = known
+            Aseen = seen
+            AinDeck = inDeck              
+        AsumKnown += Aknown
+        AsumSeen += Aseen        
+        AsumInDeck += AinDeck       
+        knownString = get_report(known, Aknown)
+        seenString = get_report(seen, Aseen)
+        inDeckString = get_report(inDeck, AinDeck)
         html += """
         <tr class="Background">
 		    <td><b>%s</b></td>
@@ -635,22 +643,33 @@ def display_stats(stats):
 		    <td>%s</td>
 		    <td class="BorderRight">%.0f</td>
 		</tr>""" % (value, known*100.0/max(1,total), knownString, seenString, inDeckString, total)
+	sumKnownString = get_report(sumKnown, AsumKnown)
+    sumSeenString = get_report(sumSeen, AsumSeen)
+    sumInDeckString = get_report(sumInDeck, AsumInDeck)
     html += """
     <tr class="Border BackgroundHeader">
         <td><b>%s</b></td>
         <td><b style="font-size:small">%.0f%%</b></td>
-        <td>%.0f</td>
-        <td>%.0f</td>
-        <td>%.0f</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
         <td class="BorderRight">%.0f</td>
-    </tr>""" % ('Total',sumKnown*100.0/max(1,sumTotal),sumKnown,sumSeen,sumInDeck,sumTotal)     
+    </tr>""" % ('Total',sumKnown*100.0/max(1,sumTotal),sumKnownString,sumSeenString,sumInDeckString,sumTotal)     
     known = get_stat((stats,1,'Other'))
     seen = known + get_stat((stats,0,'Other'))
     inDeck = seen + get_stat((stats,-1,'Other'))
+    if JxSavedStats:
+        Aknown = get_ancient_stat((stats,1,'Other'))
+        Aseen = Aknown + get_ancient_stat((stats,0,'Other'))
+        AinDeck = Aseen + get_ancient_stat((stats,-1,'Other'))
+    else:
+        Aknown = known
+        Aseen = seen
+        AinDeck = inDeck         
     if (known,seen,inDeck) != (0,0,0):
-        knownString = get_report(known, (stats,1,'Other'))
-        seenString = get_report(seen, (stats,0,'Other'))
-        inDeckString = get_report(inDeck, (stats,-1,'Other'))     
+        knownString = get_report(known, Aknown)
+        seenString = get_report(seen, Aseen)
+        inDeckString = get_report(inDeck, AinDeck)  
         html += """
         <tr>
             <td style="border:0px solid black;"><b>%s</b></td>
@@ -743,10 +762,10 @@ def display_partition(stat,label):
     else:
         dic = Jx_Kanji_Occurences
         type = 'Kanji'
-    def assign((id,metadata)):
+    def assign((id,(state, cardsStates))):
         if state==label:
             try:
-                content = metadata[type]
+                content = JxTypes[id][type]
                 try:
                     key = mapping.Dict[content]
                 except KeyError:
@@ -754,7 +773,7 @@ def display_partition(stat,label):
                 partition[key].append((content,id))
             except KeyError:
                 pass
-    map(assign, JxTypes.iteritems())
+    map(assign, JxStates.iteritems())
 
 
     for (key,string) in mapping.Order+ [('Other','Other')]:
