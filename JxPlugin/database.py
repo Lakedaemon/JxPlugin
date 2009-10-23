@@ -205,7 +205,7 @@ def set_types():
     
 JxStates = {}
 def get_deltaStates():
-    global JxStates  
+    global JxStates
     try:
         JxStates = JxDeck['States']
         cardsCached = JxDeck['CardsCached']
@@ -306,7 +306,7 @@ def set_stats(List, add=True):
                             JxStats[(name,'Total',zone)] += value
                         except KeyError:
                             JxStats[(name,'Total',zone)] = value                
-                        map(count_WAF,Jx_Word_Occurences.iteritems())                    
+                    map(count_WAF,Jx_Word_Occurences.iteritems())                    
             elif name == 'K-AFreq':                
                 def assign_KAF((content,state)):
                     try:
@@ -329,7 +329,7 @@ def set_stats(List, add=True):
                             JxStats[(name,'Total',zone)] += value
                         except KeyError:
                             JxStats[(name,'Total',zone)] = value                
-                        map(count_KAF,Jx_Kanji_Occurences.iteritems())                
+                    map(count_KAF,Jx_Kanji_Occurences.iteritems()) 
             else:     
                 if add:
                     increment = 1
@@ -354,7 +354,7 @@ def set_stats(List, add=True):
                     map(count,mapping.Dict.values())
 
 def set_history(States): 
-    global JxGraphs
+    global JxGraphs, debug
     try:
         historyCached = JxDeck['HistoryCached']
         JxGraphs = JxDeck['Graphs']
@@ -387,18 +387,15 @@ def set_history(States):
     deltaHistory = {}
     def compute((factId,cardsHistory)):
         if build:
-            (status, cardsStates) = States[factId] 
+            (status, cardsStates) = States[factId]
         else:            
              (status, cardsStates) = JxStates[factId]
         stateArray = {}    
         for (id,changes) in cardsHistory.iteritems():
-            #try: 
             if build:
                 boolean = True
             else:
-                boolean = (cardsStates[id]!=1)
-            #except KeyError:
-           #     boolean = True
+                boolean = (cardsStates[id] != 1)
             for day in changes:
                 try:
                     if boolean:
@@ -414,7 +411,7 @@ def set_history(States):
                 
         days = stateArray.keys()
         days.sort()
-        
+
 
         threshold = len(cardsStates) * JxKnownCoefficient
         if build:
@@ -423,7 +420,10 @@ def set_history(States):
             boolean = (status != 1)
 
         list = []
-        cumul = len([1 for state in cardsStates.values() if state ==1])
+        if build:
+            cumul = 0
+        else : 
+            cumul = len([1 for state in cardsStates.values() if state ==1])
         for day in days:
             cumul += stateArray[day]
             if (boolean and cumul >=threshold ) or (not(boolean) and cumul < threshold): #xor
@@ -680,7 +680,15 @@ def display_stats(stats):
         </tr>""" % ('Other', knownString, seenString, inDeckString)                
     html += '</table>'
     return html
-    
+
+def get_Areport(new,ancient) :
+    if not(JxSavedStats) or new == ancient:
+        return "%s%%" % JxFormat(new)
+    elif ancient < new:
+        return """%s%%<br/><font face="Comic Sans MS" color="green" size=2>+%s%%</font>""" % (JxFormat(new),JxFormat(new-ancient))
+    else:
+        return """%s%%<br/><font face="Comic Sans MS" color="red" size=2>-%s%%</font>""" % (JxFormat(new),JxFormat(ancient-new))    
+
 def display_astats(stats):
     mappings = {'W-AFreq':MapZoneTango, 'K-AFreq':MapZoneKanji}
     mapping = mappings[stats]
@@ -706,7 +714,12 @@ def display_astats(stats):
 	        <th class="BorderRight"><b>Total</b></th>
 	    </tr>"""
     grandTotal = sum([get_stat((stats,'Total',key)) for (key, value) in mapping.Order])
+    if JxSavedStats:
+        AgrandTotal = sum([get_ancient_stat((stats,'Total',key)) for (key, value) in mapping.Order])     
+    else:
+        AgrandTotal = grandTotal
     (sumKnown, sumSeen, sumInDeck, sumTotal)=(0,0,0,0)
+    (AsumKnown, AsumSeen, AsumInDeck)=(0,0,0)
     for (key,value) in mapping.Order:
         known = get_stat((stats,1,key))
         seen = known + get_stat((stats,0,key))
@@ -716,6 +729,17 @@ def display_astats(stats):
         sumSeen += seen
         sumInDeck += inDeck
         sumTotal += total
+        if JxSavedStats:
+            Aknown = get_ancient_stat((stats,1,key))
+            Aseen = Aknown + get_ancient_stat((stats,0,key))
+            AinDeck = Aseen + get_ancient_stat((stats,-1,key))
+        else:
+            Aknown = known
+            Aseen = seen
+            AinDeck = inDeck              
+        AsumKnown += Aknown
+        AsumSeen += Aseen        
+        AsumInDeck += AinDeck      
         html +="""
         <tr class="Background">
             <td><b>%s</b></td>
@@ -724,14 +748,17 @@ def display_astats(stats):
             <td>%s%%</td>
             <td class="BorderRight">%.0f%%</td>
         </tr>""" % (value, JxFormat(known*100.0/max(1,grandTotal)), JxFormat(seen*100.0/max(1,grandTotal)), JxFormat(inDeck*100.0/max(1,grandTotal)), total*100.0/max(1,grandTotal))
+    sumKnownString = get_Areport(sumKnown*100.0/max(1,grandTotal), AsumKnown*100.0/max(1,AgrandTotal))
+    sumSeenString = get_Areport(sumSeen*100.0/max(1,grandTotal), AsumSeen*100.0/max(1,AgrandTotal))
+    sumInDeckString = get_Areport(sumInDeck*100.0/max(1,grandTotal), AsumInDeck*100.0/max(1,AgrandTotal))
     html += """
     <tr class="Border BackgroundHeader">
-        <td><b>%s</b></td>
-        <td>%s%%</td>
-        <td>%s%%</td>
-        <td>%s%%</td>
-        <td class="BorderRight">%s%%</td>
-    </tr>""" % ('Total', JxFormat(sumKnown*100.0/max(1,grandTotal)),JxFormat(sumSeen*100.0/max(1,grandTotal)),JxFormat(sumInDeck*100.0/max(1,grandTotal)),100)        
+        <td><b>Total</b></td>
+        <td>%s</td>
+        <td>%s</td>
+        <td>%s</td>
+        <td class="BorderRight">100%%</td>
+    </tr>""" % (sumKnownString,sumSeenString,sumInDeckString)        
     html += "</table>"
     return html        
     
