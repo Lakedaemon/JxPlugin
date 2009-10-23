@@ -11,7 +11,7 @@ from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
 from loaddata import *
 
 JxKnownThreshold = 21
-JxKnownCoefficient = 0.7
+JxKnownCoefficient = 1
 
 from copy import deepcopy
 JxDeck = {}
@@ -230,19 +230,24 @@ def get_deltaStates():
             cardsStates[factId] = {id : status} 
         return cached
     cardsCached = max(map(assign, mw.deck.s.all(query)) + [cardsCached])
-    
+    global debug
+    debug=""
     States = {}
     def compute((factId,dic)):
+        global debug
         list = [status for status in dic.values() if status>=0]
         threshold = len(dic) * JxKnownCoefficient
+
         if list and sum(list)>= threshold:
             status = 1# known
         elif list:
             status = 0# seen
         else:
             status = -1# in deck
+        debug+= str(threshold) + " " + str(status)+"<br>"+str(dic)+"<br><br>"
         States[factId] = (status, dic)
     map(compute, cardsStates.iteritems())
+    mw.help.showText(debug)
     return (States, cardsCached)
     
 def set_states(States):
