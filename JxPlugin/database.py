@@ -16,30 +16,39 @@ JxKnownCoefficient = 1
 from copy import deepcopy
 JxDeck = {}
 JxSavedStats = {}
+JxHistory = {}
 def build_JxDeck():
-    global JxDeck, JxSavedStats
-    JxDeck = load_cache()          
+    global JxDeck, JxFields, JxTypes, JxStates, JxHistory, JxGraphs, JxStats, JxSavedStats
+    JxDeck = load_cache() 
+    JxFields = {}
+    JxTypes = {}
+    JxStates = {}
+    JxHistory = {}
+    JxStats ={}
+    JxGraphs = {}    
     modelsCached = set_models()
     factsCached = set_fields()
     try : 
         JxSavedStats = deepcopy(JxDeck['Stats'])
     except KeyError:
         JxSavedStats = {}
-    # I'll have to downdate stats/graphs there 
+    factsDeleted = drop_facts()
     set_types()
-    # I'll have to update stats/graphs there
     (States, cardsCached) = get_deltaStates()
     historyCached = set_history(States)
     set_states(States)
     JxDeck['Fields'] = JxFields
     JxDeck['Types'] = JxTypes
     JxDeck['States'] = JxStates
+    JxDeck['History'] = JxHistory
     JxDeck['Stats'] = JxStats
     JxDeck['Graphs'] = JxGraphs
     JxDeck['ModelsCached'] = modelsCached
     JxDeck['FactsCached'] = factsCached
+    JxDeck['FactsDeleted'] = factsDeleted   
     JxDeck['CardsCached'] = cardsCached
     JxDeck['HistoryCached'] = historyCached
+
     save_cache(JxDeck) 
  
 
@@ -51,11 +60,11 @@ def set_models():
     try:
         JxModels = JxDeck['Models']
         modelsCached = JxDeck['ModelsCached'] 
-        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, max(created,modified) from models,fieldModels where models.id = fieldModels.modelId and max( created,modified)>%s""" % modelsCached 
+        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, max(models.created,models.modified) from models,fieldModels where models.id = fieldModels.modelId and max( models.created,models.modified)>%.3f""" % modelsCached 
     except KeyError: 
         JxModels = {}
         modelsCached  = 0
-        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,max(created,modified) from models,fieldModels where models.id = fieldModels.modelId"""
+        query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,max(models.created,models.modified) from models,fieldModels where models.id = fieldModels.modelId"""
 
     # then set the JxModels name, tags, fieldsnames and ordinals     
     dic = {}
@@ -131,7 +140,7 @@ def set_fields():
     try:
         JxFields = JxDeck['Fields']    
         factsCached = JxDeck['FactsCached']
-        query = """select factId,value, max(created,modified) from fields, facts where fields.factId = facts.id and max(created,modified)>%s order by ordinal""" %  factsCached
+        query = """select factId,value, max(created,modified) from fields, facts where fields.factId = facts.id and max(created,modified)>%.3f order by ordinal""" %  factsCached
     except KeyError:
         JxFields = {}
         factsCached = 0
@@ -155,16 +164,96 @@ def set_fields():
     map(copy, dic.iteritems()) # I shouldn't overwrite the other fields...for JxStats/JxGraphs update purpose
     return factsCached
 
+def drop_facts():
+    global JxHistory, JxStates, JxFields, JxTypes, JxStates, JxHistory
+    try:
+        JxFields = JxDeck['Fields']
+        JxTypes = JxDeck['Types']       
+        JxStates = JxDeck['States']
+        JxHistory = JxDeck['History']
+        factsDeleted = JxDeck['FactsDeleted']
+        query = """select factId,deletedTime from factsDeleted where deletedTime>%.3f""" % factsDeleted  
+        update = True
+    except KeyError:
+        query = """select deletedTime from factsDeleted""" 
+        return max(map(lambda x:x[0],mw.deck.s.all(query))+[0])
+
+    changelist = mw.deck.s.all(query)
+    workload = {}
+    def build_workload((factId, time)):
+        try:
+            workload[factId] = (False, JxHistory[factId][:])
+        except KeyError:
+            pass
+    map(build_workload,changelist)
+    update_graphs(workload)
+    worklist = []
+    def build((factId,time)):
+        try:
+            worklist.append((factId,JxStates[factId][0]))
+        except KeyError:
+            pass
+    map(build,changelist)
+    set_stats(worklist,False)
+    
+    def drop((id,time)):
+        try: 
+            del JxFields[id]
+        except:
+            pass
+        try:
+            del JxType[id] 
+        except:
+            pass
+        try: 
+            del JxStates[id]
+        except:
+            pass
+        try: 
+            del JxHistory[id]
+        except:
+            pass        
+        return time
+    return max(map(drop,changelist) + [factsDeleted])
+
 JxTypes = {}
 def set_types():
-    global JxTypes
+    global JxTypes, JxHistory, JxStates, JxGraphs, debug
     try:
         JxTypes = JxDeck['Types']
-        query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (max(facts.created,facts.modified)>%s or max(models.created,models.modified)>%s)""" %  (JxDeck['FactsCached'],JxDeck['ModelsCached'])  
+        JxStates = JxDeck['States']
+        JxHistory = JxDeck['History']
+        query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.3f or models.modified>%.3f)""" %  (JxDeck['FactsCached'],JxDeck['ModelsCached'])  
+        update = True
     except KeyError:
+        update = False
         JxTypes = {}
+        JxHistory={}
+        JxStates={}
         query = """select id, tags, modelId from facts"""
-        
+    
+    changelist = mw.deck.s.all(query)
+    
+    #downdate stats/graphs
+    if update:
+        workload = {}
+        def build_workload((factId, tags,modelId)):
+            try:
+                workload[factId] = (False, JxHistory[factId][:])
+            except KeyError:
+                pass
+        map(build_workload,changelist)
+
+        update_graphs(workload)
+        worklist = []
+        def build((factId,tags,modelId)):
+            try:
+                worklist.append((factId,JxStates[factId][0]))
+            except KeyError:
+                pass
+        map(build,changelist)
+        set_stats(worklist,False)
+
     def compute((id,tags,modelId)):
         types = set()
         test = set(tags.split(" "))
@@ -201,15 +290,23 @@ def set_types():
             if boolean or type in GuessType(content):
                 metadata[type] = content 
         JxTypes[id] = metadata
-    map(compute,mw.deck.s.all(query))
+    map(compute,changelist)
+
+    #update stats/graphs
+    if update:
+        def change_workload((factId,(boolean,dic))):
+            workload[factId] = (True, dic)        
+        map(change_workload,workload.iteritems())
+        update_graphs(workload)
+        set_stats(worklist,True)
+
     
-JxStates = {}
 def get_deltaStates():
     global JxStates
     try:
         JxStates = JxDeck['States']
         cardsCached = JxDeck['CardsCached']
-        query = """select cards.factId, cards.id, cards.interval, cards.reps, max(cards.created, cards.modified) from cards where max(cards.created,cards.modified)>%s""" % cardsCached
+        query = """select cards.factId, cards.id, cards.interval, cards.reps, max(cards.created, cards.modified) from cards where max(cards.created,cards.modified)>%.3f""" % cardsCached
     except KeyError:
         JxStates = {}
         cardsCached = 0
@@ -230,24 +327,20 @@ def get_deltaStates():
             cardsStates[factId] = {id : status} 
         return cached
     cardsCached = max(map(assign, mw.deck.s.all(query)) + [cardsCached])
-    global debug
-    debug=""
+
     States = {}
     def compute((factId,dic)):
-        global debug
         list = [status for status in dic.values() if status>=0]
         threshold = len(dic) * JxKnownCoefficient
-
         if list and sum(list)>= threshold:
             status = 1# known
         elif list:
             status = 0# seen
         else:
             status = -1# in deck
-        debug+= str(threshold) + " " + str(status)+"<br>"+str(dic)+"<br><br>"
         States[factId] = (status, dic)
     map(compute, cardsStates.iteritems())
-    mw.help.showText(debug)
+
     return (States, cardsCached)
     
 def set_states(States):
@@ -267,8 +360,7 @@ def set_states(States):
     #midnightOffset = time.timezone - self.deck.utcOffset
     #self.endOfDay = time.mktime(now) - midnightOffset
     #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
-
-JxStats = {}      
+   
 def set_stats(List, add=True):
     global JxStats
     try:
@@ -364,17 +456,28 @@ def set_history(States):
         historyCached = JxDeck['HistoryCached']
         JxGraphs = JxDeck['Graphs']
         build = False
-        query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%s  order by reviewHistory.cardId, reviewHistory.time""" %  historyCached
+        query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.3f  order by reviewHistory.cardId, reviewHistory.time""" %  historyCached
     except KeyError:
         historyCached = 0
         JxGraphs = {}# I can use this to decide if I should build or not maybee
         build = True
         query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
         
-    history = {}    
+    history = {}         
+    global card    
+    card = None
     def assign((factId,id,interval,nextInterval,ease,time)):
         """sets the cards status changes in the Jx database JxDeck"""
-        if (interval <= JxKnownThreshold  and nextInterval > JxKnownThreshold ) or (interval > JxKnownThreshold  and ease == 1): 
+        global switch
+        global card
+        if card != id:
+            if build:
+                switch = True
+            else:            
+                switch = (JxStates[factId][1][id] != 1)
+            card = id
+        if (nextInterval > JxKnownThreshold  and switch) or (nextInterval <= JxKnownThreshold  and not(switch)):
+            switch = not(switch)
             #Card Status Change
             day = int(time / 86400.0)
             try: 
@@ -386,9 +489,13 @@ def set_history(States):
                 cardsHistory[id].append(day)
             except KeyError:
                 cardsHistory[id] = [day]
-        return time
+        return time        
     historyCached= max(map(assign,mw.deck.s.all(query)) + [historyCached])
-
+    try:
+        del card
+        del switch
+    except :
+        pass
     deltaHistory = {}
     def compute((factId,cardsHistory)):
         if build:
@@ -435,8 +542,10 @@ def set_history(States):
                 list.append(day)
                 boolean = not(boolean)  
         if build:
+            JxHistory[factId] = list[:]
             deltaHistory[factId] = (True, list[:])
         else:
+            JxHistory[factId].append(list[:])
             deltaHistory[factId] = ((status != 1), list[:])             
         
     map(compute, history.iteritems())
@@ -444,8 +553,13 @@ def set_history(States):
         
     return historyCached
 
-JxGraphs = {}
+
 def update_graphs(dic):
+    global JxGraphs
+    try:
+        JxGraphs = JxDeck['Graphs']
+    except KeyError:
+        JxGraphs = {}
     for type in ['Word','Kanji']:
         def select((id,(add,changelist))):
             try:
