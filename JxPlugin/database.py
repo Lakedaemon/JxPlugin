@@ -545,7 +545,10 @@ def set_history(States):
             JxHistory[factId] = list[:]
             deltaHistory[factId] = (True, list[:])
         else:
-            JxHistory[factId].append(list[:])
+            try:
+                JxHistory[factId].append(list[:])
+            except KeyError:
+                JxHistory[factId]=list[:]
             deltaHistory[factId] = ((status != 1), list[:])             
         
     map(compute, history.iteritems())

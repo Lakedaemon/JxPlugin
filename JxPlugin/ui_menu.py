@@ -154,7 +154,7 @@ def init_JxPlugin():
 	# to enable or disable Jstats whenever a deck is opened/closed
 	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs",)
 	
-	# Ading features through hooks !
+	# Adding features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
 	mw.addHook('deckClosed', JxWindow.hide) # hides the main Jxplugin window when the current deck is closed	
 
@@ -176,9 +176,22 @@ mw.loadDeck = newLoadDeck
 # The main JxPlugin Windows # funny, you cannot import stuff after these statements
 from controls import JxWindow
 from controls import JxPreview        
-        
-        
-        
+
+
+# make sure there is Cache and User directories
+def ensure_dir_exists(dir):
+    """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
+    path = os.path.join(mw.config.configPath, "plugins","JxPlugin",dir)
+    if not(os.path.isdir(path)):
+        try:
+            os.mkdir(path)
+        except OSError:
+            # big troubles ahead... raise an error message
+            pass
+            from ankiqt.ui.utils import showWarning
+            showWarning("Couldn't create the '" + dir + "' directory.")
+
+map(ensure_dir_exists,['User','Cache'])
         
         
 

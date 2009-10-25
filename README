@@ -1,0 +1,141 @@
+DESCRIPTION (Version 1.11) 
+This plugin implements some stuff related to japanese : 
+
+A) 3 More graphs (Jouyou Kanji, JLPT Kanji and JLPT Words time progression)
+B) All stats about JLPT/Jouyou/Frequency for Words and Kanji)
+C) Stroke order
+D) Words including the same kanji
+E) JLPT, Frequency and Grade Info in the answer 
+F) customizable display : 
+try putting the following code in the answer part of a word card model :
+
+${Css}
+<div style="float:left;">
+<div>${T2JLPT}</div>
+<div>${T2Freq}</div>
+</div>
+<div>
+%(Reading)s<br />
+%(Meaning)s
+</div>
+
+or try putting the following code in the answer part of a kanji card model 
+
+${Css}<div style="float:left">${Stroke}
+<div>${K2JLPT}</div><div>${K2Jouyou}</div><div>${K2Freq}</div></div>
+<center>%(Meaning)s</center>
+<center>
+${K2Words}</center>
+
+SET UP
+To use this plugin, you need a deck with :
+
+-> your words inside a japanese card model :  
+Fields : "Expression", "Reading", "Meaning"
+Tags : "Japanese"
+Cards templates : "Recognition", "Recall"
+
+The "Expression" field must not contain anything other than 1 word (i.e. no space, no tabs, no exemple, no html, etc...)
+
+-> your Kanji inside a "custom" card model : 
+Fields : "Kanji", the others fields don't matter
+Tags : "Kanji"
+Cards templates : "Kanji ?"
+
+The "Kanji" field must not contain anything other than 1 Kanji (i.e. no space, no tab, no exemple, no html, etc...)
+
+
+Optional : for stroke order, download the stroke order font from there : 
+http://sites.google.com/site/nihilistorguk/Home/KanjiStrokeOrders_v2.012.zip?attredirects=0
+unzip it and put StrokeOrderFont.ttf in your windows/Fonts directory
+
+For more information, look at the introduction of JapaneseXtended.py  
+
+
+TROUBLESHOOTING
+
+0) Customizable answer display
+1) Displays Kanji with Stroke Order in the Kanji answer
+2) Displays Words including the Kanji in the Kanji answer 
+3) Displays JLPT and Grade Info in the Kanji answer 
+4) Time -> Grade/JLPT Kanji Count graphs 
+5) Displays JLPT Info in the Tango answer
+6) Time -> JLPT Word Count graph
+7) Words JLPT stats
+8) Seen/Missing Words against JLPT sets
+
+For 1), download the stroke order font from http://sites.google.com/site/nihilistorguk/Home/ and put it in your C:/Windows/Font directory
+For 2) and 3), you must have Facts with a field whose name is "Kanji"
+For 2) you must have a card model with "Expression", "Reading" and "Meaning" fields 
+For 4) you must have a model whose tags includes "Kanji" AND a Card Model whose name is "Kanji ?" and a field whose name is "Kanji"
+For 5 and 6) you must have the file JLPT.Word.List.csv in the anki plugin directory.
+For 6) you must have a modem whose tags includes "Japanese" and a Card Model whose name is "Recognition" and a field whose name is "Expression"
+
+TO DO
+
+Frequency for Words/Kanji
+Time -> Kanji accumuated frequency graph
+Time -> Word accumuated frequency graph
+Threshold for graphs
+
+
+TO IMPROVE
+
+Separate Japanese graphic window
+presentation (colors, forms,...)
+JLPT/Grade levels in the graphs
+Clean the code (recurrent)
+
+USEFULL
+
+to print some variable and debug, use the command mw.help.showText(str(some variable))
+
+
+
+LOG
+
+5/07/2009 : version 1.4
+Cleaned the JStats and JGraphs code.
+Experimented a little
+Separate Window for graphics
+
+4/07/2009 : version 1.3
+Cleaned the JStats code.
+Implemented Stats/Seen/Missing for JLPT/Jouyou and Kanji/JLPT
+Improved HTML display
+
+3/07/2009 : version 1.2
+Some HTML Clean-up
+Implemented Stats/Missing/Seen JLPT for Kanji
+Used RunHook for drawing Answer : JapaneseXtended is now "other plugins"-friendly.
+
+2/07/2009 : version 1.0
+Implemented JLPT for words
+Compiled JLPT.Word.List.csv
+Squashed JLPT Word bug
+Clean the code : names and tags
+Implemented JLPT4Words Stats 
+Implemented Missing/Seen Words
+Enable/Disable JStats with Deck Opened/closed
+Tested and Uploaded first public version
+
+1/07/2009 : version 0.2.6
+Implemented Time -> Grade graph
+Squashed color bug
+Added JLPT and Grade Info to Kanji Answer
+Implemented threshold for the Graphs (hardcoded to 21 days)
+
+30/06/2009 : version 0.2.3
+Implemented Time -> JLPT graph
+Support for JLPT4/3/2/1/0=non JLPT
+Different colors for JLPT4/3/2/1/0
+Squashed the bug interfering with the graphics
+
+29/06/2009 : version 0.1.5
+now displays in the answer all words including the Kanji (simpler tables).
+tests if the card has a valid "Kanji" Field.
+
+17/05/2009 : version 0.1.3
+displays basic kanji book related words under the Kanji in the answer.
+displays Kanji with Stroke Order + some html/css improvement
+tests if the card has a valid "Rank" Field.

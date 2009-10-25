@@ -53,8 +53,24 @@ class Jx__Settings(QObject):
                 File.close()
         
         
-        
-        
+class Jx__Cache(QObject):
+    """Data class for JxKnownThreshold, JxKnownCoefficient, JxCacheRefresh, JxCacheRebuild"""       
+    def __init__(self,name,parent=JxBase):
+	QObject.__init__(self,parent)
+	self.setObjectName(name)
+		
+    @Jx__Prop
+    def card_threshold(): pass
+
+    @Jx__Prop
+    def fact_threshold(): pass
+
+    @Jx__Prop
+    def cache_refresh(): pass
+	
+    @Jx__Prop
+    def cache_rebuild(): pass
+
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
 	def __init__(self,name,parent=JxBase):
@@ -406,6 +422,7 @@ from ui_menu import onClick
 JxSettings = Jx__Settings()
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")             
 Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase) 
+Jx_Control_Cache = Jx__Cache('JxCache',JxBase)
 
 class Jx__Menu(QWebView):
 	"""A QWebkit Window with mw as parent for Menu related stuff"""
@@ -430,6 +447,7 @@ class Jx__Menu(QWebView):
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
                 self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)     
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTags",Jx_Control_Tags)   
+                self.page().mainFrame().addToJavaScriptWindowObject("JxCache",Jx_Control_Cache)  
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()
