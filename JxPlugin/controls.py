@@ -58,19 +58,66 @@ class Jx__Cache(QObject):
     def __init__(self,name,parent=JxBase):
 	QObject.__init__(self,parent)
 	self.setObjectName(name)
-		
-    @Jx__Prop
-    def card_threshold(): pass
+
+    def card_fset(self,value):
+        self._card_threshold = int(value)
+        
+    #@pyqtSignature("",result="QString")	
+    def card_fget(self):
+        return "%s" % self._card_threshold
 
     @Jx__Prop
-    def fact_threshold(): pass
+    def card_threshold(): return {'fset': lambda self,value:self.card_fset(value),'fget':  lambda self:self.card_fget()}
+
+    def fact_fset(self,value):
+        self._fact_threshold = float(value)
+        
+    #@pyqtSignature("",result="QString")	
+    def fact_fget(self):
+        return "%.2f" % self._fact_threshold
 
     @Jx__Prop
-    def cache_refresh(): pass
-	
-    @Jx__Prop
-    def cache_rebuild(): pass
+    def fact_threshold(): return {'fset': lambda self,value:self.fact_fset(value),'fget':  lambda self:self.fact_fget()}
 
+    def refresh_fset(self,value):
+        self._cache_refresh = float(value)
+        
+    #@pyqtSignature("",result="QString")	
+    def refresh_fget(self):
+        return "%.1f" % self._cache_refresh
+
+    @Jx__Prop
+    def cache_refresh(): return {'fset': lambda self,value:self.refresh_fset(value),'fget':  lambda self:self.refresh_fget()}
+    
+    def rebuild_fset(self,value):
+        self._cache_rebuild = float(value)
+        
+    #@pyqtSignature("",result="QString")	
+    def rebuild_fget(self):
+        return "%.1f" % self._cache_rebuild
+        
+    @Jx__Prop
+    def cache_rebuild(): return {'fset': lambda self,value:self.rebuild_fset(value),'fget':  lambda self:self.rebuild_fget()}
+    
+    def load(self):
+        from database import JxDeck
+        try:
+            self._card_threshold = JxDeck['CardThreshold']
+            self._fact_threshold = JxDeck['FactThreshold']
+            self._cache_refresh = JxDeck['CacheRefresh']
+            self._cache_rebuild = JxDeck['CacheRebuild']
+        except KeyError:
+            self._card_threshold = 21
+            self._fact_threshold = 1
+            self._cache_refresh = 1
+            self._cache_rebuild = 14
+    def save(self):
+        from database import JxDeck
+        JxDeck['CardThreshold'] = self._card_threshold
+        JxDeck['FactThreshold'] = self._fact_threshold
+        JxDeck['CacheRefresh'] = self._cache_refresh
+        JxDeck['CacheRebuild'] = self._cache_rebuild       
+        
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
 	def __init__(self,name,parent=JxBase):

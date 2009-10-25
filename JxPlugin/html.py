@@ -123,21 +123,24 @@ $(document).ready(function(){
 <script type="text/javascript">
 	$(function() {
 		$("#knownthreshold").slider({
-			value:21,
+			value:JxCache.card_threshold,
 			min: 0,
 			max: 60,
 			step: 1,
 			slide: function(event, ui) {
+			        JxCache.card_threshold = ui.value;
 				$("#knownthresholdvalue").val(ui.value);
 				}
 			});
 		$("#knownthresholdvalue").val($("#knownthreshold").slider("value"));
+
 		$("#knowncoefficient").slider({
-			value:1,
+			value:JxCache.fact_threshold,
 			min: 0.01,
 			max: 1,
 			step: 0.01,
 			slide: function(event, ui) {
+			        JxCache.fact_threshold = ui.value;
 				$("#knowncoefficientvalue").val(ui.value);
 				}
 			});
@@ -147,6 +150,7 @@ $(document).ready(function(){
 			range: true,
 			min: 0,
 			max: 31,
+			step: 0.1,
 			values: [1, 14],
 			slide: function(event, ui) {
 				$("#cachesave").val(ui.values[0]);
@@ -241,10 +245,10 @@ $(document).ready(function(){
 	      <div id="knowncoefficient"></div>
 	      	      <p>
 	        	<label for="cachesave">Days before report : </label>
-	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:20px" />
+	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
 	                <br/>
 	                <label for="cachebuild">Days before rebuild : </label>
-	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:20px" />
+	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
 	      </p>   
 	        <div id="cache"></div>
 	</div>

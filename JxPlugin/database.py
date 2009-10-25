@@ -5,27 +5,234 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 from ankiqt import mw
-
 from cache import load_cache,save_cache
 from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
 from loaddata import *
-
-JxKnownThreshold = 21
-JxKnownCoefficient = 1
-
+from controls import JxBase
+import cPickle
 from copy import deepcopy
 JxDeck = {}
 JxSavedStats = {}
 JxHistory = {}
+from PyQt4.QtCore import *
+
+class Deck(QObject):
+    """Data structure for the JxPlugin tables"""
+    
+    def __init__(self,name="Deck",parent=JxBase):
+        QObject.__init__(self,parent)
+        self.setObjectName(name)
+        try:
+            self.load()
+            self.assign_data()
+            self.set_models(True)
+            self.set_fields(True)
+            self.save_stats(True)
+        except KeyError:
+            self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'graphs':{},
+                'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'cacheModified':0, 'cacheBuild':0, 
+                'cacheRefresh':1, 'cacheRebuild':14, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
+            self.assign_data()
+            self.set_models(False)
+            self.set_fields(False)
+            self.save_stats(False)
+            
+        mw.help.showText(str(self.cache))
+
+    def assign_data(self):
+        cache = self.cache
+        self.models = cache['models']
+        self.fields = cache['fields']
+        self.types = cache['types']
+        self.states = cache['states']
+        self.history = cache['history']
+        self.stats = cache['stats']
+        self.graphs = cache['graphs']
+            
+        self.modelsModified = cache['modelsModified']
+        self.factsDeleted = cache['factsDeleted']
+        self.factsModified = cache['factsModified']
+        self.cardsModified = cache['cardsModified']
+        self.historyModified = cache['historyModified']
+            
+        self.cacheModified = cache['cacheModified']
+        self.cacheBuild = cache['cacheBuild']
+        self.cacheRefresh = cache['cacheRefresh']
+        self.cacheRebuild = cache['cacheRebuild']
+        self.cardsKnownThreshold = cache['cardsKnownThreshold']
+        self.factsKnownThreshold = cache['factsKnownThreshold']
+            
+    def load(self):
+        """returns the cache if it exists on disk and {} if it doesn't"""
+        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")                      
+        if not os.path.exists(path): 
+            self.cache = {}
+        else:
+            file = open(path, 'rb')
+            self.cache = cPickle.load(file)
+            file.close()
+        
+    def save(self):
+        """saves the cache on disk"""
+        cache = self.cache
+        
+        """cache['models'] = self.models
+        cache['fields']  = self.fields 
+        cache['types']  = self.types 
+        cache['states'] = self.states 
+        cache['history']  = self.history 
+        cache['stats'] = self.stats 
+        cache['graphs'] = self.graphs"""
+            
+        cache['modelsModified'] = self.modelsModified
+        cache['factsDeleted']  = self.factsDeleted 
+        cache['factsModified']  = self.factsModified
+        cache['cardsModified']  =  self.cardsModified 
+        cache['historyModified'] = self.historyModified 
+            
+        cache['cacheModified']  = time.time() 
+        cache['cacheBuild']  = self.cacheBuild
+        cache['cardsKnownThreshold']  = self.cardsKnownThreshold
+        cache['factsKnownThreshold']  = self.factsKnownThreshold
+
+        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")   
+        file = open(path, 'wb')
+        cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
+        file.close()        
+
+    def set_models(self,update):
+        """builds the models and hints if update is false or updates them otherwise"""
+        
+        # sets things up for the build/update process
+        if update:
+            dic = {}
+            query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, models.modified from models,fieldModels where models.id = fieldModels.modelId and models.modified>%.3f""" % self.modelsModified
+        else:
+            dic = self.models
+            query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,models.modified from models,fieldModels where models.id = fieldModels.modelId"""
+
+        # then sets the JxModels name, tags, fieldsnames and ordinals     
+        def assign((id, name, tags, ordinal, fieldName, cached)):
+            try: 
+                model = dic[id]
+            except KeyError:
+                dic[id] = (name,tags,{},{})
+                model = dic[id]
+            model[2][ordinal]= fieldName
+            return cached
+        self.cache['modelsModified'] = max(map(assign,mw.deck.s.all(query))+[self.modelsModified])
+    
+        # then computes types and hints
+        def compute((modelName, tags, fields, hints)):
+            types = set()
+            test = set(tags.split(" ")) # parses the model tags first
+            for (key,list) in JxType:
+                if test.intersection(list):
+                    types.update([key]) 
+            if not(types): # checks the model name now
+                for (key,list) in JxType:
+                    if modelName in list:
+                        types.update([key])
+                        break # no need to parse further
+            if not(types): # checks the Field's name now
+                for (ordinal,name) in fields.iteritems():
+                    for (type,typeList) in JxType:
+                        if name in typeList:
+                            types.update([type])
+                            hints[type] = (name, ordinal, True)
+                            break # no need to parse this Field further
+            if not(types): # Japanese Model ?
+                test = set(tags.split(" ") + [modelName] + fields.values())   
+                if test.intersection(JxTypeJapanese):
+                    types.update(['Kanji','Word','Sentence','Grammar'])  
+            # now, we got to set the action and build a Hint
+            if types and not(hints):
+                # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
+                for (type,typeList) in JxType:
+                    if type in types:
+                        for (ordinal,name) in fields.iteritems():
+                            if name in typeList:
+                                hints[type] = (name,ordinal,True) 
+                                break
+                if len(hints) < len(types):
+                    # for the still missing fields, we try to find an "Expression" field next and update the List
+                    for (type,typeList) in JxType:
+                        if type in types and type not in hints:
+                            for (ordinal, name) in fields.iteritems():
+                                if name == 'Expression':
+                                    if len(types) == 1:
+                                        hints[type] = (name,ordinal,True)
+                                    else:
+                                        hints[type] = (name,ordinal,False)                                                                        
+                                    break
+        map(compute, dic.values())
+    
+        # overwrite the models
+        if update:
+            models= self.models
+            def copy((id, model)): 
+                models[id] = model
+            map(copy, dic.iteritems()) 
+    
+        """# save JxModels in the cache
+        JxDeck['Models'] = JxModels
+        return modelsCached"""
+ 
+    def set_fields(self,update):
+        from anki.utils import stripHTML
+        """fills the fields if update is false or overwrites them otherwise"""
+        if update:  
+            dic = {}
+            query = """select factId,value, modified from fields, facts where fields.factId = facts.id and modified>%.3f order by ordinal""" %  self.factsModified
+        else:
+            dic = self.fields
+            query = """select factId,value, modified from fields, facts where fields.factId = facts.id order by ordinal"""
+    
+        def assign((id,value,cached)):
+            """basically does factsDB[factId].update(ordinal=value)"""
+            try:
+                fields = dic[id]
+            except KeyError:
+                dic[id] = {}
+                fields = dic[id]
+            fields[len(fields)] = value# this is coded this way because in the anki database ordinal fields in fieldModels and fields aren't necessarily equals...
+            return cached
+        self.cache['factsModified'] = max(map(assign,mw.deck.s.all(query)) + [self.factsModified])
+    
+        if update:
+            # overwrite the fields
+            fields = self.fields
+            def copy((id,dict)):
+                fields[id] = dict
+            map(copy, dic.iteritems())
+
+    def save_stats(self, update):
+        if update:
+            self.ancient_stats = deepcopy(self.stats)
+        else:
+            self.ancient_stats = {}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    
 def build_JxDeck():
+    """loads JxDeck and inits stuff"""
+    from controls import Jx_Control_Cache 
     global JxDeck, JxFields, JxTypes, JxStates, JxHistory, JxGraphs, JxStats, JxSavedStats
     JxDeck = load_cache() 
+    a = Deck()
     JxFields = {}
     JxTypes = {}
     JxStates = {}
     JxHistory = {}
     JxStats ={}
-    JxGraphs = {}    
+    JxGraphs = {}   
+    Jx_Control_Cache .load()
     modelsCached = set_models()
     factsCached = set_fields()
     try : 
@@ -37,6 +244,8 @@ def build_JxDeck():
     (States, cardsCached) = get_deltaStates()
     historyCached = set_history(States)
     set_states(States)
+
+    Jx_Control_Cache .save()
     JxDeck['Fields'] = JxFields
     JxDeck['Types'] = JxTypes
     JxDeck['States'] = JxStates
@@ -48,8 +257,9 @@ def build_JxDeck():
     JxDeck['FactsDeleted'] = factsDeleted   
     JxDeck['CardsCached'] = cardsCached
     JxDeck['HistoryCached'] = historyCached
-
+    JxDeck['Time'] = time.time()
     save_cache(JxDeck) 
+
  
 
 JxModels = {} 
@@ -313,9 +523,12 @@ def get_deltaStates():
         query = """select factId, id, interval, reps, max(created, modified) from cards"""      
      
     cardsStates = {}
+    from controls import Jx_Control_Cache
+    card_threshold = Jx_Control_Cache._card_threshold
+    fact_threshold = Jx_Control_Cache._fact_threshold
     def assign((factId,id,interval,reps,cached)):
         """sets the cards states in the Jx database JxDeck"""
-        if interval > JxKnownThreshold and reps:
+        if interval > card_threshold and reps:
             status = 1 # known
         elif reps:
             status = 0 # seen
@@ -331,7 +544,7 @@ def get_deltaStates():
     States = {}
     def compute((factId,dic)):
         list = [status for status in dic.values() if status>=0]
-        threshold = len(dic) * JxKnownCoefficient
+        threshold = len(dic) * fact_threshold 
         if list and sum(list)>= threshold:
             status = 1# known
         elif list:
@@ -466,6 +679,9 @@ def set_history(States):
     history = {}         
     global card    
     card = None
+    from controls import Jx_Control_Cache
+    card_threshold = Jx_Control_Cache._card_threshold
+    fact_threshold = Jx_Control_Cache._fact_threshold
     def assign((factId,id,interval,nextInterval,ease,time)):
         """sets the cards status changes in the Jx database JxDeck"""
         global switch
@@ -476,7 +692,7 @@ def set_history(States):
             else:            
                 switch = (JxStates[factId][1][id] != 1)
             card = id
-        if (nextInterval > JxKnownThreshold  and switch) or (nextInterval <= JxKnownThreshold  and not(switch)):
+        if (nextInterval > card_threshold  and switch) or (nextInterval <= card_threshold  and not(switch)):
             switch = not(switch)
             #Card Status Change
             day = int(time / 86400.0)
@@ -525,7 +741,7 @@ def set_history(States):
         days.sort()
 
 
-        threshold = len(cardsStates) * JxKnownCoefficient
+        threshold = len(cardsStates) * fact_threshold
         if build:
             boolean = True
         else:
