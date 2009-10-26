@@ -52,13 +52,36 @@ class Jx__Settings(QObject):
                 cPickle.dump(self.Dict, File, cPickle.HIGHEST_PROTOCOL)
                 File.close()
         
-        
+
+class PythonJavascript(QObject):
+    """implements methods to move int between python and javascript"""
+    def __init__(self,name,parent=JxBase):
+	QObject.__init__(self,parent)
+	self.setObjectName(name)
+	
+    @pyqtSignature("QString",result="QString")		
+    def get(self,var):
+        from database import jxdeck
+        if var =="cardsKnownThreshold":            
+            return "%s" % jxdeck.cardsKnownThreshold
+        elif var =="factsKnownThreshold":            
+            return "%s" % jxdeck.factsKnownThreshold
+            
+    @pyqtSignature("QString,QString")		
+    def set(self,var,value)	:
+        from database import jxdeck
+        if var =="cardsKnownThreshold":    
+            jxdeck.set_cardsKnownThreshold(int(value))
+        elif var =="factsKnownThreshold":            
+            jxdeck.set_factsKnownThreshold(float(value))
+            
+            
 class Jx__Cache(QObject):
     """Data class for JxKnownThreshold, JxKnownCoefficient, JxCacheRefresh, JxCacheRebuild"""       
     def __init__(self,name,parent=JxBase):
 	QObject.__init__(self,parent)
 	self.setObjectName(name)
-
+	
     def card_fset(self,value):
         self._card_threshold = int(value)
         
@@ -470,6 +493,7 @@ JxSettings = Jx__Settings()
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")             
 Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase) 
 Jx_Control_Cache = Jx__Cache('JxCache',JxBase)
+Jx_Control_Bridge = PythonJavascript('py',JxBase)
 
 class Jx__Menu(QWebView):
 	"""A QWebkit Window with mw as parent for Menu related stuff"""
@@ -495,6 +519,7 @@ class Jx__Menu(QWebView):
                 self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)     
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTags",Jx_Control_Tags)   
                 self.page().mainFrame().addToJavaScriptWindowObject("JxCache",Jx_Control_Cache)  
+                self.page().mainFrame().addToJavaScriptWindowObject("py",Jx_Control_Bridge)  
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()

@@ -84,6 +84,8 @@ from controls import Jx_Control_Tags
                 
   
 def onJxMenu():
+    from database import jxdeck
+    jxdeck.update()
     #build_JxDeck()
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu

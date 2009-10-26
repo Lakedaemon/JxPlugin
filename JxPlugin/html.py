@@ -123,12 +123,12 @@ $(document).ready(function(){
 <script type="text/javascript">
 	$(function() {
 		$("#knownthreshold").slider({
-			value:JxCache.card_threshold,
+			value:py.get('cardsKnownThreshold'), 
 			min: 0,
 			max: 60,
 			step: 1,
+			stop: function(event, ui) {py.set('cardsKnownThreshold',ui.value.toString())},
 			slide: function(event, ui) {
-			        JxCache.card_threshold = ui.value;
 				$("#knownthresholdvalue").val(ui.value);
 				}
 			});
@@ -139,6 +139,7 @@ $(document).ready(function(){
 			min: 0.01,
 			max: 1,
 			step: 0.01,
+			stop: function(event, ui) {py.set('factsKnownThreshold',ui.value.toString())},
 			slide: function(event, ui) {
 			        JxCache.fact_threshold = ui.value;
 				$("#knowncoefficientvalue").val(ui.value);
@@ -150,7 +151,7 @@ $(document).ready(function(){
 			range: true,
 			min: 0,
 			max: 31,
-			step: 0.1,
+			step: 1,
 			values: [1, 14],
 			slide: function(event, ui) {
 				$("#cachesave").val(ui.values[0]);
@@ -244,7 +245,7 @@ $(document).ready(function(){
 	      </p>          
 	      <div id="knowncoefficient"></div>
 	      	      <p>
-	        	<label for="cachesave">Days before report : </label>
+	        	<label for="cachesave">Days before refresh : </label>
 	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
 	                <br/>
 	                <label for="cachebuild">Days before rebuild : </label>
