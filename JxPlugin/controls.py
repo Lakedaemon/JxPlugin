@@ -31,22 +31,21 @@ class Jx__Settings(QObject):
          
         @pyqtSignature("QString", result="QString")	
 	def Get(self,Key):
-                return self.Dict[u"%s" % Key]
+                return str(self.Dict[u"%s" % Key])
                 
         @pyqtSignature("QString, QString")	
 	def Set(self,Key,Value):
-                self.Dict[u"%s" % Key] = Value
+                self.Dict[u"%s" % Key] = str(Value)
                 self.Update()
                   
         def Load(self):
+                from default import  Jx__Css__Default
+                self.Dict = {"Mode":"Override","Css":Jx__Css__Default,'reportReset':'1','cacheRebuild':'14'}
                 if os.path.exists(self.File):
                           File = open(self.File, 'rb')
-                          self.Dict = cPickle.load(File)
+                          self.Dict.update(cPickle.load(File))
                           File.close()
-                else:
-                          from default import  Jx__Css__Default
-                          self.Dict={"Mode":"Override","Css":Jx__Css__Default}
-                          self.Update()
+
         def Update(self):
                 File = open(self.File, 'wb')
                 cPickle.dump(self.Dict, File, cPickle.HIGHEST_PROTOCOL)
@@ -66,6 +65,9 @@ class PythonJavascript(QObject):
             return "%s" % jxdeck.cardsKnownThreshold
         elif var =="factsKnownThreshold":            
             return "%s" % jxdeck.factsKnownThreshold
+        elif var in ['JLPT','Frequency', 'Kanken','Jouyou']:
+            from ui_menu import JxStats
+            return JxStats(str(var))
             
     @pyqtSignature("QString,QString")		
     def set(self,var,value)	:
@@ -76,31 +78,12 @@ class PythonJavascript(QObject):
             jxdeck.set_factsKnownThreshold(float(value))
             
             
+            
 class Jx__Cache(QObject):
     """Data class for JxKnownThreshold, JxKnownCoefficient, JxCacheRefresh, JxCacheRebuild"""       
     def __init__(self,name,parent=JxBase):
 	QObject.__init__(self,parent)
 	self.setObjectName(name)
-	
-    def card_fset(self,value):
-        self._card_threshold = int(value)
-        
-    #@pyqtSignature("",result="QString")	
-    def card_fget(self):
-        return "%s" % self._card_threshold
-
-    @Jx__Prop
-    def card_threshold(): return {'fset': lambda self,value:self.card_fset(value),'fget':  lambda self:self.card_fget()}
-
-    def fact_fset(self,value):
-        self._fact_threshold = float(value)
-        
-    #@pyqtSignature("",result="QString")	
-    def fact_fget(self):
-        return "%.2f" % self._fact_threshold
-
-    @Jx__Prop
-    def fact_threshold(): return {'fset': lambda self,value:self.fact_fset(value),'fget':  lambda self:self.fact_fget()}
 
     def refresh_fset(self,value):
         self._cache_refresh = float(value)

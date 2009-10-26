@@ -15,6 +15,7 @@ JxDeck = {}
 JxSavedStats = {}
 JxHistory = {}
 from PyQt4.QtCore import *
+from anki.utils import stripHTML
 
 class Database(QObject):
     """Data structure for the JxPlugin tables"""
@@ -29,8 +30,8 @@ class Database(QObject):
             
         except KeyError:
             self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
-                'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
-                'statsRefresh':1, 'cacheRebuild':14, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
+                'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
+                'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
             self.reference_data()
             self.build() 
         
@@ -100,8 +101,6 @@ class Database(QObject):
             
         self.statsModified = cache['statsModified']
         self.cacheBuilt = cache['cacheBuilt']
-        self.statsRefresh = cache['statsRefresh']
-        self.cacheRebuild = cache['cacheRebuild']
         self.cardsKnownThreshold = cache['cardsKnownThreshold']
         self.factsKnownThreshold = cache['factsKnownThreshold']
             
@@ -226,8 +225,9 @@ class Database(QObject):
 
     def save_stats(self, update):
         from copy import deepcopy
+        from controls import JxSettings
         now = time.time()
-        if not(update) or int(now/86400.0) - int(self.statsModified/86400.0) >= self.statsRefresh:
+        if not(update) or int(now/86400.0) - int(self.statsModified/86400.0) >= int(JxSettings.Get('reportReset')):
             self.cache['oldStats'] = deepcopy(self.stats)
             self.oldStats = self.cache['oldStats']
             self.cache['statsModified'] = now
@@ -642,34 +642,14 @@ class Database(QObject):
  
  
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
     
 def build_JxDeck():
     """loads JxDeck and inits stuff"""
-    from controls import Jx_Control_Cache 
+    #from controls import Jx_Control_Cache 
     global jxdeck
     jxdeck = Database()
 
-    Jx_Control_Cache .load()
+    #Jx_Control_Cache .load()
 
 
  
@@ -704,19 +684,6 @@ def JxGraphs_into_json():
     
 def JxJSon(CouplesList):
         return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
-"""          
-def get_stat(key):
-    try:
-        return JxStats[key]
-    except KeyError:
-        return 0
-
-def get_ancient_stat(key):
-    try:
-        return JxSavedStats[key]
-    except KeyError:
-        return 0
-"""
 
 def get_report(new,ancient) :
     if  new == ancient:

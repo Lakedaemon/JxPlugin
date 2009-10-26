@@ -127,7 +127,13 @@ $(document).ready(function(){
 			min: 0,
 			max: 60,
 			step: 1,
-			stop: function(event, ui) {py.set('cardsKnownThreshold',ui.value.toString())},
+			stop: function(event, ui) {
+			        py.set('cardsKnownThreshold',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			},
 			slide: function(event, ui) {
 				$("#knownthresholdvalue").val(ui.value);
 				}
@@ -139,9 +145,14 @@ $(document).ready(function(){
 			min: 0.01,
 			max: 1,
 			step: 0.01,
-			stop: function(event, ui) {py.set('factsKnownThreshold',ui.value.toString())},
+			stop: function(event, ui) {
+			        py.set('factsKnownThreshold',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			},
 			slide: function(event, ui) {
-			        JxCache.fact_threshold = ui.value;
 				$("#knowncoefficientvalue").val(ui.value);
 				}
 			});
@@ -152,7 +163,11 @@ $(document).ready(function(){
 			min: 0,
 			max: 31,
 			step: 1,
-			values: [1, 14],
+			stop: function(event, ui) {
+			        JxSettings.Set('reportReset',ui.values[0].toString());
+			        JxSettings.Set('cacheRebuild',ui.values[1].toString());
+                        },
+			values: [parseInt(JxSettings.Get('reportReset')), parseInt(JxSettings.Get('cacheRebuild'))],
 			slide: function(event, ui) {
 				$("#cachesave").val(ui.values[0]);
 				$("#cachebuild").val(ui.values[1]);
@@ -232,26 +247,29 @@ $(document).ready(function(){
                 <p>
                 Thanks to all the people who have provided suggestions, bug reports and donations.</p>
 	</div>
-	<h3><a href="#">Cache</a></h3>
-	<div>
+	<h3><a href="#">Cards &amp; Facts knowledge</a></h3>
+	<div>	      
+	        <div id="knownthreshold"></div>	      
 	        <p>
 	        	<label for="knownthresholdvalue">Card known threshold : </label>
 	                <input type="text" id="knownthresholdvalue" style="border:0; color:#f6931f; font-weight:bold; width:20px" />
 	      </p>          
-	      <div id="knownthreshold"></div>
+	      <div id="knowncoefficient"></div>
 	      <p>
 	        	<label for="knowncoefficientvalue">Fact known threshold : </label>
 	                <input type="text" id="knowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
 	      </p>          
-	      <div id="knowncoefficient"></div>
-	      	      <p>
-	        	<label for="cachesave">Days before refresh : </label>
-	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
-	                <br/>
-	                <label for="cachebuild">Days before rebuild : </label>
-	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
-	      </p>   
+	</div>
+	<h3><a href="#">Report &amp; Cache</a></h3>
+	<div>
 	        <div id="cache"></div>
+	        <p>
+	        	<label for="cachesave">Report resets every &nbsp;</label>
+	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:20px" />&nbsp; days
+	                <br/>
+	                <label for="cachebuild">Cache rebuilds every &nbsp;</label>
+	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:20px" />&nbsp; days
+	      </p>   
 	</div>
 	<h3><a href="#">Answer Transductor</a></h3>
 	<div>
