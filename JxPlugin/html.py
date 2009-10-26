@@ -118,7 +118,7 @@ $(document).ready(function(){
 });
 </script>
 
-<--            slider        -->
+<!--            slider        -->
 
 <script type="text/javascript">
 	$(function() {
