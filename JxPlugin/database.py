@@ -26,14 +26,21 @@ class Database(QObject):
         try:
             self.load()
             self.reference_data()
-            self.update()
-            
+            from controls import JxSettings
+            if time.time()-self.cacheBuilt > JxSettings.Get('cacheRebuild'):
+                self.restart()
+            else:
+                self.update()
+                
         except KeyError:
-            self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
-                'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
-                'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
-            self.reference_data()
-            self.build() 
+            self.restart()
+        
+    def restart(self):
+        self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{}, 
+        'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
+        'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
+        self.reference_data()
+        self.build()
         
     def update(self):
         self.set_models(True)
