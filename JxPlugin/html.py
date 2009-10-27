@@ -125,7 +125,7 @@ $(document).ready(function(){
 		$("#knownthreshold").slider({
 			value:py.get('cardsKnownThreshold'), 
 			min: 0,
-			max: 60,
+			max: 180,
 			step: 1,
 			stop: function(event, ui) {
 			        py.set('cardsKnownThreshold',ui.value.toString());
@@ -135,13 +135,17 @@ $(document).ready(function(){
 			        $("#Jouyou").html(py.get('Jouyou'));			        
 			},
 			slide: function(event, ui) {
-				$("#knownthresholdvalue").val(ui.value);
-				}
+			        if (ui.value>1){$("#knownthresholdvalue").val(ui.value+ " days")}
+			        else {$("#knownthresholdvalue").val(ui.value+ " day");}}
 			});
-		$("#knownthresholdvalue").val($("#knownthreshold").slider("value"));
+			
+						        if ($("#knownthreshold").slider("value")>1){$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " days")}
+			        else
+			        {$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " day");}
+	
 
 		$("#knowncoefficient").slider({
-			value:JxCache.fact_threshold,
+			value:py.get('factsKnownThreshold'), 
 			min: 0.01,
 			max: 1,
 			step: 0.01,
@@ -153,11 +157,10 @@ $(document).ready(function(){
 			        $("#Jouyou").html(py.get('Jouyou'));			        
 			},
 			slide: function(event, ui) {
-				$("#knowncoefficientvalue").val(ui.value);
+				$("#knowncoefficientvalue").val(Math.round(ui.value*100) + " %");
 				}
 			});
-		$("#knowncoefficientvalue").val($("#knowncoefficient").slider("value"));
-		$("#knowncoefficient").slider();
+		$("#knowncoefficientvalue").val(Math.round($("#knowncoefficient").slider("value") *100) + " %");
 		$("#cache").slider({
 			range: true,
 			min: 0,
@@ -169,12 +172,18 @@ $(document).ready(function(){
                         },
 			values: [parseInt(JxSettings.Get('reportReset')), parseInt(JxSettings.Get('cacheRebuild'))],
 			slide: function(event, ui) {
-				$("#cachesave").val(ui.values[0]);
-				$("#cachebuild").val(ui.values[1]);
+			
+		if ($("#cache").slider("values", 0)>1) {$("#cachesave").val($("#cache").slider("values", 0)+ " days");}
+		        else {$("#cachesave").val($("#cache").slider("values", 0)+ " day");}
+		if ($("#cache").slider("values", 1)>1){$("#cachebuild").val($("#cache").slider("values", 1)+ " days");}
+			else {$("#cachebuild").val($("#cache").slider("values", 1)+ " day");}
+			
 			}
 		});
-		$("#cachesave").val($("#cache").slider("values", 0));
-	        $("#cachebuild").val($("#cache").slider("values", 1));	
+		if ($("#cache").slider("values", 0)>1) {$("#cachesave").val($("#cache").slider("values", 0)+ " days");}
+		        else {$("#cachesave").val($("#cache").slider("values", 0)+ " day");}
+		if ($("#cache").slider("values", 1)>1){$("#cachebuild").val($("#cache").slider("values", 1)+ " days");}
+			else {$("#cachebuild").val($("#cache").slider("values", 1)+ " day");}
 	});
 </script>
 
@@ -252,12 +261,12 @@ $(document).ready(function(){
 	        <div id="knownthreshold"></div>	      
 	        <p>
 	        	<label for="knownthresholdvalue">Card known threshold : </label>
-	                <input type="text" id="knownthresholdvalue" style="border:0; color:#f6931f; font-weight:bold; width:20px" />
+	                <input type="text" id="knownthresholdvalue" style="border:0; color:#f6931f; font-weight:bold; width:65px" />
 	      </p>          
 	      <div id="knowncoefficient"></div>
 	      <p>
 	        	<label for="knowncoefficientvalue">Fact known threshold : </label>
-	                <input type="text" id="knowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:35px" />
+	                <input type="text" id="knowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:45px" />
 	      </p>          
 	</div>
 	<h3><a href="#">Report &amp; Cache</a></h3>
@@ -265,10 +274,10 @@ $(document).ready(function(){
 	        <div id="cache"></div>
 	        <p>
 	        	<label for="cachesave">Report resets every &nbsp;</label>
-	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:20px" />&nbsp; days
+	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:60px" />
 	                <br/>
 	                <label for="cachebuild">Cache rebuilds every &nbsp;</label>
-	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:20px" />&nbsp; days
+	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:60px" />
 	      </p>   
 	</div>
 	<h3><a href="#">Answer Transductor</a></h3>

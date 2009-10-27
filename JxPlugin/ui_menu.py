@@ -84,9 +84,8 @@ from controls import Jx_Control_Tags
                 
   
 def onJxMenu():
-    from database import jxdeck
-    jxdeck.update()
-    #build_JxDeck()
+    from database import eDeck
+    eDeck.update()
     Jx_Control_Tags.Update()
     from html import Jx_Html_Menu
     JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})

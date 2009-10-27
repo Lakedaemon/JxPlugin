@@ -31,7 +31,7 @@ class Jx__Settings(QObject):
          
         @pyqtSignature("QString", result="QString")	
 	def Get(self,Key):
-                return str(self.Dict[u"%s" % Key])
+                return self.Dict[u"%s" % Key]
                 
         @pyqtSignature("QString, QString")	
 	def Set(self,Key,Value):
@@ -60,22 +60,22 @@ class PythonJavascript(QObject):
 	
     @pyqtSignature("QString",result="QString")		
     def get(self,var):
-        from database import jxdeck
+        from database import eDeck
         if var =="cardsKnownThreshold":            
-            return "%s" % jxdeck.cardsKnownThreshold
+            return "%s" % eDeck.cardsKnownThreshold
         elif var =="factsKnownThreshold":            
-            return "%s" % jxdeck.factsKnownThreshold
+            return "%s" % eDeck.factsKnownThreshold
         elif var in ['JLPT','Frequency', 'Kanken','Jouyou']:
             from ui_menu import JxStats
             return JxStats(str(var))
             
     @pyqtSignature("QString,QString")		
     def set(self,var,value)	:
-        from database import jxdeck
+        from database import eDeck
         if var =="cardsKnownThreshold":    
-            jxdeck.set_cardsKnownThreshold(int(value))
+            eDeck.set_cardsKnownThreshold(int(value))
         elif var =="factsKnownThreshold":            
-            jxdeck.set_factsKnownThreshold(float(value))
+            eDeck.set_factsKnownThreshold(float(value))
             
             
             

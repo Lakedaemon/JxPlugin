@@ -17,6 +17,10 @@ JxHistory = {}
 from PyQt4.QtCore import *
 from anki.utils import stripHTML
 
+def sliding_day(seconds):
+    """let's decide that a day stats at 4h in the morning, to minimize border problems (you should be sleeping at that time)""" 
+    return int((seconds - time.timezone + 14400) / 86400.0)
+
 class Database(QObject):
     """Data structure for the JxPlugin tables"""
     
@@ -25,24 +29,22 @@ class Database(QObject):
         self.setObjectName(name)
         try:
             self.load()
-            self.reference_data()
             from controls import JxSettings
-            if time.time()-self.cacheBuilt > JxSettings.Get('cacheRebuild'):
-                self.restart()
+            if sliding_day(time.time()) - sliding_day(self.cache['cacheBuilt']) <= JxSettings.Get('cacheRebuild'):
+                self.update() 
             else:
-                self.update()
-                
+                self.reset()       
         except KeyError:
-            self.restart()
+            self.reset()
         
-    def restart(self):
+    def reset(self):
         self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{}, 
         'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
         'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
-        self.reference_data()
         self.build()
         
     def update(self):
+        self.reference_data()
         self.set_models(True)
         self.set_fields(True)
         self.save_stats(True)
@@ -51,8 +53,10 @@ class Database(QObject):
         self.set_new_states(True)
         self.set_history(True)
         self.apply_new_states(True)
+        self.save() 
         
     def build(self):
+        self.reference_data()
         self.set_models(False)
         self.set_fields(False)
         self.drop_deleted_facts(False)
@@ -79,7 +83,7 @@ class Database(QObject):
     def set_factsKnownThreshold(self,value): 
         val = float(value)
         if val != self.factsKnownThreshold:
-            self.cache.update({'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
+            self.cache.update({'states':{},'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
                 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
                 'factsKnownThreshold':val})
             self.reference_data()
@@ -122,7 +126,9 @@ class Database(QObject):
             file.close()
         
     def save(self):
-        """saves the cache on disk"""                   
+        from ui_menu import JxStats
+        """saves the cache on disk"""  
+        #mw.help.showText(self.debug)
         path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")   
         file = open(path, 'wb')
         cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
@@ -134,7 +140,7 @@ class Database(QObject):
         # sets things up for the build/update process
         if update:
             dic = {}
-            query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, models.modified from models,fieldModels where models.id = fieldModels.modelId and models.modified>%.3f""" % self.modelsModified
+            query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name, models.modified from models,fieldModels where models.id = fieldModels.modelId and models.modified>%.8f""" % self.modelsModified
         else:
             dic = self.models
             query = """select models.id,models.name,models.tags,fieldModels.ordinal,fieldModels.name,models.modified from models,fieldModels where models.id = fieldModels.modelId"""
@@ -201,13 +207,14 @@ class Database(QObject):
             def copy((id, model)): 
                 models[id] = model
             map(copy, dic.iteritems()) 
+        self.debug = "Models (" + str(len(dic)) +")<br/>" 
     
     def set_fields(self,update):
         from anki.utils import stripHTML
         """fills the fields if update is false or overwrites them otherwise"""
         if update:  
             dic = {}
-            query = """select factId,value, modified from fields, facts where fields.factId = facts.id and modified>%.3f order by ordinal""" %  self.factsModified
+            query = """select factId,value, modified from fields, facts where fields.factId = facts.id and modified>%.8f order by ordinal""" %  self.factsModified
         else:
             dic = self.fields
             query = """select factId,value, modified from fields, facts where fields.factId = facts.id order by ordinal"""
@@ -229,19 +236,20 @@ class Database(QObject):
             def copy((id,dict)):
                 fields[id] = dict
             map(copy, dic.iteritems())
-
+        self.debug += "Facts (" + str(len(dic)) +")<br/>" 
+        
     def save_stats(self, update):
         from copy import deepcopy
         from controls import JxSettings
         now = time.time()
-        if not(update) or int(now/86400.0) - int(self.statsModified/86400.0) >= int(JxSettings.Get('reportReset')):
+        if not(update) or sliding_day(now) - sliding_day(self.statsModified) >= int(JxSettings.Get('reportReset')):
             self.cache['oldStats'] = deepcopy(self.stats)
-            self.oldStats = self.cache['oldStats']
             self.cache['statsModified'] = now
-            
+            self.oldStats = self.cache['oldStats']
+        
     def drop_deleted_facts(self,update):
         if update:
-            query = """select factId,deletedTime from factsDeleted where deletedTime>%.3f""" % self.factsDeleted  
+            query = """select factId,deletedTime from factsDeleted where deletedTime>%.8f""" % self.factsDeleted  
         else:
             # no need to drop facts
             query = """select deletedTime from factsDeleted""" 
@@ -249,6 +257,7 @@ class Database(QObject):
             return
             
         drop = mw.deck.s.all(query)
+        self.debug += "Facts (-" + str(len(drop)) +") : " 
         list = []
         dic = {}
         history = self.history
@@ -276,10 +285,11 @@ class Database(QObject):
             except:
                 pass        
         map(delete,drop) 
- 
+
+         
     def set_types(self,update):
         if update:
-            query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.3f or models.modified>%.3f)""" %  (self.factsModified,self.modelsModified)  
+            query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.8f or models.modified>%.8f)""" %  (self.factsModified,self.modelsModified)  
         else:
             query = """select id, tags, modelId from facts"""
     
@@ -298,8 +308,9 @@ class Database(QObject):
                 except KeyError:
                     pass
             map(build,table)
+            self.debug += "---- " 
             self.update_graphs(dic)
-            self.set_stats(lis,-1)
+            self.set_stats(lis,-1)          
 
         models = self.models
         def compute((id,tags,modelId)):
@@ -339,20 +350,23 @@ class Database(QObject):
                     metadata[type] = content 
             self.types[id] = metadata
         map(compute,table)
-
+        
+        self.debug += "Types (" + str(len(table)) + ")<br/>" 
+        
         #update stats/graphs
         if update:
             def invert((factId,(boolean,dict))):
                 dic[factId] = (True, dict)        
             map(invert,dic.iteritems())
+            self.debug += "++++ " 
             self.update_graphs(dic)
             self.set_stats(lis,1)
-
+            
     def set_new_states(self,update):
         if update:
             self.newStates = {}
             States = self.newStates
-            query = """select cards.factId, cards.id, cards.interval, cards.reps, cards.modified from cards where cards.modified>%.3f""" % self.cardsModified
+            query = """select cards.factId, cards.id, cards.interval, cards.reps, cards.modified from cards where cards.modified>%.8f""" % self.cardsModified
         else:
             States = self.states
             query = """select factId, id, interval, reps, modified from cards"""      
@@ -374,7 +388,8 @@ class Database(QObject):
                 cardsStates[factId] = {id : status} 
             return cached
         self.cache['cardsModified'] = max(map(assign, mw.deck.s.all(query)) + [self.cardsModified])
-
+        #self.cardsModified= self.cache['cardsModified'] 
+        
         def compute((factId,dic)):
             list = [status for status in dic.values() if status>=0]
             threshold = len(dic) * factsKnownThreshold 
@@ -386,10 +401,11 @@ class Database(QObject):
                 status = -1# in deck
             States[factId] = (status, dic)
         map(compute, cardsStates.iteritems())
-
+        self.debug += "States (" + str(len(cardsStates)) + ")<br/>" 
+            
     def set_history(self,update): 
         if update:
-            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.3f  order by reviewHistory.cardId, reviewHistory.time""" %  self.historyModified
+            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.8f  order by reviewHistory.cardId, reviewHistory.time""" %  self.historyModified
         else:
             query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
         
@@ -402,14 +418,14 @@ class Database(QObject):
             """sets the cards status changes in the Jx database JxDeck"""
             if self.cardId != id:
                 if update:
-                    self.switch = (states[factId][1][id] != 1)                
+                    self.switch = (states[factId][1][id] != 1)                #########################################################
                 else:
                     self.switch = True            
                 self.cardId = id
             if (nextInterval > cardsKnownThreshold  and self.switch) or (nextInterval <= cardsKnownThreshold  and not(self.switch)):
                 self.switch = not(self.switch)
                 #Card Status Change
-                day = int(time / 86400.0)
+                day = sliding_day(time)
                 try: 
                     cardsHistory = history[factId]
                 except KeyError:
@@ -421,6 +437,9 @@ class Database(QObject):
                     cardsHistory[id] = [day]
             return time        
         self.cache['historyModified'] = max(map(assign,mw.deck.s.all(query)) + [self.historyModified])
+        
+        self.debug += "History ("+str(len(history)) + ") : "         
+        
         deltaHistory = {}
         def compute((factId,cardsHistory)):         
             (status, cardsStates) = states[factId]
@@ -462,7 +481,7 @@ class Database(QObject):
                     boolean = not(boolean)  
             if update:
                 try:
-                    self.history[factId].append(list[:])
+                    self.history[factId].extend(list[:]) ##### no risk taken 
                 except KeyError:
                     self.history[factId]=list[:]
                 deltaHistory[factId] = ((status != 1), list[:])  
@@ -471,9 +490,11 @@ class Database(QObject):
                 deltaHistory[factId] = (True, list[:])
         
         map(compute, history.iteritems())
+
         self.update_graphs(deltaHistory)
 
     def update_graphs(self,dic):
+        self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
         types = self.types
         graphs = self.graphs
         for type in ['Word','Kanji']:
@@ -546,20 +567,21 @@ class Database(QObject):
         """downdates stats, apply new states and updates stats""" 
         states = self.states
         def build(factId):
-            return (factId,states[factId][0])
+                return (factId,states[factId][0])
+        self.debug += "<br/>ApplyStates :"
         if update:
-            list = self.newStates.keys()
-            self.set_stats(map(build,list),-1)
+            self.set_stats(map(build,[id for id in self.newStates.keys() if id in states]),-1)
             states.update(self.newStates)
+            self.debug += " --> "
+            self.set_stats(map(build,self.newStates.keys()),1)
             del self.newStates
-            self.set_stats(map(build,list),1)
         else:
-            list = self.states.keys()
-            self.set_stats(map(build,list),0)
+            self.set_stats(map(build,self.states.keys()),0)
 
 
     def set_stats(self, List, add):
         """updates stats positively if add>0, negatively if add<0 or build stats if add=0"""
+        self.debug += "stats(" + str(len(List))  + ")<br/>" 
         types = self.types
         for type in ['Word','Kanji']:
             def select((factId, status)):
@@ -652,45 +674,44 @@ class Database(QObject):
     
 def build_JxDeck():
     """loads JxDeck and inits stuff"""
-    #from controls import Jx_Control_Cache 
-    global jxdeck
-    jxdeck = Database()
-
-    #Jx_Control_Cache .load()
+    global eDeck
+    eDeck = Database()
 
 
- 
-    #midnightOffset = time.timezone - self.deck.utcOffset
-    #self.endOfDay = time.mktime(now) - midnightOffset
-    #todaydt = datetime.datetime(*list(time.localtime(time.time())[:3]))
+
+
    
                 
 import time
 def JxGraphs_into_json():
     global JxGraphs
-    graphs = jxdeck.graphs
-    today = int(time.time() / 86400.0)
+    graphs = eDeck.graphs
+    today = sliding_day(time.time())
     dict_json = {}
     tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
     for (graph,mapping) in tasks.iteritems():
         for (key,string) in mapping.Order +[('Other','Other')]:
+            if graph == 'W-AFreq':
+                    a = 100.0/Jx_Word_SumOccurences
+            elif graph == 'K-AFreq':
+                    a = 100.0/Jx_Kanji_SumOccurences
+            else:
+                    a = 1
             try:
                 dict = graphs[(graph,key)]
             except KeyError:
                 dict = {}
             if today not in dict:
                 dict[today] = 0
-            keys = dict.keys()
-            if graph == 'W-AFreq':
-                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])*100.0/Jx_Word_SumOccurences) for limit in range(min(keys), max(keys) + 1)]) 
-            elif graph == 'K-AFreq':
-                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])*100.0/Jx_Kanji_SumOccurences) for limit in range(min(keys), max(keys) + 1)]) 
-            else:
-                dict_json[(graph,key)] =  JxJSon([(limit-today,sum([dict[day] for day in keys if day <=limit])) for limit in range(min(keys), max(keys) + 1)])                 
+            sortedList = list(dict.iteritems())
+            sortedList.sort(lambda x,y:x[0]-y[0])
+            s = 0
+            List = []
+            for (day,value) in sortedList:
+                s = s + value
+                List.append("[%s,%s]"% (day - today,s * a))
+            dict_json[(graph,key)] =  "[" + ",".join(List) + "]"              
     return dict_json
-    
-def JxJSon(CouplesList):
-        return "[" + ",".join(map(lambda (x,y): "[%s,%s]"%(x,y),CouplesList)) + "]" 
 
 def get_report(new,ancient) :
     if  new == ancient:
@@ -709,8 +730,8 @@ def JxVal(Dict,x):
 def display_stats(stats):
     mappings = {'W-JLPT':MapJLPTTango, 'W-Freq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-Freq':MapZoneKanji,  'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji}
     mapping = mappings[stats]
-    get_stat = jxdeck.get_stat
-    get_ancient_stat = jxdeck.get_old_stat
+    get_stat = eDeck.get_stat
+    get_old_stat = eDeck.get_old_stat
     html = """
     <style>
 	    .BackgroundHeader {background-color: #eee8d4;}
@@ -744,14 +765,9 @@ def display_stats(stats):
         sumSeen += seen
         sumInDeck += inDeck
         sumTotal += total
-        if JxSavedStats:
-            Aknown = get_ancient_stat((stats,1,key))
-            Aseen = Aknown + get_ancient_stat((stats,0,key))
-            AinDeck = Aseen + get_ancient_stat((stats,-1,key))
-        else:
-            Aknown = known
-            Aseen = seen
-            AinDeck = inDeck              
+        Aknown = get_old_stat((stats,1,key))
+        Aseen = Aknown + get_old_stat((stats,0,key))
+        AinDeck = Aseen + get_old_stat((stats,-1,key))           
         AsumKnown += Aknown
         AsumSeen += Aseen        
         AsumInDeck += AinDeck       
@@ -782,14 +798,9 @@ def display_stats(stats):
     known = get_stat((stats,1,'Other'))
     seen = known + get_stat((stats,0,'Other'))
     inDeck = seen + get_stat((stats,-1,'Other'))
-    if JxSavedStats:
-        Aknown = get_ancient_stat((stats,1,'Other'))
-        Aseen = Aknown + get_ancient_stat((stats,0,'Other'))
-        AinDeck = Aseen + get_ancient_stat((stats,-1,'Other'))
-    else:
-        Aknown = known
-        Aseen = seen
-        AinDeck = inDeck         
+    Aknown = get_old_stat((stats,1,'Other'))
+    Aseen = Aknown + get_old_stat((stats,0,'Other'))
+    AinDeck = Aseen + get_old_stat((stats,-1,'Other'))     
     if (known,seen,inDeck) != (0,0,0):
         knownString = get_report(known, Aknown)
         seenString = get_report(seen, Aseen)
@@ -816,8 +827,8 @@ def get_Areport(new,ancient) :
 def display_astats(stats):
     mappings = {'W-AFreq':MapZoneTango, 'K-AFreq':MapZoneKanji}
     mapping = mappings[stats]
-    get_stat = jxdeck.get_stat
-    get_old_stat = jxdeck.get_old_stat
+    get_stat = eDeck.get_stat
+    get_old_stat = eDeck.get_old_stat
     html = """
     <style>
         .BackgroundHeader {background-color: #817865;}
@@ -841,7 +852,7 @@ def display_astats(stats):
 	    </tr>"""
     grandTotal = sum([get_stat((stats,'Total',key)) for (key, value) in mapping.Order])
     if JxSavedStats:
-        AgrandTotal = sum([get_ancient_stat((stats,'Total',key)) for (key, value) in mapping.Order])     
+        AgrandTotal = sum([get_old_stat((stats,'Total',key)) for (key, value) in mapping.Order])     
     else:
         AgrandTotal = grandTotal
     (sumKnown, sumSeen, sumInDeck, sumTotal)=(0,0,0,0)
@@ -855,14 +866,9 @@ def display_astats(stats):
         sumSeen += seen
         sumInDeck += inDeck
         sumTotal += total
-        if JxSavedStats:
-            Aknown = get_ancient_stat((stats,1,key))
-            Aseen = Aknown + get_ancient_stat((stats,0,key))
-            AinDeck = Aseen + get_ancient_stat((stats,-1,key))
-        else:
-            Aknown = known
-            Aseen = seen
-            AinDeck = inDeck              
+        Aknown = get_old_stat((stats,1,key))
+        Aseen = Aknown + get_old_stat((stats,0,key))
+        AinDeck = Aseen + get_old_stat((stats,-1,key))        
         AsumKnown += Aknown
         AsumSeen += Aseen        
         AsumInDeck += AinDeck      
@@ -915,7 +921,7 @@ def display_partition(stat,label):
     else:
         dic = Jx_Kanji_Occurences
         type = 'Kanji'
-    types = jxdeck.types
+    types = eDeck.types
     def assign((id,(state, cardsStates))):
         if state==label:
             try:
@@ -927,7 +933,7 @@ def display_partition(stat,label):
                 partition[key].append((content,id))
             except KeyError:
                 pass
-    map(assign, jxdeck.states.iteritems())
+    map(assign, eDeck.states.iteritems())
 
 
     for (key,string) in mapping.Order+ [('Other','Other')]:
@@ -974,7 +980,7 @@ def display_complement(stat):
                 partition[key].discard(content)
             except KeyError:
                 pass
-    map(assign, jxdeck.types.iteritems())
+    map(assign, eDeck.types.iteritems())
     for (key,string)in mapping.Order:
         partition[key] = sorted(partition[key],lambda x,y:JxVal(dic,y)-JxVal(dic,x))
     color = dict([(key,True) for (key,string) in mapping.Order])
