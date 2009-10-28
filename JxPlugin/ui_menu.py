@@ -114,6 +114,85 @@ def JxBrowse():
 	JxPreview.activateWindow()
 	JxPreview.show()
 
+
+
+    
+from japanese.reading import *
+import sys, os, platform, re, subprocess
+
+
+class MecabControl(object):
+
+    def __init__(self):
+        self.mecab = None
+
+    def setup(self):
+        if sys.platform == "win32":
+            dir = WIN32_READING_DIR
+            os.environ['PATH'] += (";%s\\mecab\\bin" % dir)
+            os.environ['MECABRC'] = ("%s\\mecab\\etc\\mecabrc" % dir)
+        elif sys.platform.startswith("darwin"):
+            dir = os.path.dirname(os.path.abspath(__file__))
+            os.environ['PATH'] += ":" + dir + "/osx/mecab/bin"
+            os.environ['MECABRC'] = dir + "/osx/mecab/etc/mecabrc"
+            os.environ['DYLD_LIBRARY_PATH'] = dir + "/osx/mecab/bin"
+            os.chmod(dir + "/osx/mecab/bin/mecab", 0755)
+
+    def ensureOpen(self):
+        if not self.mecab:
+            self.setup()
+            try:
+                self.mecab = subprocess.Popen(
+                    mecabCmd, bufsize=-1, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, startupinfo=si)
+            except OSError:
+                raise Exception(_("Please install mecab"))
+                
+                
+                
+                
+if sys.platform == "win32":
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+else:
+    si = None                
+mecabCmd = ["mecab", '--node-format=%m[%f[7]] ', '--eos-format=\n',
+            '--unk-format=%m[] ']
+mecabCmd = ["mecab", '--node-format=%m\t%F-[0,1,2,3]\n', '--eos-format=EOS\n']
+mecabCmd = ["mecab", '--node-format=%m\t%F-[0,1,2,3]\n', '--eos-format=EOS\n']
+mecabCmd = ["mecab", '--node-format=%m,%f[7],%f[8],%f[6],%F-[0,1,2,3],%f[4],%f[5]\n',
+'--unk-format=%m,%m,%m,%f[6],%F-[0,1,2,3],,\n',
+'--eos-format=EOS,,,,,,\n']
+mecabCmd = ["mecab",'--node-format=(%m,%f[0],%f[1],%f[7]),',  '--eos-format=\n']
+me = MecabControl()
+
+def escapeTextOL(text):
+    # strip characters that trip up kakasi/mecab
+    text = text.replace("\n", " ")
+    #text = text.replace(u'～', u"○")
+    #text = text.replace(u'\uff5e', "~")
+    text = text.replace('~',u'～')
+    text = re.sub("<br( /)?>", "---newline---", text)
+    text = stripHTML(text)
+    text = text.replace("---newline---", "<br>")
+    return text
+
+debug=""
+def call_mecab(string):
+    stringe = escapeTextOL(string)
+    try:    
+        if string != u'試着室'and string !=u'V-(r)u 際に'and string != u'21世紀' and string != u'N に際して':
+             me.ensureOpen()
+             me.mecab.stdin.write(stringe.encode("euc-jp", "ignore")+'\n')
+             me.mecab.stdin.flush()
+             return unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
+        else:
+                return "gahhhh" + string
+    except:
+            global debug
+            debug+= string
+            return stringe + " <--> "+ string
+
 def onJxGraphs():
     from database import JxGraphs_into_json
     JxGraphsJSon = JxGraphs_into_json()
@@ -127,10 +206,26 @@ def onJxGraphs():
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
     JxPreview.show()
+    """
+    from database import eDeck
+    n = time.time()
+    List=[]
+    def build((id,dic)):
+        try:
+            List.append(dic['Word'])
+        except KeyError:
+            pass
+    map(build,eDeck.types.iteritems())
+    List.sort()
+    origin=time.time()
+    global debug
+    Listd=map(call_mecab,List)
 
+    end= time.time()-origin
+    mw.help.showText(str(end)+ debug + "<br/><br/><br/>" + "<br/>".join(Listd))
 
-
-
+    #call_mecab(u"カリン、自分でまいた種は自分で刈り取れ")
+"""
 
 def init_JxPlugin():
         """Initialises the Anki GUI to present an option to invoke the plugin."""
