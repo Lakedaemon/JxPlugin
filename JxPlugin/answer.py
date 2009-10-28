@@ -251,7 +251,7 @@ def JxFindTypeAndField(Card,Types):
                                                         break
                 except KeyError:
                         pass
-                
+
                 List=TempList
                 
         if len(List)<len(Types):
