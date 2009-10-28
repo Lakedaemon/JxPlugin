@@ -519,7 +519,8 @@ class Jx__Browser(QWebView):
 		sizePolicyd.setVerticalStretch(QSizePolicy.GrowFlag+QSizePolicy.ShrinkFlag)
 		#sizePolicyd.setHeightForWidth(self.sizePolicy().sizeHint())#hasHeightForWidth())
 		self.setSizePolicy(sizePolicyd)
-		self.setMinimumSize(QtCore.QSize(1200, 600))
+      		rect=QtGui.QApplication.desktop().availableGeometry()
+		self.setMinimumSize(QtCore.QSize(min(1200,rect.width()), min(600,rect.height()-10)))
 		#self.setMaximumSize(QtCore.QSize(210, 16777215))
 		self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
 		mw.connect(self, QtCore.SIGNAL('linkClicked (const QUrl&)'), onClick)	
@@ -531,7 +532,8 @@ class Jx__Browser(QWebView):
 	        	self.page().mainFrame().addToJavaScriptWindowObject("JxAnswerSettings",JxAnswerSettings)	
 	        	self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)  
 	def sizeHint(self):
-		return(QSize(1400,1100))
+      		rect=QtGui.QApplication.desktop().availableGeometry()
+		return(QSize(min(1400,rect.width()), min(1100,rect.height()-10)))
 
 		
 JxPreview = Jx__Browser()

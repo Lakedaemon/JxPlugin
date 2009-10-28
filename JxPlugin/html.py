@@ -515,7 +515,7 @@ $.plot($("#KanjiKanken"), %(JSon:Kanken)s ,{grid:{show:true,aboveData:true},line
 });
 </script> 
 </head>
-<body>
+<body style="min-width:1200px">
 
 <div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
 <div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
