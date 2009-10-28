@@ -35,25 +35,94 @@ class Jx__Settings(QObject):
                 
         @pyqtSignature("QString, QString")	
 	def Set(self,Key,Value):
-                self.Dict[u"%s" % Key] = Value
+                self.Dict[u"%s" % Key] = str(Value)
                 self.Update()
                   
         def Load(self):
+                from default import  Jx__Css__Default
+                self.Dict = {"Mode":"Override","Css":Jx__Css__Default,'reportReset':'1','cacheRebuild':'14'}
                 if os.path.exists(self.File):
                           File = open(self.File, 'rb')
-                          self.Dict = cPickle.load(File)
+                          self.Dict.update(cPickle.load(File))
                           File.close()
-                else:
-                          from default import  Jx__Css__Default
-                          self.Dict={"Mode":"Override","Css":Jx__Css__Default}
-                          self.Update()
+
         def Update(self):
                 File = open(self.File, 'wb')
                 cPickle.dump(self.Dict, File, cPickle.HIGHEST_PROTOCOL)
                 File.close()
         
+
+class PythonJavascript(QObject):
+    """implements methods to move int between python and javascript"""
+    def __init__(self,name,parent=JxBase):
+	QObject.__init__(self,parent)
+	self.setObjectName(name)
+	
+    @pyqtSignature("QString",result="QString")		
+    def get(self,var):
+        from database import eDeck
+        if var =="cardsKnownThreshold":            
+            return "%s" % eDeck.cardsKnownThreshold
+        elif var =="factsKnownThreshold":            
+            return "%s" % eDeck.factsKnownThreshold
+        elif var in ['JLPT','Frequency', 'Kanken','Jouyou']:
+            from ui_menu import JxStats
+            return JxStats(str(var))
+            
+    @pyqtSignature("QString,QString")		
+    def set(self,var,value)	:
+        from database import eDeck
+        if var =="cardsKnownThreshold":    
+            eDeck.set_cardsKnownThreshold(int(value))
+        elif var =="factsKnownThreshold":            
+            eDeck.set_factsKnownThreshold(float(value))
+            
+            
+            
+class Jx__Cache(QObject):
+    """Data class for JxKnownThreshold, JxKnownCoefficient, JxCacheRefresh, JxCacheRebuild"""       
+    def __init__(self,name,parent=JxBase):
+	QObject.__init__(self,parent)
+	self.setObjectName(name)
+
+    def refresh_fset(self,value):
+        self._cache_refresh = float(value)
         
+    #@pyqtSignature("",result="QString")	
+    def refresh_fget(self):
+        return "%.1f" % self._cache_refresh
+
+    @Jx__Prop
+    def cache_refresh(): return {'fset': lambda self,value:self.refresh_fset(value),'fget':  lambda self:self.refresh_fget()}
+    
+    def rebuild_fset(self,value):
+        self._cache_rebuild = float(value)
         
+    #@pyqtSignature("",result="QString")	
+    def rebuild_fget(self):
+        return "%.1f" % self._cache_rebuild
+        
+    @Jx__Prop
+    def cache_rebuild(): return {'fset': lambda self,value:self.rebuild_fset(value),'fget':  lambda self:self.rebuild_fget()}
+    
+    def load(self):
+        from database import JxDeck
+        try:
+            self._card_threshold = JxDeck['CardThreshold']
+            self._fact_threshold = JxDeck['FactThreshold']
+            self._cache_refresh = JxDeck['CacheRefresh']
+            self._cache_rebuild = JxDeck['CacheRebuild']
+        except KeyError:
+            self._card_threshold = 21
+            self._fact_threshold = 1
+            self._cache_refresh = 1
+            self._cache_rebuild = 14
+    def save(self):
+        from database import JxDeck
+        JxDeck['CardThreshold'] = self._card_threshold
+        JxDeck['FactThreshold'] = self._fact_threshold
+        JxDeck['CacheRefresh'] = self._cache_refresh
+        JxDeck['CacheRebuild'] = self._cache_rebuild       
         
 class Jx__Entry_Source_Target(QObject):
 	"""Data class for the HtmlJavascript Entry/Name/Source/Target Widget"""
@@ -406,6 +475,8 @@ from ui_menu import onClick
 JxSettings = Jx__Settings()
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")             
 Jx_Control_Tags = Jx__MultiSelect('JxTags',JxBase) 
+Jx_Control_Cache = Jx__Cache('JxCache',JxBase)
+Jx_Control_Bridge = PythonJavascript('py',JxBase)
 
 class Jx__Menu(QWebView):
 	"""A QWebkit Window with mw as parent for Menu related stuff"""
@@ -430,6 +501,8 @@ class Jx__Menu(QWebView):
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTemplateOverride",JxTemplateOverride)	
                 self.page().mainFrame().addToJavaScriptWindowObject("JxSettings",JxSettings)     
                 self.page().mainFrame().addToJavaScriptWindowObject("JxTags",Jx_Control_Tags)   
+                self.page().mainFrame().addToJavaScriptWindowObject("JxCache",Jx_Control_Cache)  
+                self.page().mainFrame().addToJavaScriptWindowObject("py",Jx_Control_Bridge)  
 	@pyqtSignature("")                
 	def Hide(self):
 		self.hide()

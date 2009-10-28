@@ -118,6 +118,76 @@ $(document).ready(function(){
 });
 </script>
 
+<!--            slider        -->
+
+<script type="text/javascript">
+	$(function() {
+		$("#knownthreshold").slider({
+			value:py.get('cardsKnownThreshold'), 
+			min: 0,
+			max: 180,
+			step: 1,
+			stop: function(event, ui) {
+			        py.set('cardsKnownThreshold',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			},
+			slide: function(event, ui) {
+			        if (ui.value>1){$("#knownthresholdvalue").val(ui.value+ " days")}
+			        else {$("#knownthresholdvalue").val(ui.value+ " day");}}
+			});
+			
+						        if ($("#knownthreshold").slider("value")>1){$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " days")}
+			        else
+			        {$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " day");}
+	
+
+		$("#knowncoefficient").slider({
+			value:py.get('factsKnownThreshold'), 
+			min: 0.01,
+			max: 1,
+			step: 0.01,
+			stop: function(event, ui) {
+			        py.set('factsKnownThreshold',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			},
+			slide: function(event, ui) {
+				$("#knowncoefficientvalue").val(Math.round(ui.value*100) + " %");
+				}
+			});
+		$("#knowncoefficientvalue").val(Math.round($("#knowncoefficient").slider("value") *100) + " %");
+		$("#cache").slider({
+			range: true,
+			min: 0,
+			max: 31,
+			step: 1,
+			stop: function(event, ui) {
+			        JxSettings.Set('reportReset',ui.values[0].toString());
+			        JxSettings.Set('cacheRebuild',ui.values[1].toString());
+                        },
+			values: [parseInt(JxSettings.Get('reportReset')), parseInt(JxSettings.Get('cacheRebuild'))],
+			slide: function(event, ui) {
+			
+		if ($("#cache").slider("values", 0)>1) {$("#cachesave").val($("#cache").slider("values", 0)+ " days");}
+		        else {$("#cachesave").val($("#cache").slider("values", 0)+ " day");}
+		if ($("#cache").slider("values", 1)>1){$("#cachebuild").val($("#cache").slider("values", 1)+ " days");}
+			else {$("#cachebuild").val($("#cache").slider("values", 1)+ " day");}
+			
+			}
+		});
+		if ($("#cache").slider("values", 0)>1) {$("#cachesave").val($("#cache").slider("values", 0)+ " days");}
+		        else {$("#cachesave").val($("#cache").slider("values", 0)+ " day");}
+		if ($("#cache").slider("values", 1)>1){$("#cachebuild").val($("#cache").slider("values", 1)+ " days");}
+			else {$("#cachebuild").val($("#cache").slider("values", 1)+ " day");}
+	});
+</script>
+
+
 <style type="text/css">
 
 textarea.Code { 
@@ -180,11 +250,35 @@ $(document).ready(function(){
 <div id="Settings" style="padding:3px;">
 	<h3><a href="#">About</a></h3>
 	<div>
-        The Japanese eXtended Plugin (V 1.14) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
+        The Japanese eXtended Plugin (V 1.16) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
                 <p>Written by Olivier Binda with patches from Robert Hebler.</p>
                 <div><a style="display:block;" align="center" href='http://www.pledgie.com/campaigns/5354'><img alt='Click here to lend your support to: JxPlugin and make a donation at www.pledgie.com !' src='http://www.pledgie.com/campaigns/5354.png?skin_name=chrome' border='0' /></a></div>
                 <p>
                 Thanks to all the people who have provided suggestions, bug reports and donations.</p>
+	</div>
+	<h3><a href="#">Cards &amp; Facts knowledge</a></h3>
+	<div>	      
+	        <div id="knownthreshold"></div>	      
+	        <p>
+	        	<label for="knownthresholdvalue">Card known threshold : </label>
+	                <input type="text" id="knownthresholdvalue" style="border:0; color:#f6931f; font-weight:bold; width:65px" />
+	      </p>          
+	      <div id="knowncoefficient"></div>
+	      <p>
+	        	<label for="knowncoefficientvalue">Fact known threshold : </label>
+	                <input type="text" id="knowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:45px" />
+	      </p>          
+	</div>
+	<h3><a href="#">Report &amp; Cache</a></h3>
+	<div>
+	        <div id="cache"></div>
+	        <p>
+	        	<label for="cachesave">Report resets every &nbsp;</label>
+	                <input type="text" id="cachesave" style="border:0; color:#f6931f; font-weight:bold; width:60px" />
+	                <br/>
+	                <label for="cachebuild">Cache rebuilds every &nbsp;</label>
+	                <input type="text" id="cachebuild" style="border:0; color:#f6931f; font-weight:bold; width:60px" />
+	      </p>   
 	</div>
 	<h3><a href="#">Answer Transductor</a></h3>
 	<div>
@@ -406,14 +500,14 @@ Jx_Html_Graphs = u"""
 	jQuery().ready(function(){
                $('.ui-button').button({checkButtonset:true});
                
-$.plot($("#KanjiJLPT"),   %(JSon:Kanji|0)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
-$.plot($("#WordJLPT"),    %(JSon:Word|0)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
-$.plot($("#KanjiFreq"),   %(JSon:Kanji|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+$.plot($("#KanjiJLPT"),   %(JSon:K-JLPT)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
+$.plot($("#WordJLPT"),    %(JSon:W-JLPT)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
+$.plot($("#KanjiFreq"),   %(JSon:K-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});               
-$.plot($("#WordFreq"),     %(JSon:Word|1)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
+$.plot($("#WordFreq"),     %(JSon:W-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});  
-$.plot($("#KanjiJouyou"), %(JSon:Kanji|2)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanji|3)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+$.plot($("#KanjiJouyou"), %(JSon:Jouyou)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
+$.plot($("#KanjiKanken"), %(JSon:Kanken)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
  
             
                

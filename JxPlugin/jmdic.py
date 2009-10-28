@@ -16,45 +16,39 @@ JxJMdic = []
 
 JxLanguage="fre"
 
-# need this to see what happens
-Debug=""
-
 # we don't care about lots of stuff : codepoint[cp], ...
 
+
 def start_element(Name,Attributes):
-        global JxElement,JxAttributes,JxBuffer,JxEntity
+        global JxElement, JxAttributes,JxBuffer
         JxElement = Name
         JxAttributes = Attributes
+                
         if Name == 'entry':
                 # multiple container node -> list
                 JxBuffer = dict([('k_ele',[]),('r_ele',[]),('sense',[])])              
-        global Debug
-        if len(Debug)<100000:
-                String = u''
-                if Attributes:
-                        for (Key,Value) in Attributes.iteritems():
-                                String += " " + str(Key) + '="' + str(Value) + '"'
-                Debug += '&lt;' +str(Name)+ String +'&gt;<br/>'
                 
 def char_data(Data):
-        global JxElement,JxAttributes,JxBuffer
+        #global JxElement,JxAttributes,JxBuffer
         if Data != '\n':
                 #got to save the data in a buffer respecting the structure
-                if JxElement in ['ent_seq','keb','reb','re_nokanji','s_inf']:
+                if JxElement == 'ent_seq': 
+                        ent_seq = Data
+                elif JxElement in ['keb','reb','re_nokanji','s_inf']:
                         # unique node -> value
                         JxBuffer[JxElement] = Data
-                if JxElement in ['ke_inf','ke_pri','re_inf','re_pri','r_restr','stagk','stagr','xref','ant','pos','field','misc','dial']:
+                elif JxElement in ['ke_inf','ke_pri','re_inf','re_pri','r_restr','stagk','stagr','xref','ant','pos','field','misc','dial']:
                         # multiple leaf node
                         try:
                                 JxBuffer[JxElement].append(Data)
                         except KeyError:
                                 JxBuffer[JxElement] = [Data]
-                if JxElement == 'gloss' and JxAttributes['xml:lang'] == JxLanguage:                    
+                elif JxElement == 'gloss' and JxAttributes['xml:lang'] == JxLanguage:                    
                         try:
                                 JxBuffer['gloss'].append(Data)
                         except KeyError:
                                 JxBuffer['gloss'] = [Data]                                
-                if JxElement == 'lsource':
+                elif JxElement == 'lsource':
                         try:
                                 Language = JxAttributes['xml:lang']
                         except KeyError:
@@ -70,38 +64,33 @@ def char_data(Data):
                         try:
                                 JxBuffer['lsource'].append([(Data,Language,Type,Wasei)])                        
                         except KeyError:
-                                JxBuffer['lsource'] = [(Data,Language,Type,Wasei)] 
-        global Debug
-        if len(Debug)<100000 and Data !=u'\n':
-                Debug+= 'Data:' +str(repr(Data)) +"<br/>"                
-                
+                                JxBuffer['lsource'] = [(Data,Language,Type,Wasei)]               
         
 def end_element(Name):
-        if Name == 'k_ele':
-                List = [Key for Key in ['keb','ke_inf','ke_pri'] if Key in JxBuffer]
-                JxBuffer['k_ele'].append([dict([(Key,JxBuffer[Key]) for Key in List])])
-                for Key in List:
-                        del JxBuffer[Key]
-        if Name == 'r_ele':
-                List = [Key for Key in ['reb','re_inf','re_pri','re_nokanji','re_restr'] if Key in JxBuffer]
-                JxBuffer['r_ele'].append([dict([(Key,JxBuffer[Key]) for Key in List])])
-                for Key in List:
-                        del JxBuffer[Key]
-        if Name == 'sense':
+        if Name == 'entry':
+                # saving the info and flushing
+                if JxBuffer['sense']: #no need to save if there aren't any glosses in the target language
+                        JxJMdic.append([JxBuffer])
+        elif Name == 'sense':
                 List = [Key for Key in ['gloss','stagk','stagr','xref','ant','pos','field','misc','dial','lsource','s_inf'] if Key in JxBuffer]
                 
                 if 'gloss' in JxBuffer:
                         JxBuffer['sense'].append([dict([(Key,JxBuffer[Key]) for Key in List])])
                 for Key in List:
                         del JxBuffer[Key]
-        if Name == 'entry':
-                # saving the info and flushing
-                if JxBuffer['sense']: #no need to save if there aren't any glosses in the target language
-                        JxJMdic.append([JxBuffer])
+        elif Name == 'r_ele':
+                List = [Key for Key in ['reb','re_inf','re_pri','re_nokanji','re_restr'] if Key in JxBuffer]
+                JxBuffer['r_ele'].append([dict([(Key,JxBuffer[Key]) for Key in List])])
+                for Key in List:
+                        del JxBuffer[Key]                        
+        if Name == 'k_ele':
+                List = [Key for Key in ['keb','ke_inf','ke_pri'] if Key in JxBuffer]
+                JxBuffer['k_ele'].append([dict([(Key,JxBuffer[Key]) for Key in List])])
+                for Key in List:
+                        del JxBuffer[Key]
 
-        global Debug
-        if len(Debug)<100000:
-                Debug+= '&lt;/' +str( Name)+"&gt;<br/>"
+
+
 
 
 
@@ -125,17 +114,28 @@ else:
         File.close()
         # I don't ncessarily want Entities to be replaced with the default JMdict strings... I may provide my own strings
         from re import sub
+        from globalobjects import JxInitProfile,JxProfile,JxShowProfile
+        JxInitProfile('JMdict.py')
+        JMdic = sub(r'<info>.*?</info>','',JMdic)
         JMdicWithoutEntities = sub(r'<!ENTITY (.*?) ".*?">',lambda x:'<!ENTITY ' + x.group(1) + ' "${' + x.group(1) + '}">',JMdic)
+        
+        JxProfile('re-place')
         import xml.parsers.expat
-        Jx_Parser_JMdic = xml.parsers.expat.ParserCreate()                
-        Jx_Parser_JMdic.StartElementHandler = start_element
-        Jx_Parser_JMdic.EndElementHandler = end_element
-        Jx_Parser_JMdic.CharacterDataHandler = char_data
+        Jx_Parser_JMdic = xml.parsers.expat.ParserCreate() 
+        JxStart = start_element
+        JxEnd = end_element
+        JxData = char_data
+        Jx_Parser_JMdic.StartElementHandler = JxStart
+        Jx_Parser_JMdic.EndElementHandler = JxEnd
+        Jx_Parser_JMdic.CharacterDataHandler = JxData
+        JxProfile('Parser created')
         Jx_Parser_JMdic.Parse(JMdicWithoutEntities)
+        JxProfile('JMdit parsed')
+        mw.help.showText(JxShowProfile()+str(JxJMdic[6666]))
 	f = open(file_pickle, 'wb')
 	cPickle.dump(JxJMdic, f, cPickle.HIGHEST_PROTOCOL)
 	f.close()
-mw.help.showText(str(len(JxJMdic))+" " +str(JxJMdic[6666])+Debug)#str(JxKanjidic))
+#mw.help.showText(str(len(JxJMdic))+" " +str(JxJMdic[6666])+Debug)#str(JxKanjidic))
 """
 <!DOCTYPE JMdict [
 <!ELEMENT JMdict (entry*)>

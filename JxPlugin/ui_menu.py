@@ -14,19 +14,11 @@ from loaddata import *
 from answer import *
 from stats import *
 from tools import *
-import jmdic
+#import jmdic
 #import kanjidic
 
 
 JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
-
-JxStatsMenu ={
-'JLPT':[('Kanji',HtmlReport,('Kanji',0)),('Words',HtmlReport,('Word',0))],
-'Frequency':[('Kanji',HtmlReport,('Kanji',2)),('Kanji',JxWidgetAccumulatedReport,('Kanji',1)),('Word',HtmlReport,('Word',2)),
-('Words',JxWidgetAccumulatedReport,('Word',1))],
-'Kanken':[('Kanji',HtmlReport,('Kanji',4))],
-'Jouyou':[('Kanji',HtmlReport,('Kanji',3))]}
-
 
 def onClick(url):
         String = unicode(url.toString())
@@ -43,84 +35,62 @@ def JxHelp():
         JxPreview.activateWindow()
         JxPreview.show()
 
+from database import display_stats, display_astats
+JxStatsMenu ={
+'JLPT':[('Kanji',display_stats,'K-JLPT'),('Words',display_stats,'W-JLPT')],
+'Frequency':[('Kanji',display_stats,'K-Freq'),('Kanji',display_astats,'K-AFreq'),('Word',display_stats,'W-Freq'),
+('Words',display_astats,'W-AFreq')],
+'Kanken':[('Kanji',display_stats,'Kanken')],
+'Jouyou':[('Kanji',display_stats,'Jouyou')]}
 
 def JxStats(Type):
-        JxHtml=""
-	for (Title,Func,Couple) in JxStatsMenu[Type]:
-	        if Func == HtmlReport:
-	                JxHtml += '<br/><center><b style="font-size:1.4em;">' + Title.upper() + "</b></center>"
-	                JxHtml += """<center>
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Known')>Known</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'Seen')>Seen</a>&nbsp;&nbsp;
-	                <a href=py:JxShowIn('""" + Couple[0] + "'," + str(Couple[1]) +  """,'InDeck')>Deck</a>&nbsp;&nbsp;
-	                <a href=py:JxShowOut('""" + Couple[0] + "'," + str(Couple[1])+ """)>Missing</a>
+        html=""
+	for (title,func,stat) in JxStatsMenu[Type]:
+	        if func == display_stats:
+	                html += '<br/><center><b style="font-size:1.4em;">' + title.upper() + "</b></center>"
+	                html += """<center>
+	                <a href=py:JxShowIn('""" + stat +  """',1)>Known</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stat +  """',0)>Seen</a>&nbsp;&nbsp;
+	                <a href=py:JxShowIn('""" + stat +  """',-1)>Deck</a>&nbsp;&nbsp;
+	                <a href=py:JxShowOut('""" + stat + """')>Missing</a>
 	                </center><br/>"""
-                JxHtml += Func(Couple[0],Couple[1])
-        return JxHtml
+                html += func(stat)
+        return html
 
 
 
 
-
-def JxShowIn(Type,k,Label):
-        Map = JxStatsMap[Type][k]
-        Dict = None
-        if Type == 'Kanji':
-                Dict = Jx_Kanji_Occurences
-        elif Type == 'Word':
-                Dict = Jx_Word_Occurences
-        if Dict:
-                for (Key,String) in Map.Order + [('Other','Other')]: 
-                        JxPartitionLists[(Type,k,Key,Label)].sort(lambda x,y:JxVal(Dict,y[0])-JxVal(Dict,x[0]))
-        from html import Jx_Html_DisplayStuff
-        JxHtml = Jx_Html_DisplayStuff + JxShowPartition(Type,k,Label)+ """</body></html>"""
-        JxPreview.setHtml(JxHtml,JxResourcesUrl)
-        JxPreview.activateWindow()
-        JxPreview.setWindowTitle("Cards Report")
-        JxPreview.show()
+def JxShowIn(stat,label):
+    from database import display_partition
+    from html import Jx_Html_DisplayStuff
+    html = Jx_Html_DisplayStuff + display_partition(stat,label)+ """</body></html>"""
+    JxPreview.setHtml(html,JxResourcesUrl)
+    JxPreview.activateWindow()
+    JxPreview.setWindowTitle("Facts Report")
+    JxPreview.show()
         
 	
-def JxShowOut(Type,k):
-        Map = JxStatsMap[Type][k]
-        Dict = None
-        if Type == 'Kanji':
-                Dict = Jx_Kanji_Occurences
-        elif Type == 'Word':
-                Dict = Jx_Word_Occurences
-        for (Key,String) in Map.Order: 
-                Done =  [Stuff for Label in ['Known','Seen','InDeck'] for (Stuff,Value) in JxPartitionLists[(Type,k,Key,Label)]]
-                JxPartitionLists[(Type,k,Key,'Missing')] = [Stuff for (Stuff,Value) in Map.Dict.iteritems() if Value == Key and Stuff not in Done]
-                if Dict:               
-                        JxPartitionLists[(Type,k,Key,'Missing')].sort(lambda x,y:JxVal(Dict,y)-JxVal(Dict,x))
-        from html import Jx_Html_DisplayStuff
-        JxHtml = Jx_Html_DisplayStuff + JxShowMissingPartition(Type,k) + """</body></html>"""
-        JxPreview.setHtml(JxHtml,JxResourcesUrl)
-        JxPreview.activateWindow()
-        JxPreview.setWindowTitle("Cards Report")
-        JxPreview.show()  
+def JxShowOut(stat):
+    from database import display_complement
+    from html import Jx_Html_DisplayStuff
+    html = Jx_Html_DisplayStuff + display_complement(stat)+ """</body></html>"""
+    JxPreview.setHtml(html,JxResourcesUrl)
+    JxPreview.activateWindow()
+    JxPreview.setWindowTitle("Facts Report")
+    JxPreview.show()
 		
 from controls import Jx_Control_Tags       
 
                 
-
-
-
+  
 def onJxMenu():
-        from graphs import JxParseFacts4Stats
-        JxParseFacts4Stats() 
-        ComputeCount()        
-        Jx_Control_Tags.Update()
-        from html import Jx_Html_Menu
-	JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'),
-                'Jouyou':JxStats('Jouyou')})
-        JxWindow.setHtml(JxHtml,JxResourcesUrl)
-        JxWindow.show()
-
-
-
-
-
-
+    from database import eDeck
+    eDeck.update()
+    Jx_Control_Tags.Update()
+    from html import Jx_Html_Menu
+    JxHtml = Template(Jx_Html_Menu).safe_substitute({'JLPT':JxStats('JLPT'),'Frequency':JxStats('Frequency'),'Kanken':JxStats('Kanken'), 'Jouyou':JxStats('Jouyou')})
+    JxWindow.setHtml(JxHtml,JxResourcesUrl)
+    JxWindow.show()
 
 def JxBrowse():
 	from controls import Jx__Model_CardModel_String	
@@ -133,16 +103,19 @@ def JxBrowse():
 	JxPreview.show()
 
 def onJxGraphs():
-        from graphs import JxParseFacts4Stats, JxNewAlgorythm
-        if not CardId2Types:
-                JxParseFacts4Stats() 
-        JxGraphsJSon =JxNewAlgorythm()
-        from html import Jx_Html_Graphs
-        JxHtml = Jx_Html_Graphs % (dict([('JSon:'+Type+'|'+str(k),"[" + ",".join(['{ label: "'+ String +'",data :'+ JxGraphsJSon[(Type,k,Key)] +'}' for (Key,String) in (reversed(Map.Order+[('Other','Other')]))]) +"]") for (Type,List) in JxStatsMap.iteritems() for (k,Map) in enumerate(List)]))
-        JxPreview.setHtml(JxHtml ,JxResourcesUrl)
-        JxPreview.setWindowTitle(u"Japanese related Graphs")
-        JxPreview.activateWindow()
-        JxPreview.show() 
+    from database import JxGraphs_into_json
+    JxGraphsJSon = JxGraphs_into_json()
+    from html import Jx_Html_Graphs
+    tasks = {'W-JLPT':MapJLPTTango, 'K-JLPT':MapJLPTKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
+    dic = dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()])
+    tasks = {'W-AFreq':MapZoneTango, 'K-AFreq':MapZoneKanji}
+    dic.update([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order))]) +"]") for (graph,mapping) in tasks.iteritems()])
+    JxHtml = Jx_Html_Graphs % dic
+    JxPreview.setHtml(JxHtml ,JxResourcesUrl)
+    JxPreview.setWindowTitle(u"Japanese related Graphs")
+    JxPreview.activateWindow()
+    JxPreview.show()
+
 
 
 
@@ -182,22 +155,44 @@ def init_JxPlugin():
 	# to enable or disable Jstats whenever a deck is opened/closed
 	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs",)
 	
-	# Ading features through hooks !
+	# Adding features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
 	mw.addHook('deckClosed', JxWindow.hide) # hides the main Jxplugin window when the current deck is closed	
 
 # adds JxPlugin to the list of plugin to process in Anki 
 mw.addHook('init', init_JxPlugin)
 mw.registerPlugin("Japanese Extended Support", 666)
-print 'Japanese Extended Plugin loaded'
 
- 
+# let's overload the loadDeck function as there isn't any hook
+oldLoadDeck = mw.loadDeck
+
+def newLoadDeck(deckPath, sync=True, interactive=True, uprecent=True,media=None):
+    code = oldLoadDeck(deckPath, sync, interactive, uprecent,media)
+    if code and mw.deck:
+        from database import build_JxDeck
+        build_JxDeck()
+    return code
+
+mw.loadDeck = newLoadDeck
 # The main JxPlugin Windows # funny, you cannot import stuff after these statements
 from controls import JxWindow
 from controls import JxPreview        
-        
-        
-        
+
+
+# make sure there is Cache and User directories
+def ensure_dir_exists(dir):
+    """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
+    path = os.path.join(mw.config.configPath, "plugins","JxPlugin",dir)
+    if not(os.path.isdir(path)):
+        try:
+            os.mkdir(path)
+        except OSError:
+            # big troubles ahead... raise an error message
+            pass
+            from ankiqt.ui.utils import showWarning
+            showWarning("Couldn't create the '" + dir + "' directory.")
+
+map(ensure_dir_exists,['User','Cache'])
         
         
 
