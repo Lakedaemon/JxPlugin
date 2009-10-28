@@ -237,16 +237,21 @@ def JxFindTypeAndField(Card,Types):
                         (Done,Field) = zip(*List)
                 else : 
                         Done = []
+
                 TempList=[]
-                for (Type,TypeList) in JxType:
-                        if Type in Types and Type in Done:
-                                TempList.append(List.pop(0))
-                        elif Type in Types:
-                                for Field in Card.fact.model.fieldModels:
-                                        Content=stripHTML(Card.fact[u"Expression"])
-                                        if Field.name == u"Expression" and Type in GuessType(Content):
-                                                TempList.append((Type,Field.name,Content)) 
-                                                break 
+                try:
+                        Content=stripHTML(Card.fact[u"Expression"])
+                        for (Type,TypeList) in JxType:
+                                if Type in Types and Type in Done:
+                                        TempList.append(List.pop(0))
+                                elif Type in Types:
+                                        for Field in Card.fact.model.fieldModels:
+                                                if Field.name == u"Expression" and Type in GuessType(Content):
+                                                        TempList.append((Type,Field.name,Content)) 
+                                                        break
+                except KeyError:
+                        pass
+                
                 List=TempList
                 
         if len(List)<len(Types):
