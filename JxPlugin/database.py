@@ -5,15 +5,13 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 from ankiqt import mw
-from cache import load_cache,save_cache
+
 from answer import Tango2Dic,GuessType
 from loaddata import *
 from controls import JxBase
 import cPickle
 from copy import deepcopy
-JxDeck = {}
-JxSavedStats = {}
-JxHistory = {}
+
 from PyQt4.QtCore import *
 from anki.utils import stripHTML
 
