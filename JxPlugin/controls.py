@@ -21,6 +21,8 @@ from ui_menu import *
 
 JxBase = QObject()
 
+
+
 class Jx__Settings(QObject):
 	"""Data class for the settings of the JxPlugin"""
 	def __init__(self,name="JxSettings",parent=JxBase):
@@ -470,7 +472,17 @@ class Jx__MultiSelect(QObject):
 
 from PyQt4.QtWebKit import QWebPage, QWebView
 from PyQt4 import QtGui, QtCore
-from ui_menu import onClick
+
+def onClick(url):
+        String = unicode(url.toString())
+	if String.startswith("py:"):
+	        String = String[3:]
+	        from ui_menu import JxShowIn,JxShowOut
+	        from export import JxAddo, JxDoNothing
+	        eval(String)
+	else:
+	        from PyQt4.QtGui import QDesktopServices
+	        QDesktopServices.openUrl(QUrl(url))
 
 JxSettings = Jx__Settings()
 JxTemplateOverride = Jx__Entry_Source_Target("JxTemplateOverride")             

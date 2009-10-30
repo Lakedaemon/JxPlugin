@@ -31,6 +31,7 @@ def JxAnchorClicked(url):
                 mw.help.handlers[key]()
 	elif addr.startswith("Jx:"):
             key = addr[3:]
+            from export import JxExport2Anki, JxExport2csv, JxRemove, JxClear
             eval(key)
         else:
             # open in browser
