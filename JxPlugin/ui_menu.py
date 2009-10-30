@@ -12,7 +12,7 @@ from ankiqt import mw
 import globalobjects
 from loaddata import *
 from answer import *
-from stats import *
+from export import *
 from tools import *
 #import jmdic
 #import kanjidic
