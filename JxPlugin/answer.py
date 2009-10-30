@@ -5,16 +5,17 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 import re
+import time
 from math import log
 from string import Template
 
-from loaddata import *
-from globalobjects import JxLink
 from anki.hooks import *
 from anki.utils import hexifyID
-import time
-from japanese.furigana import rubify
-from globalobjects import JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
+from japanese.furigana import rubify # there is a strange thing going on in here
+
+from loaddata import *
+from globalobjects import JxLink,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
+from JxPlugin.japan import JxType, JxTypeJapanese
 
 def JxReplace(String,Dict):
 
@@ -72,8 +73,7 @@ def JxTableDisplay(TupleList,Class,Type=None):
                 return u""
 
 def JxStrokeDisplay(KanjiList,Class):
-        # Maybee we should use the Card2Type fonction to filter out the wordswrong K/W but it's working as is and it'll have to wait for an upgrade of the guesstype function...
-        # the "title" tag is a bit slow and tiny, maybee we should inject some javascript/use a nice jquery tooltip plugin... but this will have to wait till we allow javascript inside the main QWebView window (We''ll have to convince damien to set a nice resource directory for javascript..or override hisroutines).
+        # the "title" tag is a bit slow and tiny, maybee we should inject some javascript/use a nice jquery tooltip plugin... but this will have to wait till we allow javascript inside the main QWebView window (We''ll have to convince damien to set a nice resource directory for javascript..or override his routines).
        
         Kanjis='","'.join(KanjiList)
         # Finds all Kanji facts whose kanji is in the list
@@ -103,6 +103,7 @@ def JxStrokeDisplay(KanjiList,Class):
 #    displays aditionnal info  in the answer (Words : JLPT, Kanji : JLPT/Grade/stroke order/related words.
 #
 ###############################################################################################################
+
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
 
 
@@ -134,9 +135,7 @@ def JxDefaultAnswer(Buffer,String,Dict):
 
 
     
-JxTypeJapanese = ["japanese","Japanese","JAPANESE",u"日本語",u"にほんご"]
-JxType=[('Kanji',["kanji","Kanji","KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
-('Sentence',["sentence","Sentence","SENTENCE",u"文",u"ぶん"]),('Grammar',["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"])]    
+  
 JxTypeHash={u'Kanji':[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"],'Word':["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"],
 'Sentence':["sentence","Sentence","SENTENCE",u"文",u"ぶん"],'Grammar':["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"]}
 JxExpression='expression","Expression","EXPRESSION'
@@ -166,20 +165,15 @@ def GuessType(String):
 ################################################################################################################################################               
 JxAbbrev = {u'Kanji':u'K',u'Word':u'W',u'Sentence':u'S',u'Grammar':u'G'}
 
-JxFieldsDoc = [
-('F:Types','displays a list of triplets (Type,Field,Content) of possible Types for the Fact of this card, associated to the relevant Field, that holds Content'),
-('K','displays the Kanji of the Card, if it has a Kanji fact'), 
-('W','displays the (guessed) Word of the Card, if it has a Word fact'),
-('S','displays the (guessed) Sentence of the Card, if it has a Sentence fact'),
-('G','displays the Grammar point of the Card, if it has a Grammar fact'),
-('F','displays the content of the relevant field of the Fact, if it has one guessed type'),
-('<Field>','displays the content of the <Field> of the Fact')]
-def JxDoc(Field,Code,DocString):
-        """adds DocString as documentation for ${Field}"""
-        pass
 
 
-# I'll have to change that when I'll star supporting streaming questions/answers to Anki.nds/Android
+
+#      I'll have to change that when I'll star supporting streaming questions/answers to Anki.nds/Android
+
+#      It would be nice to get rid of all those queries, now that we hae an inmemory database 
+
+
+
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
@@ -202,8 +196,6 @@ def append_JxPlugin(Answer,Card):
             except KeyError: 
                     return Answer
                     
-
-
     
     # Then create a dictionnary for all data replacement strings...
     
