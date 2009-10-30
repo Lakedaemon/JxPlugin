@@ -116,6 +116,18 @@ def JxBrowse():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     
 from japanese.reading import *
 import sys, os, platform, re, subprocess
@@ -156,42 +168,39 @@ if sys.platform == "win32":
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 else:
     si = None                
-mecabCmd = ["mecab", '--node-format=%m[%f[7]] ', '--eos-format=\n',
-            '--unk-format=%m[] ']
-mecabCmd = ["mecab", '--node-format=%m\t%F-[0,1,2,3]\n', '--eos-format=EOS\n']
-mecabCmd = ["mecab", '--node-format=%m\t%F-[0,1,2,3]\n', '--eos-format=EOS\n']
-mecabCmd = ["mecab", '--node-format=%m,%f[7],%f[8],%f[6],%F-[0,1,2,3],%f[4],%f[5]\n',
-'--unk-format=%m,%m,%m,%f[6],%F-[0,1,2,3],,\n',
-'--eos-format=EOS,,,,,,\n']
-mecabCmd = ["mecab",'--node-format=(%m,%f[0],%f[1],%f[7]),',  '--eos-format=\n']
+mecabCmd = ["mecab",'--node-format=(%m,%f[0],%f[1],%f[8]) ',  '--eos-format=\n','--unk-format=%m[Unknown] '] #1/#0
 me = MecabControl()
 
 def escapeTextOL(text):
     # strip characters that trip up kakasi/mecab
     text = text.replace("\n", " ")
-    #text = text.replace(u'～', u"○")
-    #text = text.replace(u'\uff5e', "~")
-    text = text.replace('~',u'～')
+    text = text.replace(u'\uff5e', "~")
     text = re.sub("<br( /)?>", "---newline---", text)
     text = stripHTML(text)
     text = text.replace("---newline---", "<br>")
     return text
 
 debug=""
+
 def call_mecab(string):
+
     stringe = escapeTextOL(string)
-    try:    
-        if string != u'試着室'and string !=u'V-(r)u 際に'and string != u'21世紀' and string != u'N に際して':
-             me.ensureOpen()
-             me.mecab.stdin.write(stringe.encode("euc-jp", "ignore")+'\n')
-             me.mecab.stdin.flush()
-             return unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
-        else:
-                return "gahhhh" + string
-    except:
-            global debug
-            debug+= string
-            return stringe + " <--> "+ string
+    stringe = stringe.encode("euc-jp", "replace") + '\n'
+
+
+    me.ensureOpen()
+    me.mecab.stdin.write(stringe)
+    me.mecab.stdin.flush()
+    return unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
+    
+
+
+
+
+
+
+
+
 
 def onJxGraphs():
     from database import JxGraphs_into_json
@@ -206,7 +215,7 @@ def onJxGraphs():
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
     JxPreview.show()
-    """
+   
     from database import eDeck
     n = time.time()
     List=[]
@@ -225,7 +234,7 @@ def onJxGraphs():
     mw.help.showText(str(end)+ debug + "<br/><br/><br/>" + "<br/>".join(Listd))
 
     #call_mecab(u"カリン、自分でまいた種は自分で刈り取れ")
-"""
+
 
 def init_JxPlugin():
         """Initialises the Anki GUI to present an option to invoke the plugin."""

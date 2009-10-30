@@ -418,7 +418,11 @@ class Database(QObject):
             """sets the cards status changes in the Jx database JxDeck"""
             if self.cardId != id:
                 if update:
-                    self.switch = (states[factId][1][id] != 1)                #########################################################
+                    try:
+                        self.switch = (states[factId][1][id] != 1)
+                    except KeyError:
+                        # in case a new fact has been created
+                        self.switch = True                             
                 else:
                     self.switch = True            
                 self.cardId = id
