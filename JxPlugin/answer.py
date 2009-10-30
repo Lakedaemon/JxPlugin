@@ -107,24 +107,7 @@ def JxStrokeDisplay(KanjiList,Class):
 Map = {1:"JLPT 1",2:"JLPT 2",3:"JLPT 3",4:"JLPT 4",5:"Other"}
 
 
-JxN = [ord(u'一'),ord(u'龥'),ord(u'豈'),ord(u'鶴')]
-def JxIsKanji(Char):
-        N = ord(Char)
-        if N >=JxN[0]  and N < JxN[1]:
-                return True
-        if N >=JxN[2]  and N < JxN[3]:
-                return True             
-        return False
 
-def Tango2Dic(string):
-	String = string.strip(u" ")
-	if String.endswith(u"する") and len(String)>2:
-		return String[0:-2]
-	elif (String.endswith(u"な") or String.endswith(u"の") or String.endswith(u"に")) and len(String)>1: #python24 fix for OS X                  
-#	elif String.endswith((u"な",u"の",u"に")) and len(String)>1:    #python25
-		return String[0:-1]
-	else:
-		return String
 
 def JxDefaultAnswer(Buffer,String,Dict):
 	if re.search(u"\${.*?}",Buffer):
@@ -140,24 +123,14 @@ JxTypeHash={u'Kanji':[u"kanji",u"Kanji",u"KANJI",u"漢字",u"かんじ"],'Word':
 'Sentence':["sentence","Sentence","SENTENCE",u"文",u"ぶん"],'Grammar':["grammar","Grammar","GRAMMAR",u"文法",u"ぶんぽう"]}
 JxExpression='expression","Expression","EXPRESSION'
 JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) for c in range(ord(u'豈'),ord(u'鶴'))]
-JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
-JxPonctuation.remove(u'々')    
+  
     
 
 from anki.utils import stripHTML
 
 
         
-def GuessType(String):
-        if len(String)==1 and JxIsKanji(String):
-                #if  String has one Kanji, it is a Kanji (or a Word)
-                return set([u"Kanji",u"Word"])    
-        elif set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation):
-                #if  String has ponctuations marks, it is a sentence
-                return set([u"Sentence"])             
-        else:              
-                #in other cases, it is a word (still don't know what to do with grammar)    
-                return set([u"Word"])
+
         
                
 

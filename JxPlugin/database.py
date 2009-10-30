@@ -4,18 +4,17 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
-from ankiqt import mw
-
-from answer import Tango2Dic,GuessType
-from loaddata import *
-from controls import JxBase
 import cPickle
 from copy import deepcopy
 
+from ankiqt import mw
 from PyQt4.QtCore import *
 from anki.utils import stripHTML
 
-from JxPlugin.japan import JxType,JxTypeJapanese
+from loaddata import *
+from controls import JxBase
+
+from JxPlugin.japan import JxType,JxTypeJapanese,GuessType
 
 def sliding_day(seconds):
     """let's decide that a day stats at 4h in the morning, to minimize border problems (you should be sleeping at that time)""" 
@@ -855,10 +854,7 @@ def display_astats(stats):
 	        <th class="BorderRight"><b>Total</b></th>
 	    </tr>"""
     grandTotal = sum([get_stat((stats,'Total',key)) for (key, value) in mapping.Order])
-    if JxSavedStats:
-        AgrandTotal = sum([get_old_stat((stats,'Total',key)) for (key, value) in mapping.Order])     
-    else:
-        AgrandTotal = grandTotal
+    AgrandTotal = sum([get_old_stat((stats,'Total',key)) for (key, value) in mapping.Order])     
     (sumKnown, sumSeen, sumInDeck, sumTotal)=(0,0,0,0)
     (AsumKnown, AsumSeen, AsumInDeck)=(0,0,0)
     for (key,value) in mapping.Order:
