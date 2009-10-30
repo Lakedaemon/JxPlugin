@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 from ankiqt import mw
 from cache import load_cache,save_cache
-from answer import Tango2Dic,JxType,JxTypeJapanese, GuessType
+from answer import Tango2Dic,GuessType
 from loaddata import *
 from controls import JxBase
 import cPickle
@@ -16,6 +16,8 @@ JxSavedStats = {}
 JxHistory = {}
 from PyQt4.QtCore import *
 from anki.utils import stripHTML
+
+from JxPlugin.japan import JxType,JxTypeJapanese
 
 def sliding_day(seconds):
     """let's decide that a day stats at 4h in the morning, to minimize border problems (you should be sleeping at that time)""" 

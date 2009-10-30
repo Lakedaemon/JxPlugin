@@ -46,10 +46,6 @@ def JxInt2Name(Int):
 
 def JxTableDisplay(TupleList,Class,Type=None):
         if Type != None:
-                from globalobjects import FactId2Types            
-                if not FactId2Types:
-                        from graphs import JxParseFacts4Stats
-                        JxParseFacts4Stats()
                 tupleStart=1
         else:
                 tupleStart=0
@@ -58,7 +54,8 @@ def JxTableDisplay(TupleList,Class,Type=None):
         Boolean = True 
         for Tuple in TupleList:
                 if Type != None:
-                        Types= [t for (t,e,c) in FactId2Types[Tuple[0]][0]] #FactID2Type is a very strange structure
+                        from JxPlugin.database import eDeck 
+                        Types= [type for (type,list) in JxType if type in eDeck.types[Tuple[0]]] 
                 if Type == None or Type in Types:
                         if Boolean:
                                     JxHtmlBuffer += u"""<tr class="Tr-Odd">"""
@@ -135,19 +132,7 @@ def JxDefaultAnswer(Buffer,String,Dict):
 		return Buffer + String            
 
 
-###################################################################################################################################################################################
-    # try to guess if this is a Tango card or a Kanji card and fill the appropriate data Tango & Expression (for stroke order of tango) or Kanji 
 
-    # Given a card (-> a model & a fact), I have to guess whether it is a Kanji/Word/Sentence/Grammar card so that I can use the correct card template
-    # for the "foolish" people who like to put different stuff in the same container and who expect dumb machine code to make the difference
-    #
-    ## I could display the same card template whether it's a Word/kanji/... (that's probably what they do anyway) but then, they would complain, whine and pester me...
-    #
-    ## Besides, for stats and Graph, I will have to guess whether a card advances a Kanji/Word/Grammara/Sentence stats...(and guess on which field it applies...sigh...)...
-    #
-    #
-    # Well, this difficult problem requires human intelligence and japanese knowledge to solve it correctly, so i'm going for a simple/generally working solution 
-    # (because me and my code are lacking those) that might err sometimes (when it lacks guidance), but I don't care because I'll use tidy deck (and help my code guess with tags and names). I'll try to fully support tidy decks and at leat the japanese model at 99% (won't be able to make the difference between 1 kanji and 1 Kanji word). 
     
 JxTypeJapanese = ["japanese","Japanese","JAPANESE",u"日本語",u"にほんご"]
 JxType=[('Kanji',["kanji","Kanji","KANJI",u"漢字",u"かんじ"]),('Word',["word","Word","WORD",u"単語",u"たんご",u"言葉",u"ことば"]),
@@ -159,141 +144,8 @@ JxKanjiRange=[unichr(c) for c in range(ord(u'一'),ord(u'龥'))] + [unichr(c) fo
 JxPonctuation = [unichr(c) for c in range(ord(u'　'),ord(u'〿')+1)]+[u' ',u'      ',u',',u';',u'.',u'?',u'"',u"'",u':',u'/',u'!']
 JxPonctuation.remove(u'々')    
     
-def JxMagicalGuess(Card):  
-        # for version 1, we are only going to investigate the tags of the Fact & Models, the names of the Model and the Fields.
-        
-        # first check the facts of the Fact, in case they have only one tag among "Kanji", "Word", "Sentence", "Grammar".
 
-        
-
-        # First : parse the fact tags
-        Types = set()
-        JxFactTags = set(Card.fact.tags.split(" "))
-        for (Key,List) in JxType:
-                if len(JxFactTags.intersection(List))>0:
-                        Types.update([Key])
-        # Types countains the numerous possible type of the card
-        # 0 -> usuall case (no restriction) we know nothing. Parse further ! Later, we might check for the Japanese Tag.
-        # 1 -> we found the type, now affect the related field
-        # 2 & 3 & 4 -> the user is (posibly wrongly) telling that he wants this card to be considered of those types (what to do now ? affecting the fields). 
-
-        if len(Types)>=1:
-                return JxAffectFields(Card,Types)
-                # needed for stats and graphs. We need to know on what field we are working. 
-                # -> Expression if japanese model
-        else:
-                return JxParseModelTags(Card)
-                # Tex-Like programmation, to avoid nested ifs
 from anki.utils import stripHTML
-
-def JxAffectFields(Card,Types):
-        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)
-        List=[]
-        for (Type,TypeList) in JxType:
-                if Type in Types:
-                        for Field in Card.fact.model.fieldModels:
-                                if Field.name in TypeList:
-                                        List.append((Type,Field.name,stripHTML(Card.fact[Field.name]))) 
-                                        break
-
-        if len(List)<len(Types):
-                # there are still missing fields for the types, we could try the "Expression" field next and update the List
-                if len(List)>0:
-                        (Done,Field) = zip(*List)
-                else : 
-                        Done=[]
-                TempList=[]
-                for (Type,TypeList) in JxType:
-                        if Type in Types and Type in Done:
-                                TempList.append(List.pop(0))
-                        elif Type in Types:
-                                for Field in Card.fact.model.fieldModels:
-                                        if Field.name == u"Expression":
-                                                TempList.append((Type,Field.name,stripHTML(Card.fact[Field.name]))) 
-                                                break 
-                List = TempList
-        if len(List)<len(Types):
-                # field names and "Expression" have failed, we could still try to guess with the fields content
-                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields, might be doable for sentences (ponctuation helps) and Kanji (only 1 Kanji character))
-                pass
-   
-        return List
-        
-# The following function is nearly the same appart from the  and Type in GuessType(Card.fact[u"Expression"]) condition !!!!!
-def JxFindTypeAndField(Card,Types):
-        # we now try to affect relevant fields for each type (first try fields with the name similar to the type)      
-        
-        List=[]
-        for (Type,TypeList) in JxType:
-                if Type in Types:
-                        for Field in Card.fact.model.fieldModels:
-                                if Field.name in TypeList:
-                                        List.append((Type,Field.name,stripHTML(Card.fact[Field.name])))
-                                        break
-                                             
-        if len(List)<len(Types):
-                # for the still missing fields, we try to find an "Expression" field next and update the List
-                if len(List) > 0:
-                        (Done,Field) = zip(*List)
-                else : 
-                        Done = []
-
-                TempList=[]
-                try:
-                        Content=stripHTML(Card.fact[u"Expression"])
-                        for (Type,TypeList) in JxType:
-                                if Type in Types and Type in Done:
-                                        TempList.append(List.pop(0))
-                                elif Type in Types:
-                                        for Field in Card.fact.model.fieldModels:
-                                                if Field.name == u"Expression" and Type in GuessType(Content):
-                                                        TempList.append((Type,Field.name,Content)) 
-                                                        break
-                except KeyError:
-                        pass
-
-                List=TempList
-                
-        if len(List)<len(Types):
-                # field names and "Expression" have failed, we could still try to guess with the fields content
-                # but for the time being, we will pass because I don't know how to choose between two fields that might only have kanas (maybee query other cards to decide between the fields)
-                pass
-        
-        return List
-
-def JxParseModelTags(Card):
-
-        # Secondly : parse the model tags (most of the hope is there : it would catch my kanji model, 
-        # but do "nothing" for the japanese model except saying that it is a japanese deck)
-        Types = set()
-        JxModelTags = set(Card.fact.model.tags.split(" "))
-        for (Key,List) in JxType:
-                if len(JxModelTags.intersection(List))>0:
-                        Types.update([Key])  
-
-        # Types countains the numerous possible type of the card as before, yet in a slightly different context
-        # 0 -> unusuall case (no type) we still know nothing. Parse further ! Later, we might check for the Japanese Tag...our only hope left resisdes in the name of the model, 
-        # of the fields and the contents of the fields (but who knows what the owner put there). Maybee I shouldn't look further than the names (for speed).
-        # 1 -> we found the type, now find the related field
-        # 2 & 3 & 4 & 5 -> the user is telling what kind of facts he has in this model. We still have to parse further to know exactly how this card is supposed to be displayed
-        # (user might want cards in this model to participate to different kind of stats too ?). But we know that we are in the Japanese case. 
-
-#### there
-
-        if len(Types) == 1:
-                # great, we found the type, now affect the field. 
-                return JxAffectFields(Card,Types)
-
-        elif len(Types) >1:
-                # we must now find the relevant field to guess the type of the card (names of Model and Fields won't help to determine the type 
-                #there because it opposes the model's tags purpose, yet it can help finding the relevant field)
-                return JxFindTypeAndField(Card,Types)
-
-        # we will now parse the name of the model, and the names of the fields..and later the content, to reduce the possibilities (for display)
-        # we will do the same, except that we don't want to reduce the possibilities, we want to find at least one !
-        return JxParseModelName(Card)
-
-  
 
 
         
@@ -308,78 +160,8 @@ def GuessType(String):
                 #in other cases, it is a word (still don't know what to do with grammar)    
                 return set([u"Word"])
         
+               
 
-        
-######################################### this can go in JxParsemodelTags -> there : ####
-def JxParseModelName(Card):
-        # thirdly : parse the name of the model
-        
-        Types = set()
-        for (Key,List) in JxType:
-                if Card.fact.model.name in List:
-                        Types.update([Key])
-                        break # no need to parse further
-        
-        if len(Types) == 1:
-                # great, we found the type, now find the field. 
-                return JxAffectFields(Card,Types)
-
-        #Next, we'll parse the names of the fields
-        return JxParseFieldsName(Card)
-
-def JxParseFieldsName(Card):
-        # tries to find a field with a relevant name and checks for the japanese model last.
-        
-        Types = set()
-        for Field in Card.fact.model.fieldModels:
-                for (Key,List) in JxType:
-                        if Field.name in List:
-                                Types.update([Key])
-                                break # no need to parse this Field further
-        # same cases than for JxParseModelTags()
-
-        if len(Types) ==1:
-                # great, we found the type, now find the field. 
-                return JxAffectFields(Card,Types)
-
-        elif len(Types) >1:
-                # we must now find the relevant field to guess the type of the card 
-                 return JxAffectFields(Card,Types)               
-
-        # this should be the usual case for the Japanese model, we'll now check if this is a deck related to Japanese
-        return JxParseForJapanese(Card)
-   
-def JxParseForJapanese(Card):             
-        # try to find a Japanese Tag/Name
-        Set = set(Card.fact.tags.split(" "))
-        Set.update(Card.fact.model.tags.split(" "))
-        Set.update([Card.fact.model.name])
-        for Field in Card.fact.model.fieldModels:   
-                Set.update([Field.name])
-        if len(Set.intersection(JxTypeJapanese))>0:
-                #this is a model related to japanese (like the japanese model), so people might have put anything in it, try to guess the relevant field and then it's nature                
-                return JxFindTypeAndField(Card,set([u'Kanji',u'Word',u'Sentence',u'Grammar']))
-
-        # this set might still be related to japanese if it's content includes Kana (as I expect the japanese user of Anki NOT to use the JxPlugin, 
-        # I test for Kana in case there are koreans or chinese users learning japanese, it'll be hard finding the relevant field for those though
-        # I expect that anybody wantng to learn japanese will want to display kana readings)
-        return JxParseForJapaneseCharacters(Card)
-                
-                
-############################## not implemented yet                
-                
-def JxParseForJapaneseCharacters(Card):
-        # try to find Kana inside Fields
-        
-        Set=set()
-        for Field in Card.fact.fields:
-                Set.update([Field.value])
-        if len(Set.intersection(JxPonctuation))>0:
-                #it holds Kana, this is related to Japanese, now go and try to find Fields
-                return []
-
-        # There is no way this card could be related to Japanese
-        return []
                         
 ################################################################################################################################################               
 JxAbbrev = {u'Kanji':u'K',u'Word':u'W',u'Sentence':u'S',u'Grammar':u'G'}
@@ -397,17 +179,15 @@ def JxDoc(Field,Code,DocString):
         pass
 
 
-
-        
+# I'll have to change that when I'll star supporting streaming questions/answers to Anki.nds/Android
 def append_JxPlugin(Answer,Card):
     """Append additional information about kanji and words in answer."""
 
     
-
-    
     # Guess the type(s) and the relevant content(s) of the Fact
-    JxGuessedList = JxMagicalGuess(Card) # that's it. Chose the right name for the right job. This should always work now, lol...
-
+    from database import eDeck  
+    types = eDeck.types[Card.factId]
+    JxGuessedList = [(type,"", types[type]) for (type,list) in JxType if type in types]
 
     
     # Get and translate the new CardModel Template
