@@ -4,8 +4,9 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
-from time import time
+#from time import time
 from os import path
+
 from ankiqt import mw
 from ankiqt.ui.utils import getSaveFile, askUser
 
@@ -41,37 +42,6 @@ def JxShow():
 	JxHtml += u"""</ol>"""
 	py = {u"Export2csv":JxExport2csv,u"Export2Anki":JxExport2Anki,u"Clear":JxClear}
 	mw.help.showText(JxHtml,py)
-
-
-# "hack" to overload mw.help.anchorClicked
-def JxAnchorClicked(url):
-        # prevent the link being handled
-        mw.help.widget.setSource(QUrl(""))
-        addr = unicode(url.toString())
-        if addr.startswith("hide:"):
-            if len(addr) > 5:
-                # hide for good
-                mw.help.config[addr] = True
-            mw.help.hide()
-            if "hide" in mw.help.handlers:
-                mw.help.handlers["hide"]()
-        elif addr.startswith("py:"):
-            key = addr[3:]
-            if key in mw.help.handlers:
-                mw.help.handlers[key]()
-	elif addr.startswith("Jx:"):
-            key = addr[3:]
-            eval(key)
-        else:
-            # open in browser
-            QDesktopServices.openUrl(QUrl(url))
-        if mw.help.focus:
-            mw.help.focus.setFocus()
-	    
-from PyQt4.QtCore import SIGNAL, QUrl
-mw.help.widget.connect(mw.help.widget, SIGNAL("anchorClicked(QUrl)"),
-                            JxAnchorClicked)    
-
 
 def JxExport2csv():
 	JxPath = unicode(getSaveFile(mw,  _("Choose file to export to"), "","Tab separated text file (.csv)", ".csv"))

@@ -6,13 +6,18 @@
 # ---------------------------------------------------------------------------
 from string import upper
 import itertools
+from string import Template
 
 from ankiqt import mw
 
 import globalobjects
 from loaddata import *
-from answer import *
+from answer import append_JxPlugin
+import hack
+from hack import JxResourcesUrl
+
 from export import *
+#from export import JxExport2Anki, JxExport2csv, JxShow, JxRemove, JxClear, JxAddo, JxDoNothing
 from tools import *
 #import jmdic
 #import kanjidic
@@ -30,7 +35,7 @@ def ensure_dir_exists(dir):
 
 map(ensure_dir_exists,['User','Cache'])
 
-JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
+#JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
 
 def onClick(url):
         String = unicode(url.toString())

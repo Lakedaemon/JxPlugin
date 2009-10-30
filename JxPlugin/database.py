@@ -8,7 +8,7 @@ import cPickle
 from copy import deepcopy
 
 from ankiqt import mw
-from PyQt4.QtCore import *
+from PyQt4.QtCore import QObject
 from anki.utils import stripHTML
 
 from loaddata import *
