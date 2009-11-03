@@ -26,23 +26,14 @@ def JxIsKanji(Char):
                 return True             
         return False
 
-def GuessType(String):
-        if len(String)==1 and JxIsKanji(String):
-                #if  String has one Kanji, it is a Kanji (or a Word)
-                return set([u"Kanji",u"Word"])    
-        elif set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation):
-                #if  String has ponctuations marks, it is a sentence
-                return set([u"Sentence"])             
-        else:              
-                #in other cases, it is a word (still don't know what to do with grammar)    
-                return set([u"Word"])
+
                 
                 
     
 from japanese.reading import *
 import sys, os, platform, re, subprocess
 
-
+                
 class MecabControl(object):
 
     def __init__(self):
@@ -78,13 +69,15 @@ if sys.platform == "win32":
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 else:
     si = None                
-mecabCmd = ["mecab",'--node-format=(%m,%f[0],%f[1],%f[8]) ',  '--eos-format=\n','--unk-format=%m[Unknown] '] #1/#0
+mecabCmd = ["mecab",'--node-format=%m\t%f[0]\t%f[1]\t%f[8]\r',  '--eos-format=\n','--unk-format=%m\tUnknown\t\t\r'] #1/#0
 me = MecabControl()
 
 def escapeTextOL(text):
     # strip characters that trip up kakasi/mecab
     text = text.replace("\n", " ")
     text = text.replace(u'\uff5e', "~")
+    text = text.replace('\t', "")   # we strip the tabs \t
+    text = text.replace('\r', "")   # and the \r    
     text = re.sub("<br( /)?>", "---newline---", text)
     text = stripHTML(text)
     text = text.replace("---newline---", "<br>")
@@ -101,8 +94,99 @@ def call_mecab(string):
     me.ensureOpen()
     me.mecab.stdin.write(stringe)
     me.mecab.stdin.flush()
-    return unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
+    string = unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
+    # then split the output in a list
+    output = string.split('\r')
+    list = []
+    for string in output:
+        list.append(tuple(string.split('\t')))
+    return list
     
+def GuessType(String):
+        if len(String)==1 and JxIsKanji(String):
+                #if  String has one Kanji, it is a Kanji (or a Word)
+                return set(["Kanji","Word"])    
+        elif set(unicode(c) for c in String.strip(u'  \t　	')).intersection(JxPonctuation):
+                #if  String has ponctuations marks, it is a sentence
+                return set(["Sentence"])             
+        else:              
+                #in other cases, it is a word (still don't know what to do with grammar)    
+                return set(["Word"])
 
 
+                ######################################################################## I will have to change it there thanks to mecab
+                #content = stripHTML(fields[ordinal])
+                #if boolean or type in GuessType(content):
+                #    metadata[type] = content 
+                ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
+
+#1 形容詞,接続詞,動詞,助詞,Unknown,記号,副詞,連体詞,助動詞,接頭詞,名詞
+
+
+#2,数接続,空白,接尾,非自立,数,サ変接続,副詞化,一般,ナイ形容詞語幹,固有名詞,接続助詞,副助詞／並立助詞／終助詞,接続詞的,格助詞,係助詞,句点,形容動詞語幹,終助詞,連体化,代名詞,名詞接続,自立,副詞可能,助詞類接続
+
+#### version 1
+
+#setIgnore = set(u'形容詞',u'接続詞',u'動詞',u'助詞',u'Unknown',u'記号',u'副詞',u'連体詞',u'助動詞',u'接頭詞',u'名詞')
+setGobble = set([u'形容詞',u'接続詞',u'動詞',u'副詞',u'接頭詞', u'名詞'])# we gobble adjectivs, conjunction, verbs, adverbs, prefixes, names
+
+def parse_content(string,type):
+    if len(string)==1 and JxIsKanji(string) and type in set(["Kanji","Word"]):
+        #if  String has one Kanji, it is a Kanji (or a Word)
+        return {type:string}
+    elif type == 'Kanji':
+        return {}
+    # first mecab the string
+    list = call_mecab(string)
+    # then we have got to extract relevant info from the mecab output
+    number = 0
+    lastType = None
+    tail = u""
+    List = []
+    for (head, type, subtype, katakana) in list:
+        if tail == u"":
+            # we don't care about lastType, we gobble or ignore
+            if type in setGobble:
+                # we gobble
+                tail += head
+                number += 1
+            lastType = type
+        else:
+            # we either gobble some more or flush and gobble/ignore
+            flush = True
+            if lastType == u"形容詞" and (head, type, subtype, katakana) == (u'さ',u'名詞',u'接尾',u'サ'):
+                #gobble and flush
+                tail += head
+            elif lastType == u'接頭詞' and type == u'名詞':
+                #gobble
+                tail += head
+                flush = False
+            elif lastType == u'名詞'and type == u'名詞':
+                #gobble
+                tail += head
+                flush = False
+            elif lastType == u'名詞'and (head, type, subtype, katakana) == (u'する',u'動詞',u'自立',u'スル'):  
+                #gobble and flush
+                tail += head
+            elif lastType == u'動詞' and (head, type, subtype, katakana) == (u'て',u'助詞',u'接続助詞',u'テ'):# maybee I shouldn't do that and just flush the verb
+                #gobble
+                tail += head
+                flush = False
+            elif lastType == u'助詞'and (head, type, subtype, katakana) == (u'いる',u'動詞',u'非自立',u'イル'): # should be the same with aru/kuru/iku/miru...
+                #gobble
+                tail += head
+                flush = False
+            if flush:
+                # do something
+                List.append(tail)
+                tail = ""
+            lastType = type
+    if tail:
+        # out of the loop, gotta flush...
+        List.append(tail)
+    if number == 1:
+        return {'Word':List[0]}
+    elif number > 1:
+        return {'Word':List[0],'Sentence':List[:]}
+    return {}
 

@@ -14,7 +14,7 @@ from anki.utils import stripHTML
 from loaddata import *
 from controls import JxBase
 
-from JxPlugin.japan import JxType,JxTypeJapanese,GuessType
+from JxPlugin.japan import JxType,JxTypeJapanese,GuessType, parse_content
 
 def sliding_day(seconds):
     """let's decide that a day stats at 4h in the morning, to minimize border problems (you should be sleeping at that time)""" 
@@ -35,7 +35,13 @@ class Database(QObject):
                 self.reset()       
         except KeyError:
             self.reset()
-        
+            
+    #############################      
+    #                           #
+    # Maintain the database     #
+    #                           #
+    #############################
+    
     def reset(self):
         self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{}, 
         'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
@@ -344,9 +350,12 @@ class Database(QObject):
             fields = self.fields[id]
             metadata = {}
             for (type,(name,ordinal,boolean)) in hints.iteritems():
-                content = stripHTML(fields[ordinal])
-                if boolean or type in GuessType(content):
-                    metadata[type] = content 
+                ######################################################################## I will have to change it there thanks to mecab
+                #content = stripHTML(fields[ordinal])
+                #if boolean or type in GuessType(content):
+                #    metadata[type] = content 
+                metadata.update(parse_content(stripHTML(fields[ordinal]),type))
+                ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
             self.types[id] = metadata
         map(compute,table)
         
@@ -513,13 +522,13 @@ class Database(QObject):
             for (name,mapping) in tasks[type].iteritems():  
                 if  name == 'W-AFreq' or name == 'K-AFreq':
                     if name == 'K-AFreq':
-                        dict = Jx_Kanji_Occurences                       
+                        dict = MapFreqKanji                     
                     else:
-                        dict = Jx_Word_Occurences        
+                        dict = MapFreqTango      
                     def assign((content, add, days)):
                         try:
                             value = mapping.Value(content)
-                            increment = dict[content]
+                            increment = dict.Value(content)
                             try:
                                 stateArray = graphs[(name,value)]
                             except KeyError:
@@ -600,16 +609,16 @@ class Database(QObject):
             for (name,mapping) in JxStatTasks[type].iteritems():           
                 if  name == 'W-AFreq' or name == 'K-AFreq':
                     if name == 'K-AFreq':
-                        dic = Jx_Kanji_Occurences
+                        dic = MapFreqKanji
                     else:
-                        dic = Jx_Word_Occurences
+                        dic = MapFreqTango
                     def assign_A((content,state)):
                         try:
                             value = mapping.Value(content)
                             if add >= 0:
-                                increment = dic[content]
+                                increment = dic.Value(content)
                             else:
-                                increment = - dic[content]
+                                increment = - dic.Value(content)
                             try:
                                 stats[(name,state,value)] += increment
                             except KeyError:
@@ -625,7 +634,7 @@ class Database(QObject):
                                 stats[(name,'Total',zone)] += value
                             except KeyError:
                                 stats[(name,'Total',zone)] = value                
-                        map(count_A,dic.iteritems())
+                        map(count_A,dic.Dict.iteritems())
                 else:  
                     if add >= 0:
                         increment = 1
@@ -649,12 +658,11 @@ class Database(QObject):
                                 stats[(name,'Total',value)] = 1                
                         map(count,mapping.Dict.values())
 
-
-
-
-########################### access database
-
-
+    #############################      
+    #                           #
+    #   Access the database     #
+    #                           #
+    #############################
 
     def get_stat(self,key):
         try:

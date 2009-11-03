@@ -15,7 +15,8 @@ from japanese.furigana import rubify # there is a strange thing going on in here
 
 from loaddata import *
 from globalobjects import JxLink,JxProfile,Jx_Profile,JxShowProfile,JxInitProfile
-from JxPlugin.japan import JxType, JxTypeJapanese
+from JxPlugin.japan import JxType, JxTypeJapanese, JxIsKanji
+
 
 def JxReplace(String,Dict):
 
@@ -285,9 +286,3 @@ def append_JxPlugin(Answer,Card):
     JxProfile("Filter")
     #JxShowProfile()
     return JxAnswer
-
-
-
-
-
-

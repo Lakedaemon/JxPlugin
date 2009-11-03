@@ -21,6 +21,9 @@ from tools import *
 #import jmdic
 #import kanjidic
 
+from controls import JxWindow
+from controls import JxPreview  
+
 # make sure there is Cache and User directories
 def ensure_dir_exists(dir):
     """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
@@ -34,8 +37,6 @@ def ensure_dir_exists(dir):
 
 map(ensure_dir_exists,['User','Cache'])
 
-
-	
 
 def JxHelp():
         from html import Jx_Html_HelpAutomaticMapping
@@ -126,6 +127,8 @@ def onJxGraphs():
     JxPreview.setWindowTitle(u"Japanese related Graphs")
     JxPreview.activateWindow()
     JxPreview.show()
+
+def onMecab():
    
     from database import eDeck
     n = time.time()
@@ -140,12 +143,17 @@ def onJxGraphs():
     origin=time.time()
 
     from japan import call_mecab
-    Listd=map(call_mecab,List)
+    Listd = map(call_mecab,List)
+    def format(list):
+            return "<br/>".join(map(lambda x: "(" + ",".join(x) +")",list)) + "<br/>"
 
     end= time.time()-origin
-    mw.help.showText(str(end)+ "<br/>".join(Listd))
-
-
+    Types = set()
+    def extract(list):
+        map(lambda tuple:Types.add(tuple[2]),list)
+    map(extract,Listd)
+        
+    mw.help.showText( str(end) + "<br/>" + ",".join(list(Types)) + "<br/>" + "<br/>".join(map(format,Listd)))
 
 def init_JxPlugin():
         """Initialises the Anki GUI to present an option to invoke the plugin."""
@@ -174,13 +182,22 @@ def init_JxPlugin():
 	mw.mainWin.actionJxGraphs.setEnabled(not not mw.deck)
 	mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
 
+
+	# creates Mecab entry
+	
+	mw.mainWin.actionMecab = QtGui.QAction('Mecab', mw)
+	mw.mainWin.actionMecab.setStatusTip('Mecab')
+	mw.mainWin.actionMecab.setEnabled(not not mw.deck)
+	mw.connect(mw.mainWin.actionMecab, QtCore.SIGNAL('triggered()'), onMecab)
+	
 	# adds the plugin icons in the Anki Toolbar
 	
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
+	mw.mainWin.toolBar.addAction(mw.mainWin.actionMecab)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs",)
+	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs","Mecab",)
 	
 	# Adding features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
@@ -201,9 +218,7 @@ def newLoadDeck(deckPath, sync=True, interactive=True, uprecent=True,media=None)
     return code
 
 mw.loadDeck = newLoadDeck
-# The main JxPlugin Windows # funny, you cannot import stuff after these statements
-from controls import JxWindow
-from controls import JxPreview        
+      
 
 
 
