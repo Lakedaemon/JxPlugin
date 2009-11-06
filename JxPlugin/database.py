@@ -66,11 +66,15 @@ class Database(QObject):
         self.set_fields(False)
         self.drop_deleted_facts(False)
         self.set_types(False)
+        self.set_efacts(False)
         self.set_new_states(False)
         self.set_history(False)
         self.apply_new_states(False)        
         self.save_stats(False)
         self.save() 
+
+    def set_efacts(self):
+        pass
 
     def set_cardsKnownThreshold(self,value):
         val = int(value)
@@ -334,7 +338,7 @@ class Database(QObject):
                     if type in types:
                         for (ordinal,name) in modelFields:
                             if name in typeList:
-                                    hint[type] = (name,ordinal,True) 
+                                    hints[type] = (name,ordinal,True) 
                                     break
                 if len(hints) < len(types):
                     # for the still missing fields, we try to find an "Expression" field next and update the List
@@ -913,7 +917,11 @@ def JxFormat(Float):
         return "%.3g" % Float    
         
 
-    
+def JxValue(mapping,x):
+    try:
+        return  mapping.Value(x)
+    except KeyError:
+        return -1     
 
                 
 def display_partition(stat,label):
@@ -921,13 +929,13 @@ def display_partition(stat,label):
     mappings = {'W-JLPT':MapJLPTTango, 'W-Freq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-Freq':MapZoneKanji,  'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji}
     mapping = mappings[stat]
     partition = {}
-    for (key,string) in mapping.Order+ [('Other','Other')]:
+    for (key,string) in mapping.Order + [('Other','Other')]:
         partition[key] = []
     if stat == 'W-JLPT' or stat =='W-Freq':
-        dic = Jx_Word_Occurences
+        dic = MapFreqTango
         type = 'Word'
     else:
-        dic = Jx_Kanji_Occurences
+        dic = MapFreqKanji
         type = 'Kanji'
     types = eDeck.types
     def assign((id,(state, cardsStates))):
@@ -935,7 +943,7 @@ def display_partition(stat,label):
             try:
                 content = types[id][type]
                 try:
-                    key = mapping.Dict[content]
+                    key = mapping.Value(content)
                 except KeyError:
                     key = 'Other'
                 partition[key].append((content,id))
@@ -945,7 +953,7 @@ def display_partition(stat,label):
 
 
     for (key,string) in mapping.Order+ [('Other','Other')]:
-        partition[key].sort(lambda x,y:JxVal(dic,y)-JxVal(dic,x))
+        partition[key].sort(lambda x,y:JxValue(dic,y[0])-JxValue(dic,x[0]))
 
     color = dict([(key,True) for (key,string) in mapping.Order + [('Other','Other')]])
     buffer = dict([(key,"") for (key,string) in mapping.Order + [('Other','Other')]])
@@ -976,15 +984,15 @@ def display_complement(stat):
             partition[value] = set(key)
     map(assign, mapping.Dict.iteritems())
     if stat == 'W-JLPT' or stat =='W-Freq':
-        dic = Jx_Word_Occurences
+        dic = MapFreqTango
         type = 'Word'
     else:
-        dic = Jx_Kanji_Occurences
+        dic = MapFreqKanji
         type = 'Kanji'
     def assign((id,metadata)):
             try:
                 content = metadata[type]
-                key = mapping.Dict[content]
+                key = mapping.Value(content)
                 partition[key].discard(content)
             except KeyError:
                 pass
