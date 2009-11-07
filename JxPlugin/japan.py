@@ -187,6 +187,6 @@ def parse_content(string,type):
     if number == 1:
         return {'Word':List[0]}
     elif number > 1:
-        return {'Word':List[0],'Sentence':List[:]}
+        return {'Words':List[:]}
     return {}
 

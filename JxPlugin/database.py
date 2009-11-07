@@ -43,7 +43,8 @@ class Database(QObject):
     #############################
     
     def reset(self):
-        self.cache = {'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{}, 
+        self.cache = {'models':{}, 'fields':{}, 'types':{}, 'atoms':{'bushu':{},'kanji':{},'words':''}, 
+        'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{}, 
         'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
         'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1}
         self.build()
@@ -66,15 +67,13 @@ class Database(QObject):
         self.set_fields(False)
         self.drop_deleted_facts(False)
         self.set_types(False)
-        self.set_efacts(False)
         self.set_new_states(False)
         self.set_history(False)
         self.apply_new_states(False)        
         self.save_stats(False)
         self.save() 
 
-    def set_efacts(self):
-        pass
+
 
     def set_cardsKnownThreshold(self,value):
         val = int(value)
@@ -107,6 +106,7 @@ class Database(QObject):
         self.models = cache['models']
         self.fields = cache['fields']
         self.types = cache['types']
+        self.atoms = cache['atoms']
         self.states = cache['states']
         self.history = cache['history']
         self.stats = cache['stats']
@@ -307,6 +307,7 @@ class Database(QObject):
         #downdate stats/graphs
         history = self.history
         states = self.states
+        atoms = self.atoms
         if update:
             dic = {}
             lis = []
@@ -319,8 +320,24 @@ class Database(QObject):
             map(build,table)
             self.debug += "---- " 
             self.update_graphs(dic)
-            self.set_stats(lis,-1)          
-
+            self.set_stats(lis,-1)
+            
+            def discard((factId, factTags, factModelId)):
+                try:
+                    for (type, stuff) in self.types[factId]:
+                        try:
+                            weight = atoms[element]
+                            if len(weight) == 1:
+                                del atoms[element]
+                            else:
+                                del weight[factId]
+                        except KeyError:
+                            pass
+                except KeyError:
+                    pass               
+            map(discard,table) 
+            
+            
         models = self.models
         def compute((id,tags,modelId)):
             types = set()
@@ -361,6 +378,20 @@ class Database(QObject):
                 metadata.update(parse_content(stripHTML(fields[ordinal]),type))
                 ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
             self.types[id] = metadata
+            
+            # now update the atoms table
+            for (key, set) in metadata.iteritems():
+                atomsDict = atoms[key]
+                n = len(set) 
+                if n > 1:
+                    weight = 1.0/n
+                else:
+                    weight = 1
+                for atom in set:
+                    try:
+                        atomsDict[atom][id] = weight
+                    except KeyError:
+                        atomsDict[atom] = {id:weight}
         map(compute,table)
         
         self.debug += "Types (" + str(len(table)) + ")<br/>" 
@@ -400,8 +431,8 @@ class Database(QObject):
                 cardsStates[factId] = {id : status} 
             return cached
         self.cache['cardsModified'] = max(map(assign, mw.deck.s.all(query)) + [self.cardsModified])
-        #self.cardsModified= self.cache['cardsModified'] 
         
+
         def compute((factId,dic)):
             list = [status for status in dic.values() if status>=0]
             threshold = len(dic) * factsKnownThreshold 
@@ -414,6 +445,33 @@ class Database(QObject):
             States[factId] = (status, dic)
         map(compute, cardsStates.iteritems())
         self.debug += "States (" + str(len(cardsStates)) + ")<br/>" 
+        
+        if update:
+            workload = {'Bushu':{},'Words':{},'Kanji':{}} 
+            def build_workload((factId,dic)):
+                try:
+                    for (key, set) in self.types[factId]:
+                        workload[key].update(set)
+                except:
+                    pass
+            map(compute, cardsStates.iteritems())
+        else:
+            workload = {'Bushu':self.atoms[('Bushu')],'Words':self.atoms[('Words')],'Kanji':self.atoms[('Kanji')]}
+        atomsKnownThreshold = 1
+        def transmit((atom,weights)):
+            list = [Statesstatus for status in weights.keys() if status>=0]
+            threshold = len(weights) * atomsKnownThreshold 
+            if list and sum(list)>= threshold:
+                status = 1# known
+            elif list:
+                status = 0# seen
+            else:
+                status = -1# in deck
+            States[factId] = (status, dic)            
+        for (key,dic) in worload.iteritems():
+            map(transmit, dic.iteritems())
+        
+        
             
     def set_history(self,update): 
         if update:
