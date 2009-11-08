@@ -6,6 +6,7 @@
 # ---------------------------------------------------------------------------
 import cPickle
 from copy import deepcopy
+from collections import deque
 
 from ankiqt import mw
 from PyQt4.QtCore import QObject
@@ -51,11 +52,35 @@ class Database(QObject):
         
     def update(self):
         self.reference_data()
-        self.set_models(True)
-        self.set_fields(True)
         self.save_stats(True)
-        self.drop_deleted_facts(True)
-        self.set_types(True)
+        # facts change (may change atoms) have to go through the "SUB(if atom exists) & ADD (if atom exists) after type/states/graphs rebuild" for stats and graphs.
+        self.set_models(True) 
+        self.set_fields(True) 
+        self.set_deleted_facts(True) # -> changed_atoms (dropped facts)DOWNDATE ONCE
+        self.set_changed_atoms(True)
+        self.set_states(True)
+        self.set_history(True)
+        
+        # DOWNDATE stats/graphs 
+        # will have to purge the atoms
+        
+
+        # state changes have to go through the "SUB(if atom exists) & ADD (if atom exists)" for stats. 
+        # history changes hove to go through CONCAT
+
+        self.downdate_stats()
+        self.downdate_graphs()
+        
+
+        # fact changes
+        self.set_types()
+        self.set_atoms()
+        
+        
+        # atoms states
+        # atoms changes
+        # update stats
+        # update graphs
         self.set_new_states(True)
         self.set_history(True)
         self.apply_new_states(True)
@@ -65,8 +90,19 @@ class Database(QObject):
         self.reference_data()
         self.set_models(False)
         self.set_fields(False)
-        self.drop_deleted_facts(False)
-        self.set_types(False)
+        self.set_deleted_facts(False) # -> Null        
+        self.set_changed_atoms(False)
+        self.set_states(False)
+        self.set_history(False) # must be after self.set_states
+
+        # fact changes
+        
+        self.set_types()
+        self.set_atoms()
+        # atoms states
+        # atoms changes
+        # stats
+        # graphs
         self.set_new_states(False)
         self.set_history(False)
         self.apply_new_states(False)        
@@ -141,8 +177,17 @@ class Database(QObject):
         path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")   
         file = open(path, 'wb')
         cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
-        file.close()        
-
+        file.close()
+        
+    def save_stats(self, update):
+        from copy import deepcopy
+        from controls import JxSettings
+        now = time.time()
+        if not(update) or sliding_day(now) - sliding_day(self.statsModified) >= int(JxSettings.Get('reportReset')):
+            self.cache['oldStats'] = deepcopy(self.stats)
+            self.cache['statsModified'] = now
+            self.oldStats = self.cache['oldStats']
+            
     def set_models(self,update):
         """builds the models and hints if update is false or updates them otherwise"""
         
@@ -218,6 +263,7 @@ class Database(QObject):
             map(copy, dic.iteritems()) 
         self.debug = "Models (" + str(len(dic)) +")<br/>" 
     
+    
     def set_fields(self,update):
         from anki.utils import stripHTML
         """fills the fields if update is false or overwrites them otherwise"""
@@ -247,63 +293,192 @@ class Database(QObject):
             map(copy, dic.iteritems())
         self.debug += "Facts (" + str(len(dic)) +")<br/>" 
         
-    def save_stats(self, update):
-        from copy import deepcopy
-        from controls import JxSettings
-        now = time.time()
-        if not(update) or sliding_day(now) - sliding_day(self.statsModified) >= int(JxSettings.Get('reportReset')):
-            self.cache['oldStats'] = deepcopy(self.stats)
-            self.cache['statsModified'] = now
-            self.oldStats = self.cache['oldStats']
         
-    def drop_deleted_facts(self,update):
-        if update:
-            query = """select factId,deletedTime from factsDeleted where deletedTime>%.8f""" % self.factsDeleted  
-        else:
+    def set_deleted_facts(self,update):
+        if not(update):
             # no need to drop facts
             query = """select deletedTime from factsDeleted""" 
             self.factsDeleted = max(map(lambda x:x[0],mw.deck.s.all(query))+[0]) # I want python to compute the max, this is why I code this like this
             return
             
+        query = """select factId,deletedTime from factsDeleted where deletedTime>%.8f""" % self.factsDeleted      
         drop = mw.deck.s.all(query)
-        self.debug += "Facts (-" + str(len(drop)) +") : " 
-        list = []
-        dic = {}
-        history = self.history
-        states = self.states
+        #self.debug += "Facts (-" + str(len(drop)) +") : " 
+
+        types = self.types
+        atoms = self.atoms
+        changedAtoms = {'bushu':{},'kanji':{},'words':{}}
         def build((factId, time)):
+            """build a dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
             try:
-                dic[factId] = (False, history[factId][:])
-                list.append((factId, states[factId][0]))
+                for (key,set) in types[factId].iteritems():
+                    changedAtoms[key].update(set)
+                    for atom in set:
+                        atoms[key][atom].discard(factId)
             except KeyError:
                 pass
             return time
-        self.cache['factsDeleted'] = max(map(build,drop) + [self.factsDeleted]) 
-        self.update_graphs(dic)
-        self.set_stats(list,-1)
+        self.cache['factsDeleted'] = max(map(build,drop) + [self.factsDeleted])
+        self.changedAtoms = changedAtoms
+
         fields = self.fields
-        types = self.types
         states = self.states
         history = self.history
+        types = self.types
         def delete((id,time)):
-            try: 
-                del fields[id]
-                del types[id] 
-                del states[id]
-                del history[id]
-            except:
-                pass        
+            del fields[id]
+            del states[id]
+            del history[id]
+            del types[id] 
         map(delete,drop) 
 
-         
-    def set_types(self,update):
-        if update:
-            query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.8f or models.modified>%.8f)""" %  (self.factsModified,self.modelsModified)  
-        else:
+    def set_changed_atoms(self,update):
+        if not(update):
             query = """select id, tags, modelId from facts"""
-    
-        table = mw.deck.s.all(query)
-    
+            self.changedFacts = mw.deck.s.all(query)
+            return
+            
+        query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.8f or models.modified>%.8f)""" %  (self.factsModified,self.modelsModified)
+        self.changedFacts = mw.deck.s.all(query)
+        
+        changedAtoms = self.changedAtoms
+        types = self.types
+        atoms = self.atoms
+        def update((factId,factTags,factModelId)):
+            """update the dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
+            try:
+                for (key,set) in types[factId].iteritems():
+                    changedAtoms[key].update(set)
+                    for atom in set:
+                        atoms[key][atom].discard(factId)
+            except KeyError:
+                pass    
+        map(update,self.changedFacts)
+        self.changedAtoms = changedAtoms
+        
+    def set_states(self,update):
+        if update:
+            query = """select cards.factId, cards.id, cards.interval, cards.reps, cards.modified from cards where cards.modified>%.8f""" % self.cardsModified
+        else:
+            query = """select factId, id, interval, reps, modified from cards"""   
+            
+        cardsStates = {}
+        cardsKnownThreshold = self.cardsKnownThreshold
+        factsKnownThreshold = self.factsKnownThreshold
+        def assign((factId,id,interval,reps,cached)):
+            """sets the cards states in the eDeck database"""
+            if interval > cardsKnownThreshold and reps:
+                status = 1 # known
+            elif reps:
+                status = 0 # seen
+            else:
+                status = -1 # in deck
+            try:
+                cardsStates[factId][id] = status
+            except KeyError:
+                cardsStates[factId] = {id : status} 
+            return cached
+        self.cache['cardsModified'] = max(map(assign, mw.deck.s.all(query)) + [self.cardsModified])
+
+        
+        States = self.states
+        def compute((factId,dic)):
+            list = [status for status in dic.values() if status>=0]
+            threshold = len(dic) * factsKnownThreshold 
+            if list and sum(list)>= threshold:
+                status = 1# known
+            elif list:
+                status = 0# seen
+            else:
+                status = -1# in deck
+            States[factId] = (status, dic)
+        map(compute, cardsStates.iteritems())
+        #self.debug += "States (" + str(len(cardsStates)) + ")<br/>" 
+
+
+        types = self.types
+        atoms = self.atoms
+        downdateStats = {'bushu':set(),'kanji':set(),'words':set()}
+        def update(factId):
+            """update the dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
+            try:
+                for (key,set) in types[factId].iteritems():
+                    downdateStats[key].update(set)
+            except KeyError:
+                pass
+        self.updatesStats = cardsStates.keys()
+        map(update,self.updatesStats)
+        self.downdateStats = downdateStats
+
+
+    def set_history(self,update): 
+        if update:
+            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval,reviewHistory.nextInterval, reviewHistory.time 
+                from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.8f 
+                order by reviewHistory.cardId, reviewHistory.time desc""" %  self.historyModified
+        else:
+            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.time 
+                from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time desc"""
+        
+        history = {}         
+
+
+        cardsKnownThreshold = self.cardsKnownThreshold
+        stateArray = {}
+        stateArrayDefault = stateArray.setdefault
+        maxTime = self.historyModified
+        cardId = None
+        for (factId,id,lastInterval,nextInterval, time) in mw.deck.s.all(query):
+            """sets the cards status changes in the Jx database JxDeck"""
+            if cardId != id:
+                cardId = id
+                if time > maxTime:
+                    maxTime = time
+                if nextInterval > cardsKnownThreshold:
+                    switch = False
+                else : 
+                    switch = True
+            if switch ^ bool(lastInterval > cardsKnownThreshold): #xor
+                factChanges = stateArrayDefault(factId,{})
+                day = sliding_day(time)
+                if switch:
+                    factChanges[day] = factChanges.get(day,0) + 1
+                else:
+                    factChanges[day] = factChanges.get(day,0) - 1                    
+                switch = not(switch)
+        self.cache['historyModified'] = maxTime
+
+        #self.debug += "History ("+str(len(history)) + ") : "         
+        
+        states = self.states    
+        factsKnownThreshold = self.factsKnownThreshold
+        deltaHistory = {}
+        historyDefault = self.history.setdefault
+        self.deltaFactHistory = {}
+        deltaFactHistory = self.deltaFactHistory
+        for (factId,factChanges) in stateArray.iteritems():         
+            (status, cardsStates) = states[factId]
+            
+
+            days = factChanges.keys()
+            days.sort(reverse=True) # we go from end to start to simplify the update/build process (no need to save start states/more end states)
+            
+            myList = deque()
+            threshold = len(cardsStates) * factsKnownThreshold
+            cumul = reduce(lambda x,y:x+max(y,0),cardsStates.values(),0) # number of known cards at the end (all cards may not have ben reviewed)
+            boolean = bool(cumul < threshold)
+            for day in days:
+                cumul -= stateArray[day]
+                if boolean ^ bool(cumul >=threshold): #xor
+                    myList.appendleft(day)
+                    boolean = not(boolean)
+            historyDefault(factId,[]).extend(myList)
+            deltaFactHistory[factId] = (not(boolean),list(myList))        
+
+        #self.update_graphs(deltaHistory)
+
+
+    def downdate(self):
         #downdate stats/graphs
         history = self.history
         states = self.states
@@ -336,10 +511,14 @@ class Database(QObject):
                 except KeyError:
                     pass               
             map(discard,table) 
-            
-            
+         
+         
+         
+         
+    def set_types(self):
+
         models = self.models
-        def compute((id,tags,modelId)):
+        for (id,tags,modelId) in self.changedfacts:
             types = set()
             test = set(tags.split(" "))
             for (key,list) in JxType:
@@ -378,23 +557,22 @@ class Database(QObject):
                 metadata.update(parse_content(stripHTML(fields[ordinal]),type))
                 ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
             self.types[id] = metadata
-            
+
+    def set_atoms(self):
+        types = self.types
+        for (id,tags,modelId) in self.changedfacts:    
             # now update the atoms table
-            for (key, set) in metadata.iteritems():
-                atomsDict = atoms[key]
+            for (key, set) in types[id].iteritems():
                 n = len(set) 
                 if n > 1:
                     weight = 1.0/n
                 else:
                     weight = 1
+                default = atoms[key].setdefault                    
                 for atom in set:
-                    try:
-                        atomsDict[atom][id] = weight
-                    except KeyError:
-                        atomsDict[atom] = {id:weight}
-        map(compute,table)
+                    default(atom,{}).update({id:weight})
         
-        self.debug += "Types (" + str(len(table)) + ")<br/>" 
+        #self.debug += "Types (" + str(len(table)) + ")<br/>" 
         
         #update stats/graphs
         if update:
@@ -405,47 +583,12 @@ class Database(QObject):
             self.update_graphs(dic)
             self.set_stats(lis,1)
             
-    def set_new_states(self,update):
-        if update:
-            self.newStates = {}
-            States = self.newStates
-            query = """select cards.factId, cards.id, cards.interval, cards.reps, cards.modified from cards where cards.modified>%.8f""" % self.cardsModified
-        else:
-            States = self.states
-            query = """select factId, id, interval, reps, modified from cards"""      
-     
-        cardsStates = {}
-        cardsKnownThreshold = self.cardsKnownThreshold
-        factsKnownThreshold = self.factsKnownThreshold
-        def assign((factId,id,interval,reps,cached)):
-            """sets the cards states in the Jx database JxDeck"""
-            if interval > cardsKnownThreshold and reps:
-                status = 1 # known
-            elif reps:
-                status = 0 # seen
-            else:
-                status = -1 # in deck
-            try:
-                cardsStates[factId][id] = status
-            except KeyError:
-                cardsStates[factId] = {id : status} 
-            return cached
-        self.cache['cardsModified'] = max(map(assign, mw.deck.s.all(query)) + [self.cardsModified])
-        
 
-        def compute((factId,dic)):
-            list = [status for status in dic.values() if status>=0]
-            threshold = len(dic) * factsKnownThreshold 
-            if list and sum(list)>= threshold:
-                status = 1# known
-            elif list:
-                status = 0# seen
-            else:
-                status = -1# in deck
-            States[factId] = (status, dic)
-        map(compute, cardsStates.iteritems())
-        self.debug += "States (" + str(len(cardsStates)) + ")<br/>" 
-        
+
+
+
+
+
         if update:
             workload = {'Bushu':{},'Words':{},'Kanji':{}} 
             def build_workload((factId,dic)):
@@ -470,6 +613,10 @@ class Database(QObject):
             States[factId] = (status, dic)            
         for (key,dic) in worload.iteritems():
             map(transmit, dic.iteritems())
+        
+        
+        
+        
         
         
             
