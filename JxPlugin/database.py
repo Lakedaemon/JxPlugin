@@ -74,12 +74,12 @@ class Database(QObject):
         
 
         self.set_stats(-1)
-        # self.set_graphs(-1)
+        self.set_graphs(-1)
 
         
         self.set_models(True) 
         self.set_fields(True) 
-        self.set_states(True) # state changes have to go through the "SUB(if atom exists) & ADD (if atom exists)" for stats. 
+        self.set_states() # state changes have to go through the "SUB(if atom exists) & ADD (if atom exists)" for stats. 
         self.set_history(True) # history changes hove to go through CONCAT
 
         
@@ -91,7 +91,7 @@ class Database(QObject):
         self.set_atoms_states(False)
         self.set_atoms_history(False)
         self.set_stats(1)
-        self.update_graphs()        
+        self.set_graphs(1)        
 
 
         self.save() 
@@ -101,21 +101,18 @@ class Database(QObject):
         self.list_dropped_factIds(False)        
         self.list_changed_factIds(False)
         self.list_changed_factStates(False)
-        self.list_changed_factHistory(False)
-        
+        self.list_changed_factHistory(False)      
         self.set_models(False)
         self.set_fields(False)
-        self.set_states(False)
-        self.set_history(False)
-        
-        self.set_types()
-        
+        self.set_states()
+        self.set_history(False)       
+        self.set_types()       
         self.set_atoms()
         self.set_atoms_states(False)
         self.set_atoms_history(False)
         self.init_stats()
         self.set_stats(0)
-        self.update_graphs()
+        self.set_graphs(0)
         self.save_stats(False)
         self.save() 
 
@@ -271,7 +268,7 @@ class Database(QObject):
         self.cache['modelsModified'] = max(map(assign,mw.deck.s.all(query))+[self.modelsModified])
     
         # then computes types and hints
-        def compute((modelName, tags, fields, hints)):
+        for (modelName, tags, fields, hints) in dic.values():
             types = set()
             test = set(tags.split(" ")) # parses the model tags first
             for (key,list) in JxType:
@@ -313,15 +310,10 @@ class Database(QObject):
                                     else:
                                         hints[type] = (name,ordinal,False)                                                                        
                                     break
-        map(compute, dic.values())
     
         # overwrite the models
         if update:
-            models= self.models
-            def copy((id, model)): 
-                models[id] = model
-            map(copy, dic.iteritems()) 
-        #self.debug = "Models (" + str(len(dic)) +")<br/>" 
+            self.models.update(dic)
     
     
     def set_fields(self,update):
@@ -334,13 +326,10 @@ class Database(QObject):
             dic = self.fields
             query = """select factId,value, modified from fields, facts where fields.factId = facts.id order by ordinal"""
     
+        dicDefault = dic.setdefault
         def assign((id,value,cached)):
             """basically does factsDB[factId].update(ordinal=value)"""
-            try:
-                fields = dic[id]
-            except KeyError:
-                dic[id] = {}
-                fields = dic[id]
+            fields = dicDefault(id,{})
             fields[len(fields)] = value # this is coded this way because in the anki database ordinal fields in fieldModels and fields aren't necessarily equals...
             return cached
         self.cache['factsModified'] = max(map(assign,mw.deck.s.all(query)) + [self.factsModified])
@@ -351,7 +340,6 @@ class Database(QObject):
             def copy((id,dict)):
                 fields[id] = dict
             map(copy, dic.iteritems())
-        #self.debug += "Facts (" + str(len(dic)) +")<br/>" 
         
     def purge_atoms(self):            
         mySet = set(self.droppedFactIds + self.changedFactIds)
@@ -371,7 +359,6 @@ class Database(QObject):
                         del atomsHistory[key][atom]
 
     def drop_facts(self):                       
-        #self.debug += "Facts (-" + str(len(drop)) +") : " 
         fields = self.fields
         states = self.states
         history = self.history
@@ -382,31 +369,9 @@ class Database(QObject):
             del history[factId]
             del types[factId] 
 
-
-
-        
-        
-        
-    def update_atoms():    
-        
-        changedAtoms = self.changedAtoms
-        types = self.types
-        atoms = self.atoms
-        def update((factId,factTags,factModelId)):
-            """update the dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
-            try:
-                for (key,set) in types[factId].iteritems():
-                    changedAtoms[key].update(set)
-                    for atom in set:
-                        atoms[key][atom].discard(factId)
-            except KeyError:
-                pass    
-        map(update,self.changedFacts)
-        self.changedAtoms = changedAtoms
-        
-
-    def set_states(self,update):
+    def set_states(self):
         cardsStates = {}
+        cardsStatesDefault = cardsStates.setdefault
         cardsKnownThreshold = self.cardsKnownThreshold
         factsKnownThreshold = self.factsKnownThreshold
         for (factId,id,interval,reps,cached) in self.cardStateChanges:
@@ -417,42 +382,20 @@ class Database(QObject):
                 status = 0 # seen
             else:
                 status = -1 # in deck
-            try:
-                cardsStates[factId][id] = status
-            except KeyError:
-                cardsStates[factId] = {id : status} 
+            cardsStatesDefault(factId,{})[id] = status
         
         States = self.states
         for (factId,dic) in cardsStates.iteritems():
             list = [status for status in dic.values() if status>=0]
             threshold = len(dic) * factsKnownThreshold 
             if list and sum(list)>= threshold:
-                status = 1# known
+                status = 1 # known
             elif list:
-                status = 0# seen
+                status = 0 # seen
             else:
-                status = -1# in deck
+                status = -1 # in deck
             States[factId] = (status, dic)
             
-        #self.debug += "States (" + str(len(cardsStates)) + ")<br/>" 
-
-
-    def up():
-
-        types = self.types
-        atoms = self.atoms
-        downdateStats = {'bushu':set(),'kanji':set(),'words':set()}
-        def update(factId):
-            """update the dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
-            try:
-                for (key,set) in types[factId].iteritems():
-                    downdateStats[key].update(set)
-            except KeyError:
-                pass
-        self.updatesStats = cardsStates.keys()
-        map(update,self.updatesStats)
-        self.downdateStats = downdateStats
-
         
     def set_history(self,update):
         history = {}         
@@ -485,10 +428,8 @@ class Database(QObject):
         
         states = self.states    
         factsKnownThreshold = self.factsKnownThreshold
-        #deltaHistory = {}
         historyDefault = self.history.setdefault
-        #self.deltaFactHistory = {}
-        #deltaFactHistory = self.deltaFactHistory
+        deltaFactHistory = {}
         for (factId,factChanges) in stateArray.iteritems():         
             (status, cardsStates) = states[factId]
             
@@ -505,46 +446,10 @@ class Database(QObject):
                     myList.appendleft(day)
                     boolean = not(boolean)
             historyDefault(factId,[]).extend(list(myList))
-            #deltaFactHistory[factId] = (not(boolean),list(myList))        
+            deltaFactHistory[factId] = (not(boolean),list(myList))        
+        self.deltaFactHistory = deltaFactHistory
 
-        #self.update_graphs(deltaHistory)
-
-    def downdate(self):
-        #downdate stats/graphs
-        history = self.history
-        states = self.states
-        atoms = self.atoms
-        if update:
-            dic = {}
-            lis = []
-            def build((factId, tags,modelId)):
-                try:
-                    dic[factId] = (False, history[factId][:])
-                    lis.append((factId,states[factId][0]))
-                except KeyError:
-                    pass
-            map(build,table)
-            self.debug += "---- " 
-            self.update_graphs(dic)
-            self.set_stats(lis,-1)
-            
-            def discard((factId, factTags, factModelId)):
-                try:
-                    for (type, stuff) in self.types[factId]:
-                        try:
-                            weight = atoms[element]
-                            if len(weight) == 1:
-                                del atoms[element]
-                            else:
-                                del weight[factId]
-                        except KeyError:
-                            pass
-                except KeyError:
-                    pass               
-            map(discard,table) 
-         
-         
-         
+    
          
     def set_types(self):
 
@@ -735,24 +640,45 @@ class Database(QObject):
               
                             
 
-    def update_graphs(self):
+    def set_graphs(self,sign):
+        """adds to graphs if sign = 1 and subs to graph if qign = -1"""
+        
+        if sign != 0:
+            if sign == -1:
+                mySet = set(self.droppedFactIds + self.changedFactIds)
+            elif sign == 1:
+                mySet = set(self.changedFactIds)
+            load = {'words':{},'kanji':{},'bushu':{}}
+            atomsHistory = self.atomsHistory
+            get = self.types.get
+            for factId in mySet:
+                for (key,atoms) in get(factId,{}).iteritems():
+                    history = atomsHistory[key]
+                    myLoad = load[key]
+                    for atom in atoms:
+                        myLoad[atom] = history[atom]
+        else:
+            sign = 1
+            load = self.atomsHistory
+                         
         #self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
 
         for myType in ['words','kanji']:
             tasks = {'words':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-            atomsHistory = self.atomsHistory[myType]
             graphsDefault = self.graphs.setdefault
-
-            for (name,mapping) in tasks[myType].iteritems():  
+            myLoad = load[myType]
+            for (name,mapping) in tasks[myType].iteritems(): 
+                myValue = mapping.Value
                 if  name == 'W-AFreq' or name == 'K-AFreq':
+                    # myIncrement = mapFreqKanji.Value if name == 'K-AFreq' else MapFreqTango.Value
                     if name == 'K-AFreq':
-                        myDict = MapFreqKanji                     
+                        myIncrement = MapFreqKanji.Value                     
                     else:
-                        myDict = MapFreqTango      
-                    def assign((content,days)):
+                        myIncrement = MapFreqTango.Value      
+                    for (atom,days) in myLoad.iteritems():
                         try:
-                            value = mapping.Value(content)
-                            increment = myDict.Value(content)
+                            value = myValue(atom)
+                            increment = sign * myIncrement(atom)
                             stateArray = graphsDefault((name,value),{})
                             get = stateArray.get
                             for day in days:
@@ -760,317 +686,20 @@ class Database(QObject):
                                 increment =  - increment
                         except:
                             pass
-                else:               
-                    def assign((content,days)):
+                else:   
+                    for (atom,days) in myLoad.iteritems():
+                        # need a default dic to clean this code
+                        increment = sign                        
                         try:
-                            value = mapping.Value(content)
+                            value = myValue(atom)
                         except KeyError:
                             value = 'Other'
                         stateArray = graphsDefault((name,value),{})
                         get = stateArray.get                     
-                        increment = 1
                         for day in days:
                             stateArray[day] = get(day,0) + increment 
                             increment = - increment
-                map(assign,atomsHistory.iteritems())  
- 
- 
- 
- 
-        
-    def gah():
-        #update stats/graphs
-        if update:
-            def invert((factId,(boolean,dict))):
-                dic[factId] = (True, dict)        
-            map(invert,dic.iteritems())
-            self.debug += "++++ " 
-            self.update_graphs(dic)
-            self.set_stats(lis,1)
-            
 
-
-
-
-
-
-        if update:
-            workload = {'Bushu':{},'Words':{},'Kanji':{}} 
-            def build_workload((factId,dic)):
-                try:
-                    for (key, set) in self.types[factId]:
-                        workload[key].update(set)
-                except:
-                    pass
-            map(compute, cardsStates.iteritems())
-        else:
-            workload = {'Bushu':self.atoms[('Bushu')],'Words':self.atoms[('Words')],'Kanji':self.atoms[('Kanji')]}
-        atomsKnownThreshold = 1
-        def transmit((atom,weights)):
-            list = [Statesstatus for status in weights.keys() if status>=0]
-            threshold = len(weights) * atomsKnownThreshold 
-            if list and sum(list)>= threshold:
-                status = 1# known
-            elif list:
-                status = 0# seen
-            else:
-                status = -1# in deck
-            States[factId] = (status, dic)            
-        for (key,dic) in worload.iteritems():
-            map(transmit, dic.iteritems())
-        
-        
-        
-        
-        
-        
-            
-    def set_history_old(self,update): 
-        if update:
-            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.8f  order by reviewHistory.cardId, reviewHistory.time""" %  self.historyModified
-        else:
-            query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval, reviewHistory.nextInterval, reviewHistory.ease, reviewHistory.time from cards, reviewHistory where cards.id = reviewHistory.cardId order by reviewHistory.cardId, reviewHistory.time"""
-        
-        history = {}         
-        self.cardId = None
-        states = self.states
-        cardsKnownThreshold = self.cardsKnownThreshold
-        factsKnownThreshold = self.factsKnownThreshold        
-        def assign((factId,id,interval,nextInterval,ease,time)):
-            """sets the cards status changes in the Jx database JxDeck"""
-            if self.cardId != id:
-                if update:
-                    try:
-                        self.switch = (states[factId][1][id] != 1)
-                    except KeyError:
-                        # in case a new fact has been created
-                        self.switch = True                             
-                else:
-                    self.switch = True            
-                self.cardId = id
-            if (nextInterval > cardsKnownThreshold  and self.switch) or (nextInterval <= cardsKnownThreshold  and not(self.switch)):
-                self.switch = not(self.switch)
-                #Card Status Change
-                day = sliding_day(time)
-                try: 
-                    cardsHistory = history[factId]
-                except KeyError:
-                    history[factId] = {}
-                    cardsHistory = history[factId]
-                try:
-                    cardsHistory[id].append(day)
-                except KeyError:
-                    cardsHistory[id] = [day]
-            return time        
-        self.cache['historyModified'] = max(map(assign,mw.deck.s.all(query)) + [self.historyModified])
-        
-        #self.debug += "History ("+str(len(history)) + ") : "         
-        
-        deltaHistory = {}
-        def compute((factId,cardsHistory)):         
-            (status, cardsStates) = states[factId]
-            stateArray = {}    
-            for (id,changes) in cardsHistory.iteritems():
-                if update: 
-                    boolean = (cardsStates[id] != 1)                    
-                else:
-                    boolean = True
-                for day in changes:
-                    try:
-                        if boolean:
-                            stateArray[day] += 1
-                        else:
-                            stateArray[day] -= 1 
-                    except KeyError:
-                        if boolean:
-                            stateArray[day] = 1
-                        else:
-                            stateArray[day] = -1  
-                    boolean = not(boolean)
-                
-            days = stateArray.keys()
-            days.sort()
-
-            list = []
-            threshold = len(cardsStates) * factsKnownThreshold
-            if update:
-                boolean = (status != 1)
-                cumul = len([1 for state in cardsStates.values() if state ==1])
-            else:
-                boolean = True
-                cumul = 0
-
-            for day in days:
-                cumul += stateArray[day]
-                if (boolean and cumul >=threshold ) or (not(boolean) and cumul < threshold): #xor
-                    list.append(day)
-                    boolean = not(boolean)  
-            if update:
-                try:
-                    self.history[factId].extend(list[:]) ##### no risk taken 
-                except KeyError:
-                    self.history[factId]=list[:]
-                deltaHistory[factId] = ((status != 1), list[:])  
-            else:
-                self.history[factId] = list[:]
-                deltaHistory[factId] = (True, list[:])
-        
-        map(compute, history.iteritems())
-
-        self.update_graphs(deltaHistory)
-
-    def update_graphs_old(self,dic):
-        self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
-        types = self.types
-        graphs = self.graphs
-        for type in ['Word','Kanji']:
-            def select((id,(add,changelist))):
-                try:
-                    return (types[id][type], add, changelist)
-                except KeyError:
-                    return None
-            list = filter(lambda x: x != None, map(select,dic.iteritems()))
-
-            tasks = {'Word':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-        
-            for (name,mapping) in tasks[type].iteritems():  
-                if  name == 'W-AFreq' or name == 'K-AFreq':
-                    if name == 'K-AFreq':
-                        dict = MapFreqKanji                     
-                    else:
-                        dict = MapFreqTango      
-                    def assign((content, add, days)):
-                        try:
-                            value = mapping.Value(content)
-                            increment = dict.Value(content)
-                            try:
-                                stateArray = graphs[(name,value)]
-                            except KeyError:
-                                graphs[(name,value)] = {}
-                                stateArray = graphs[(name,value)]
-                            boolean = add
-                            for day in days:
-                                try:
-                                    if boolean:
-                                        stateArray[day] += increment
-                                    else:
-                                        stateArray[day] -= increment 
-                                except KeyError:
-                                    if boolean:
-                                        stateArray[day] = increment
-                                    else:
-                                        stateArray[day] = -increment 
-                                boolean = not(boolean)  
-                        except KeyError:
-                            pass                                                              
-                else:               
-                    def assign((content,add,days)):
-                        boolean = add
-                        try:
-                            value = mapping.Value(content)
-                        except KeyError:
-                            value = 'Other'
-                        try:
-                            stateArray = graphs[(name,value)]
-                        except KeyError:
-                            graphs[(name,value)] = {}
-                            stateArray = graphs[(name,value)]
-                        for day in days:
-                            try:
-                                if boolean:
-                                    stateArray[day] += 1
-                                else:
-                                    stateArray[day] -= 1 
-                            except KeyError:
-                                if boolean:
-                                    stateArray[day] = 1
-                                else:
-                                    stateArray[day] = -1  
-                            boolean = not(boolean)
-                map(assign,list) 
-
-    def apply_new_states(self,update):
-        """downdates stats, apply new states and updates stats""" 
-        states = self.states
-        def build(factId):
-                return (factId,states[factId][0])
-        self.debug += "<br/>ApplyStates :"
-        if update:
-            self.set_stats(map(build,[id for id in self.newStates.keys() if id in states]),-1)
-            states.update(self.newStates)
-            self.debug += " --> "
-            self.set_stats(map(build,self.newStates.keys()),1)
-            del self.newStates
-        else:
-            self.set_stats(map(build,self.states.keys()),0)
-
-
-    def set_stats_old(self, List, add):
-        """updates stats positively if add>0, negatively if add<0 or build stats if add=0"""
-        self.debug += "stats(" + str(len(List))  + ")<br/>" 
-        types = self.types
-        for type in ['Word','Kanji']:
-            def select((factId, status)):
-                try:
-                    return (types[factId][type], status)
-                except KeyError:
-                    return None
-            list = filter(lambda x: x != None, map(select,List))
-        
-            JxStatTasks = {'Word':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'Kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-        
-            stats = self.stats
-            for (name,mapping) in JxStatTasks[type].iteritems():           
-                if  name == 'W-AFreq' or name == 'K-AFreq':
-                    if name == 'K-AFreq':
-                        dic = MapFreqKanji
-                    else:
-                        dic = MapFreqTango
-                    def assign_A((content,state)):
-                        try:
-                            value = mapping.Value(content)
-                            if add >= 0:
-                                increment = dic.Value(content)
-                            else:
-                                increment = - dic.Value(content)
-                            try:
-                                stats[(name,state,value)] += increment
-                            except KeyError:
-                                stats[(name,state,value)] = increment
-                        except KeyError:
-                            pass                         
-                    map(assign_A,list)
-                    if add == 0:
-                        zoneDict = mapping.Dict
-                        def count_A((content,value)):
-                            zone = zoneDict[content]
-                            try:
-                                stats[(name,'Total',zone)] += value
-                            except KeyError:
-                                stats[(name,'Total',zone)] = value                
-                        map(count_A,dic.Dict.iteritems())
-                else:  
-                    if add >= 0:
-                        increment = 1
-                    else:
-                        increment = -1
-                    def assign((content,state)):
-                        try:
-                            value = mapping.Value(content)
-                        except KeyError:
-                            value = 'Other'                           
-                        try:
-                            stats[(name,state,value)] += increment
-                        except KeyError:
-                            stats[(name,state,value)] = increment
-                    map(assign,list)
-                    if add == 0:
-                        def count(value):
-                            try:
-                                stats[(name,'Total',value)] += 1
-                            except KeyError:
-                                stats[(name,'Total',value)] = 1                
-                        map(count,mapping.Dict.values())
 
     #############################      
     #                           #
