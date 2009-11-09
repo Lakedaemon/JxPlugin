@@ -83,8 +83,8 @@ class Database(QObject):
         self.set_history(True) # history changes hove to go through CONCAT
 
         
-        # purge atoms
-        # drop factIds & purge atoms
+        self.purge_atoms()
+        self.drop_facts()
         self.set_types()
         
         self.set_atoms()     
@@ -353,38 +353,35 @@ class Database(QObject):
             map(copy, dic.iteritems())
         #self.debug += "Facts (" + str(len(dic)) +")<br/>" 
         
-
-
-    def drop_facts(self,update):            
-            
-        #self.debug += "Facts (-" + str(len(drop)) +") : " 
-
-        types = self.types
+    def purge_atoms(self):            
+        mySet = set(self.droppedFactIds + self.changedFactIds)
         atoms = self.atoms
-        changedAtoms = {'bushu':{},'kanji':{},'words':{}}
-        def build((factId, time)):
-            """build a dic of sets of atoms to downdate (and maybee update later) and remove the factIds from the atoms"""
-            try:
-                for (key,set) in types[factId].iteritems():
-                    changedAtoms[key].update(set)
-                    for atom in set:
-                        atoms[key][atom].discard(factId)
-            except KeyError:
-                pass
-            return time
-        self.cache['factsDeleted'] = max(map(build,drop) + [self.factsDeleted])
-        self.changedAtoms = changedAtoms
+        atomsStates = self.atomsStates
+        atomsHistory = self.atomsHistory
+        get = self.types.get
+        for factId in mySet:
+            for (key,atomList) in get(factId,{}).iteritems():
+                myAtoms = atoms[key]
+                for atom in atomList:
+                    weights = myAtoms[atom]
+                    del weights[factId]
+                    if not(weights):
+                        del myAtoms[atom]
+                        del atomsStates[key][atom]
+                        del atomsHistory[key][atom]
 
+    def drop_facts(self):                       
+        #self.debug += "Facts (-" + str(len(drop)) +") : " 
         fields = self.fields
         states = self.states
         history = self.history
         types = self.types
-        def delete((id,time)):
-            del fields[id]
-            del states[id]
-            del history[id]
-            del types[id] 
-        map(delete,drop) 
+        for factId in self.droppedFactIds:
+            del fields[factId]
+            del states[factId]
+            del history[factId]
+            del types[factId] 
+
 
 
         
@@ -696,9 +693,9 @@ class Database(QObject):
                 mySet = set(self.changedFactIds + self.factStateChanges)
             load = {'words':{},'kanji':{},'bushu':{}}
             atomsStates = self.atomsStates
-            types = self.types
+            get = self.types.get
             for factId in mySet:
-                for (key,atoms) in types[factId].iteritems():
+                for (key,atoms) in get(factId,{}).iteritems():
                     states = atomsStates[key]
                     myLoad = load[key]
                     for atom in atoms:
