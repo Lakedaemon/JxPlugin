@@ -133,7 +133,7 @@ setGobble = set([u'形容詞',u'接続詞',u'動詞',u'副詞',u'接頭詞', u'�
 def parse_content(string,type):
     if len(string)==1 and JxIsKanji(string) and type in set(["Kanji","Word"]):
         #if  String has one Kanji, it is a Kanji (or a Word)
-        return {type:string}
+        return {'kanji':string}
     elif type == 'Kanji':
         return {}
     # first mecab the string
@@ -184,9 +184,7 @@ def parse_content(string,type):
     if tail:
         # out of the loop, gotta flush...
         List.append(tail)
-    if number == 1:
-        return {'Word':List[0]}
-    elif number > 1:
-        return {'Words':List[:]}
+    if number >= 1:
+        return {'words':List[:]}
     return {}
 
