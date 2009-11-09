@@ -4,6 +4,9 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
+
+# to get cleaner/more readable code, I need defaultdic & conditionnal expression (python 2.5)
+
 import cPickle
 from copy import deepcopy
 from collections import deque
@@ -35,6 +38,7 @@ class Database(QObject):
         self.setObjectName(name)
         try:
             self.load()
+            self.cache['resets']
             from controls import JxSettings
             if sliding_day(time.time()) - sliding_day(self.cache['cacheBuilt']) <= JxSettings.Get('cacheRebuild'):
                 self.update() 
@@ -111,7 +115,7 @@ class Database(QObject):
         self.set_atoms_states(False)
         self.set_atoms_history(False)
         self.set_stats(0)
-        # graphs
+        self.update_graphs()
         self.save() 
 
 
@@ -455,30 +459,28 @@ class Database(QObject):
     def set_history(self,update):
         history = {}         
 
-
         cardsKnownThreshold = self.cardsKnownThreshold
         stateArray = {}
         stateArrayDefault = stateArray.setdefault
         maxTime = self.historyModified
         cardId = None
-        for (factId,id,lastInterval,nextInterval, time) in self.changedFactHistory:
+        for (factId,id,lastInterval,nextInterval,time) in self.changedFactHistory:
             """sets the cards status changes in the Jx database JxDeck"""
             if cardId != id:
                 cardId = id
                 if time > maxTime:
-                    maxTime = time
-                if nextInterval > cardsKnownThreshold:
-                    switch = False
-                else : 
-                    switch = True
-            if switch ^ bool(lastInterval > cardsKnownThreshold): #xor
+                    maxTime = time                
                 factChanges = stateArrayDefault(factId,{})
+                get = factChanges.get
+                #increment = -1 if nextInterval > cardsKnownThreshold else 1 # python 2.5
+                if nextInterval > cardsKnownThreshold:
+                    increment = 1 #False
+                else : 
+                    increment = -1 #True
+            if (increment == 1) ^ (lastInterval > cardsKnownThreshold): #xor
                 day = sliding_day(time)
-                if switch:
-                    factChanges[day] = factChanges.get(day,0) + 1
-                else:
-                    factChanges[day] = factChanges.get(day,0) - 1                    
-                switch = not(switch)
+                factChanges[day] = get(day,0) + increment                 
+                increment = - increment
         self.cache['historyModified'] = maxTime
 
         #self.debug += "History ("+str(len(history)) + ") : "         
@@ -498,17 +500,16 @@ class Database(QObject):
             myList = deque()
             threshold = len(cardsStates) * factsKnownThreshold
             cumul = reduce(lambda x,y:x+max(y,0),cardsStates.values(),0) # number of known cards at the end (all cards may not have ben reviewed)
-            boolean = bool(cumul < threshold)
+            boolean = (cumul >= threshold)
             for day in days:
                 cumul -= factChanges[day]
-                if boolean ^ bool(cumul >=threshold): #xor
+                if boolean ^ (cumul >= threshold): #xor
                     myList.appendleft(day)
                     boolean = not(boolean)
-            historyDefault(factId,[]).extend(myList)
+            historyDefault(factId,[]).extend(list(myList))
             #deltaFactHistory[factId] = (not(boolean),list(myList))        
 
         #self.update_graphs(deltaHistory)
-
 
     def downdate(self):
         #downdate stats/graphs
@@ -631,9 +632,7 @@ class Database(QObject):
         
  
     def set_atoms_history(self,update):
-        if not(update):
-            dic = self.atoms
-        for (key, atoms) in dic.iteritems():
+        for (key, atoms) in self.atoms.iteritems():
             history = self.atomsHistory[key]
             factHistoryGet = self.history.get
             for (atom, weights) in atoms.iteritems():  
@@ -662,7 +661,8 @@ class Database(QObject):
                         if boolean ^ bool(cumul >= threshold): #xor
                             myList.append(day)
                             boolean = not(boolean)
-                            history[atom] = myList[:]   
+                            history[atom] = myList[:]
+        #mw.help.showText("<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['kanji'].iteritems()))+"<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['words'].iteritems())))    
                     
                             
     def set_stats(self, add):
@@ -723,7 +723,44 @@ class Database(QObject):
                         map(count,mapping.Dict.values())
                             
 
- 
+    def update_graphs(self):
+        #self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
+
+        for myType in ['words','kanji']:
+            tasks = {'words':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+            atomsHistory = self.atomsHistory[myType]
+            graphsDefault = self.graphs.setdefault
+
+            for (name,mapping) in tasks[myType].iteritems():  
+                if  name == 'W-AFreq' or name == 'K-AFreq':
+                    if name == 'K-AFreq':
+                        myDict = MapFreqKanji                     
+                    else:
+                        myDict = MapFreqTango      
+                    def assign((content,days)):
+                        try:
+                            value = mapping.Value(content)
+                            increment = myDict.Value(content)
+                            stateArray = graphsDefault((name,value),{})
+                            get = stateArray.get
+                            for day in days:
+                                stateArray[day] = get(day,0) + increment
+                                increment =  - increment
+                        except:
+                            pass
+                else:               
+                    def assign((content,days)):
+                        try:
+                            value = mapping.Value(content)
+                        except KeyError:
+                            value = 'Other'
+                        stateArray = graphsDefault((name,value),{})
+                        get = stateArray.get                     
+                        increment = 1
+                        for day in days:
+                            stateArray[day] = get(day,0) + increment 
+                            increment = - increment
+                map(assign,atomsHistory.iteritems())  
  
  
  
@@ -870,7 +907,7 @@ class Database(QObject):
 
         self.update_graphs(deltaHistory)
 
-    def update_graphs(self,dic):
+    def update_graphs_old(self,dic):
         self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
         types = self.types
         graphs = self.graphs
