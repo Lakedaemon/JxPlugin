@@ -72,11 +72,10 @@ class Database(QObject):
         self.list_changed_factStates(True)
         self.list_changed_factHistory(True)
         
-        # downdate will happen here
-        # self.downdate_stats()
-        # self.downdate_graphs()
-        # purge atoms
-        # drop factIds
+
+        self.set_stats(-1)
+        # self.set_graphs(-1)
+
         
         self.set_models(True) 
         self.set_fields(True) 
@@ -84,17 +83,17 @@ class Database(QObject):
         self.set_history(True) # history changes hove to go through CONCAT
 
         
-
+        # purge atoms
+        # drop factIds & purge atoms
         self.set_types()
-        self.set_atoms()     
         
-        # atoms states
-        # atoms changes
-        # update stats
-        # update graphs
-        #self.set_new_states(True)
-        #self.set_history(True)
-        #self.apply_new_states(True)
+        self.set_atoms()     
+        self.set_atoms_states(False)
+        self.set_atoms_history(False)
+        self.set_stats(1)
+        self.update_graphs()        
+
+
         self.save() 
         
     def build(self):
@@ -114,8 +113,10 @@ class Database(QObject):
         self.set_atoms()
         self.set_atoms_states(False)
         self.set_atoms_history(False)
+        self.init_stats()
         self.set_stats(0)
         self.update_graphs()
+        self.save_stats(False)
         self.save() 
 
 
@@ -663,64 +664,78 @@ class Database(QObject):
                             boolean = not(boolean)
                             history[atom] = myList[:]
         #mw.help.showText("<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['kanji'].iteritems()))+"<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['words'].iteritems())))    
-                    
-                            
-    def set_stats(self, add):
-        """updates stats positively if add>0, negatively if add<0 or build stats if add=0"""
-        #self.debug += "stats(" + str(len(List))  + ")<br/>" 
-        types = self.types
-        for type in ['words','kanji']:
-            JxStatTasks = {'words':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
-            atomsStates = self.atomsStates[type]
+
+    def init_stats(self):
+        """compute the number of elements of each class in the data lists"""      
+        for (myType, tasks) in [('words',{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}), ('kanji',{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji})]:
             stats = self.stats
             get = stats.get
-            for (name,mapping) in JxStatTasks[type].iteritems():           
+            for (name,mapping) in tasks.iteritems():
                 if  name == 'W-AFreq' or name == 'K-AFreq':
+                    # myDict = MapFreqKanji.Dict if name == 'K-AFreq' else MapFreqTango.Dict
                     if name == 'K-AFreq':
-                        dic = MapFreqKanji
+                        myDict = MapFreqKanji.Dict
                     else:
-                        dic = MapFreqTango
-                    def assign_A((content,state)):
-                        try:
-                            value = mapping.Value(content)
-                            if add >= 0:
-                                increment = dic.Value(content)
-                            else:
-                                increment = - dic.Value(content)
+                        myDict = MapFreqTango.Dict
+                    zoneDict = mapping.Dict
+                    for (content,value) in myDict.iteritems():
+                        zone = zoneDict[content]
+                        stats[(name,'Total',zone)] = get((name,'Total',zone),0) + value
+                else:  
+                    for value in mapping.Dict.values():
+                        stats[(name,'Total',value)] = get((name,'Total',value),0) + 1
+
                             
-                            stats[(name,state,value)] = get((name,state,value),0) + increment
-                        
+    def set_stats(self, sign):
+        """updates stats positively if sign == 1, negatively if sign == -1; Don't put another value in there"""            
+
+        if sign != 0:
+            if sign == -1:
+                mySet = set(self.droppedFactIds + self.changedFactIds + self.factStateChanges)
+            elif sign == 1:
+                mySet = set(self.changedFactIds + self.factStateChanges)
+            load = {'words':{},'kanji':{},'bushu':{}}
+            atomsStates = self.atomsStates
+            types = self.types
+            for factId in mySet:
+                for (key,atoms) in types[factId].iteritems():
+                    states = atomsStates[key]
+                    myLoad = load[key]
+                    for atom in atoms:
+                        myLoad[atom] = states[atom]
+        else:
+            sign = 1
+            load = self.atomsStates
+            
+        #self.debug += "stats(" + str(len(List))  + ")<br/>" 
+        
+        JxStatTasks = {'words':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+        for myType in ['words','kanji']:
+            myLoad = load[myType]
+            stats = self.stats
+            get = stats.get
+            for (name,mapping) in JxStatTasks[myType].iteritems():
+                myValue = mapping.Value
+                if  name == 'W-AFreq' or name == 'K-AFreq':
+                    # myOccurences = MapFreqKanji.Value if name == 'K-AFreq' else MapFreqTango.Value                    
+                    if name == 'K-AFreq':
+                        myOccurences = MapFreqKanji.Value
+                    else:
+                        myOccurences = MapFreqTango.Value
+                    for (content,state) in myLoad.iteritems():
+                        try:
+                            value = myValue(content)
+                            stats[(name,state,value)] = get((name,state,value),0) + sign * myOccurences(content)
                         except KeyError:
                             pass                         
-                    map(assign_A,atomsStates.iteritems())
-                    if add == 0:
-                        zoneDict = mapping.Dict
-                        def count_A((content,value)):
-                            zone = zoneDict[content]
-                            try:
-                                stats[(name,'Total',zone)] += value
-                            except KeyError:
-                                stats[(name,'Total',zone)] = value                
-                        map(count_A,dic.Dict.iteritems())
                 else:  
-                    if add >= 0:
-                        increment = 1
-                    else:
-                        increment = -1
-                    def assign((content,state)):
+                    for (content,state) in myLoad.iteritems():
                         try:
-                            value = mapping.Value(content)
+                            value = myValue(content)
                         except KeyError:
                             value = 'Other'                           
-                        stats[(name,state,value)] = get((name,state,value),0) + increment
-                    map(assign,atomsStates.iteritems())
-                    if add == 0:
-                        def count(value):
-                            try:
-                                stats[(name,'Total',value)] += 1
-                            except KeyError:
-                                stats[(name,'Total',value)] = 1                
-                        map(count,mapping.Dict.values())
+                        stats[(name,state,value)] = get((name,state,value),0) + sign
+              
                             
 
     def update_graphs(self):
