@@ -128,33 +128,6 @@ def onJxGraphs():
     JxPreview.activateWindow()
     JxPreview.show()
 
-def onMecab():
-   
-    from database import eDeck
-    n = time.time()
-    List=[]
-    def build((id,dic)):
-        try:
-            List.append(dic['Word'])
-        except KeyError:
-            pass
-    map(build,eDeck.types.iteritems())
-    List.sort()
-    origin=time.time()
-
-    from japan import call_mecab
-    Listd = map(call_mecab,List)
-    def format(list):
-            return "<br/>".join(map(lambda x: "(" + ",".join(x) +")",list)) + "<br/>"
-
-    end= time.time()-origin
-    Types = set()
-    def extract(list):
-        map(lambda tuple:Types.add(tuple[2]),list)
-    map(extract,Listd)
-        
-    mw.help.showText( str(end) + "<br/>" + ",".join(list(Types)) + "<br/>" + "<br/>".join(map(format,Listd)))
-
 def init_JxPlugin():
         """Initialises the Anki GUI to present an option to invoke the plugin."""
         from PyQt4 import QtGui, QtCore
@@ -182,22 +155,14 @@ def init_JxPlugin():
 	mw.mainWin.actionJxGraphs.setEnabled(not not mw.deck)
 	mw.connect(mw.mainWin.actionJxGraphs, QtCore.SIGNAL('triggered()'), onJxGraphs)
 
-
-	# creates Mecab entry
-	
-	mw.mainWin.actionMecab = QtGui.QAction('Mecab', mw)
-	mw.mainWin.actionMecab.setStatusTip('Mecab')
-	mw.mainWin.actionMecab.setEnabled(not not mw.deck)
-	mw.connect(mw.mainWin.actionMecab, QtCore.SIGNAL('triggered()'), onMecab)
 	
 	# adds the plugin icons in the Anki Toolbar
 	
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxMenu)
 	mw.mainWin.toolBar.addAction(mw.mainWin.actionJxGraphs)
-	mw.mainWin.toolBar.addAction(mw.mainWin.actionMecab)
 	
 	# to enable or disable Jstats whenever a deck is opened/closed
-	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs","Mecab",)
+	mw.deckRelatedMenuItems = mw.deckRelatedMenuItems + ("JxMenu","JxGraphs",)
 	
 	# Adding features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards

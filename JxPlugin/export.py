@@ -57,14 +57,15 @@ def JxExport2csv():
 	from database import eDeck
 	for (myType,atom) in User:
 	    try:
-	        Ids.extend(eDeck.atoms[myType][atom].keys())
+	        for factId in eDeck.atoms[myType][atom].keys():
+	            Ids.extend(eDeck.states[factId][1].keys())
 	    except:
 	        pass
 	from anki.exporting import TextFactExporter
 	JxExport = TextFactExporter(mw.deck)
 	JxExport.limitCardIds = Ids
 	JxExport.exportInto(JxPath)
-	mw.help.showText("Successfully exported " + str(len(Ids)) + " facts")
+	mw.help.showText("Successfully exported " + str(len(Ids)) + " cards")
 	
 def JxExport2Anki():
 	JxPath = unicode(getSaveFile(mw,  _("Choose file to export to"), "","Anki Deck (*.anki)", ".anki"))
@@ -80,11 +81,12 @@ def JxExport2Anki():
 	from database import eDeck
 	for (myType,atom) in User:
 	    try:
-	        Ids.extend(eDeck.atoms[myType][atom].keys())
+	        for factId in eDeck.atoms[myType][atom].keys():
+	            Ids.extend(eDeck.states[factId][1].keys())
 	    except:
 	        pass
 	from anki.exporting import AnkiExporter
 	JxExport = AnkiExporter(mw.deck)
 	JxExport.limitCardIds = Ids
 	JxExport.exportInto(JxPath)
-	
+	mw.help.showText("Successfully exported " + str(len(Ids)) + " cards")	

@@ -39,7 +39,6 @@ class Database(QObject):
         self.debug=""
         try:
             self.load()
-            self.cache['resets']
             from controls import JxSettings
             if sliding_day(time.time()) - sliding_day(self.cache['cacheBuilt']) <= JxSettings.Get('cacheRebuild'):
                 self.update() 
@@ -90,10 +89,9 @@ class Database(QObject):
         self.set_atoms_history(True)
         self.set_stats(1)
         self.set_graphs(1)  
-        #self.graphsWorkload = self.compute_sets(self.changedHistoryFactIds) 
-        #self.set_graphs(0)        
+        self.extend_atoms_history()      
         self.save() 
-        mw.help.showText(self.debug)
+
     def build(self):
         self.reference_data()
         self.get_dropped_factIds(False)        
@@ -120,25 +118,41 @@ class Database(QObject):
         val = int(value)
         if val != self.cardsKnownThreshold:
             self.cache.update({'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
+                'atomsStates':{'bushu':{},'kanji':{},'words':{}},
+                'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
                 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
                 'cardsKnownThreshold':val})
+            self.cardStateChanges = []
             self.reference_data()
-            #self.set_new_states(False)
-            #self.set_history(False)
-            #self.apply_new_states(False)   
+            self.get_changed_states_factIds(False)
+            self.get_changed_history_factIds(False) 
+            self.set_states()
+            self.set_history(False) 
+            self.set_atoms_states(False)
+            self.set_atoms_history(False)
+            self.set_stats(0)
+            self.set_graphs(0) 
             self.save_stats(False)
             self.save()        
       
     def set_factsKnownThreshold(self,value): 
         val = float(value)
         if val != self.factsKnownThreshold:
-            self.cache.update({'states':{},'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
+            self.cache.update({'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
+                'atomsStates':{'bushu':{},'kanji':{},'words':{}},
+                'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
                 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
                 'factsKnownThreshold':val})
+            self.cardStateChanges = []
             self.reference_data()
-            #self.set_new_states(False)
-            #self.set_history(False)
-            #self.apply_new_states(False)    
+            self.get_changed_states_factIds(False)
+            self.get_changed_history_factIds(False) 
+            self.set_states()
+            self.set_history(False) 
+            self.set_atoms_states(False)
+            self.set_atoms_history(False)
+            self.set_stats(0)
+            self.set_graphs(0)     
             self.save_stats(False)
             self.save()   
 
@@ -182,7 +196,7 @@ class Database(QObject):
     def save(self):
         from ui_menu import JxStats
         """saves the cache on disk"""  
-        #mw.help.showText(self.debug)
+
         path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")   
         file = open(path, 'wb')
         cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
@@ -348,19 +362,14 @@ class Database(QObject):
         get = self.types.get
         for factId in mySet:
             for (key,atomList) in get(factId,{}).iteritems():
-                self.debug+="1 : "+ str((key, atomList))+"<br>"
                 myAtoms = atoms[key]
                 for atom in atomList:
-                    weights = myAtoms[atom]
-                    self.debug+= atom + "a:" +str(weights) +"<br>"                    
-                    del weights[factId]
-                    self.debug+= atom + "b:" +str(weights) +"<br>"                      
+                    weights = myAtoms[atom]                 
+                    del weights[factId]                   
                     if not(weights):
-                        self.debug+="<br>del : "+atom+"<br>"
                         del myAtoms[atom]
                         myList.append((key,atom))
         self.purgedAtoms = myList
-        self.debug += "set : " +str(mySet)+"<br>purged : "+str(len(self.purgedAtoms))+"<br>"
         
     def purge_atoms_stats_and_history(self):
         atomsStates = self.atomsStates
@@ -371,7 +380,6 @@ class Database(QObject):
                 del atomsHistory[key][atom]
             except KeyError:
                 pass
-        self.debug += "purged stats: "+str(len(self.purgedAtoms))+"<br>"
         del self.purgedAtoms
             
     def drop_facts(self):                       
@@ -445,7 +453,7 @@ class Database(QObject):
                 increment = - increment
         self.cache['historyModified'] = maxTime
 
-        #self.debug += "History ("+str(len(history)) + ") : "         
+        
         
         states = self.states    
         factsKnownThreshold = self.factsKnownThreshold
@@ -467,7 +475,7 @@ class Database(QObject):
                     myList.appendleft(day)
                     boolean = not(boolean)
             historyDefault(factId,[]).extend(list(myList))
-            deltaFactHistory[factId] = (not(boolean),list(myList))        
+            deltaFactHistory[factId] = (boolean,list(myList))        
         self.deltaFactHistory = deltaFactHistory
         del self.changedFactHistory
     
@@ -566,7 +574,7 @@ class Database(QObject):
                 if len(weights) == 1:
                     history[atom] = factHistoryGet(weights.keys()[0],[])
                 else:
-                    atomsKnownThreshold = 1
+                    atomsKnownThreshold = self.atomsKnownThreshold
                     atomChanges = {}
                     get = atomChanges.get
                     for (factId,weight) in weights.iteritems():
@@ -584,7 +592,103 @@ class Database(QObject):
                         if boolean ^ bool(cumul >= threshold): #xor
                             myList.append(day)
                             boolean = not(boolean)
-                            history[atom] = myList[:]  ###################################################### this is wrong fix it
+                    history[atom] = myList[:]  ###################################################### this is wrong fix it
+                            
+                            
+    def extend_atoms_history(self):
+        
+        myDict = {}
+        get = self.graphsWorkload.get
+        for (key,mySet) in self.compute_sets(self.changedHistoryFactIds).iteritems():
+            myDict[key] = mySet - get(key,set())     
+        
+        load = self.compute_load(myDict,self.atoms)  
+        workload = {}
+        for (key, atoms) in load.iteritems():
+            myWorkload = workload.setdefault(key,{})
+            historyDefault = self.atomsHistory.setdefault(key,{}).setdefault
+            deltaFactHistoryGet = self.deltaFactHistory.get
+            factHistoryGet = self.history.get
+            for (atom, weights) in atoms.iteritems():  
+                atomsKnownThreshold = self.atomsKnownThreshold
+                atomChanges = {}
+                get = atomChanges.get
+                for (factId,weight) in weights.iteritems():
+                    (boolean,days) = deltaFactHistoryGet(factId,(True,[]))
+                    if boolean:
+                        weight = -weight
+                    for day in days:
+                        atomChanges[day] = get(day,0) + weight             
+                        weight = - weight
+                days = atomChanges.keys() 
+                days.sort()
+                myList = []
+                threshold = sum(weights.values()) * atomsKnownThreshold
+                cumul = 0
+                for (factId,weight) in weights.iteritems():
+                    try:
+                        if self.deltaFactHistory[factId][0]:
+                            cumul += weight
+                    except KeyError:
+                        if self.states[factId][0]:
+                            cumul += weight
+                boolean = (cumul >= threshold)
+                if boolean:
+                    add = -1
+                else:
+                    add = 1
+                for day in days:
+                    cumul += atomChanges[day]
+                    if boolean ^ (cumul >= threshold): #xor
+                        myList.append(day)
+                        boolean = not(boolean)
+                historyDefault(atom,[]).extend(myList[:]) 
+                
+                myWorkload[atom] = (add,myList[:])
+               
+        self.extend_graphs(workload)
+        
+    def extend_graphs(self,load):
+        """adds to graphs if sign = 1 and subs to graph if qign = -1"""                         
+        
+        loadGet = load.get
+        for myType in ['words','kanji']:
+            tasks = {'words':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+            graphsDefault = self.graphs.setdefault
+            myLoad = loadGet(myType,{})
+            for (name,mapping) in tasks[myType].iteritems(): 
+                myValue = mapping.Value
+                if  name == 'W-AFreq' or name == 'K-AFreq':
+                    # myIncrement = mapFreqKanji.Value if name == 'K-AFreq' else MapFreqTango.Value
+                    if name == 'K-AFreq':
+                        myIncrement = MapFreqKanji.Value                     
+                    else:
+                        myIncrement = MapFreqTango.Value      
+                    for (atom,(sign,days)) in myLoad.iteritems():
+                        try:
+                            value = myValue(atom)
+                            increment = sign * myIncrement(atom)
+                            stateArray = graphsDefault((name,value),{})
+                            get = stateArray.get
+                            for day in days:
+                                stateArray[day] = get(day,0) + increment
+                                increment =  - increment
+                        except:
+                            pass
+                else:   
+                    for (atom,(sign,days)) in myLoad.iteritems():
+                        # need a default dic to clean this code
+                        increment = sign                        
+                        try:
+                            value = myValue(atom)
+                        except KeyError:
+                            value = 'Other'
+                        stateArray = graphsDefault((name,value),{})
+                        get = stateArray.get                     
+                        for day in days:
+                            stateArray[day] = get(day,0) + increment 
+                            increment = - increment                            
+                            
   # del used tables
 
     def init_stats(self):
@@ -635,7 +739,6 @@ class Database(QObject):
         
         if sign != 0:
             load = self.compute_load(self.statsWorkload,self.atomsStates)
-            self.debug+=str(load)+"<br>"
         else:
             load = self.atomsStates
             sign = 1
@@ -679,7 +782,6 @@ class Database(QObject):
             load = self.atomsHistory
             sign = 1
                          
-        #self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
         
         loadGet = load.get
         for myType in ['words','kanji']:
