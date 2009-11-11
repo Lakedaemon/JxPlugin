@@ -36,6 +36,7 @@ class Database(QObject):
     def __init__(self,name="Deck",parent=JxBase):
         QObject.__init__(self,parent)
         self.setObjectName(name)
+        self.debug=""
         try:
             self.load()
             self.cache['resets']
@@ -66,42 +67,39 @@ class Database(QObject):
     def update(self):
         self.reference_data()
         self.save_stats(True)
-        # facts change (may change atoms) have to go through the "SUB(if atom exists) & ADD (if atom exists) after type/states/graphs rebuild" for stats and graphs.
-        self.list_dropped_factIds(True) 
-        self.list_changed_factIds(True)
-        self.list_changed_factStates(True)
-        self.list_changed_factHistory(True)
-        
-
-        self.set_stats(-1)
-        self.set_graphs(-1)
-
-        
+        self.get_dropped_factIds(True) 
+        self.get_changed_factIds(True)
+        self.get_changed_states_factIds(True)
+        self.get_changed_history_factIds(True) 
         self.set_models(True) 
         self.set_fields(True) 
-        self.set_states() # state changes have to go through the "SUB(if atom exists) & ADD (if atom exists)" for stats. 
+        self.set_states() 
         self.set_history(True) # history changes hove to go through CONCAT
-
-        
+        self.statsWorkload = self.compute_sets(self.droppedFactIds+self.changedFactIds+self.factStateChanges)
+        self.graphsWorkload = self.compute_sets(self.droppedFactIds+self.changedFactIds)
         self.purge_atoms()
         self.drop_facts()
-        self.set_types()
-        
-        self.set_atoms()     
-        self.set_atoms_states(False)
-        self.set_atoms_history(False)
+        self.set_types()        
+        self.statsWorkload = self.compute_sets(self.changedFactIds,self.statsWorkload)
+        self.graphsWorkload = self.compute_sets(self.changedFactIds,self.graphsWorkload) 
+        self.set_stats(-1)        
+        self.set_graphs(-1)
+        self.purge_atoms_stats_and_history()
+        self.set_atoms()  
+        self.set_atoms_states(True)
+        self.set_atoms_history(True)
         self.set_stats(1)
-        self.set_graphs(1)        
-
-
+        self.set_graphs(1)  
+        #self.graphsWorkload = self.compute_sets(self.changedHistoryFactIds) 
+        #self.set_graphs(0)        
         self.save() 
-        
+        mw.help.showText(self.debug)
     def build(self):
         self.reference_data()
-        self.list_dropped_factIds(False)        
-        self.list_changed_factIds(False)
-        self.list_changed_factStates(False)
-        self.list_changed_factHistory(False)      
+        self.get_dropped_factIds(False)        
+        self.get_changed_factIds(False)
+        self.get_changed_states_factIds(False)
+        self.get_changed_history_factIds(False)      
         self.set_models(False)
         self.set_fields(False)
         self.set_states()
@@ -115,7 +113,7 @@ class Database(QObject):
         self.set_graphs(0)
         self.save_stats(False)
         self.save() 
-
+        mw.help.showText(str(self.atoms))
 
 
     def set_cardsKnownThreshold(self,value):
@@ -199,7 +197,7 @@ class Database(QObject):
             self.cache['statsModified'] = now
             self.oldStats = self.cache['oldStats']
 
-    def list_dropped_factIds(self,update):
+    def get_dropped_factIds(self,update):
         if update:
             query = """select factId,deletedTime from factsDeleted where deletedTime>%.8f""" % self.factsDeleted
             dropped = mw.deck.s.all(query)
@@ -211,7 +209,7 @@ class Database(QObject):
             self.droppedFactIds = []
             self.cache['factsDeleted'] = max(mw.deck.s.column0(query)+[self.factsDeleted])
             
-    def list_changed_factIds(self,update):
+    def get_changed_factIds(self,update):
         if update:
             query = """select facts.id,facts.tags, facts.modelId from facts,models where models.id=facts.modelId and (facts.modified>%.8f or models.modified>%.8f)""" %  (self.factsModified,self.modelsModified)           
         else:
@@ -220,7 +218,7 @@ class Database(QObject):
         self.changedFacts = mw.deck.s.all(query)
         self.changedFactIds = tupleUnzip(self.changedFacts,1)[0]
 
-    def list_changed_factStates(self,update):
+    def get_changed_states_factIds(self,update):
         if update:
             query = """select cards.factId, cards.id, cards.interval, cards.reps, cards.modified from cards where cards.modified>%.8f""" % self.cardsModified
             self.cardStateChanges = mw.deck.s.all(query)
@@ -233,7 +231,7 @@ class Database(QObject):
             self.factStateChanges = []
             self.cache['cardsModified'] = max(tupleUnzip(self.cardStateChanges,5)[4] + [self.cardsModified])
 
-    def list_changed_factHistory(self,update): 
+    def get_changed_history_factIds(self,update): 
         if update:
             query = """select cards.factId, reviewHistory.cardId, reviewHistory.lastInterval,reviewHistory.nextInterval, reviewHistory.time 
                 from cards, reviewHistory where cards.id = reviewHistory.cardId and reviewHistory.time>%.8f 
@@ -341,23 +339,41 @@ class Database(QObject):
                 fields[id] = dict
             map(copy, dic.iteritems())
         
-    def purge_atoms(self):            
-        mySet = set(self.droppedFactIds + self.changedFactIds)
+    def purge_atoms(self):
+        myList = []
+        mySet = set(self.changedFactIds + self.droppedFactIds)
         atoms = self.atoms
         atomsStates = self.atomsStates
         atomsHistory = self.atomsHistory
         get = self.types.get
         for factId in mySet:
             for (key,atomList) in get(factId,{}).iteritems():
+                self.debug+="1 : "+ str((key, atomList))+"<br>"
                 myAtoms = atoms[key]
                 for atom in atomList:
                     weights = myAtoms[atom]
+                    self.debug+= atom + "a:" +str(weights) +"<br>"                    
                     del weights[factId]
+                    self.debug+= atom + "b:" +str(weights) +"<br>"                      
                     if not(weights):
+                        self.debug+="<br>del : "+atom+"<br>"
                         del myAtoms[atom]
-                        del atomsStates[key][atom]
-                        del atomsHistory[key][atom]
-
+                        myList.append((key,atom))
+        self.purgedAtoms = myList
+        self.debug += "set : " +str(mySet)+"<br>purged : "+str(len(self.purgedAtoms))+"<br>"
+        
+    def purge_atoms_stats_and_history(self):
+        atomsStates = self.atomsStates
+        atomsHistory = self.atomsHistory
+        for (key,atom) in self.purgedAtoms:
+            del atomsStates[key][atom]
+            try:
+                del atomsHistory[key][atom]
+            except KeyError:
+                pass
+        self.debug += "purged stats: "+str(len(self.purgedAtoms))+"<br>"
+        del self.purgedAtoms
+            
     def drop_facts(self):                       
         fields = self.fields
         states = self.states
@@ -366,8 +382,12 @@ class Database(QObject):
         for factId in self.droppedFactIds:
             del fields[factId]
             del states[factId]
-            del history[factId]
-            del types[factId] 
+            del types[factId]
+            try:
+                del history[factId]
+            except KeyError:
+                pass    
+        del self.droppedFactIds
 
     def set_states(self):
         cardsStates = {}
@@ -395,6 +415,7 @@ class Database(QObject):
             else:
                 status = -1 # in deck
             States[factId] = (status, dic)
+        del self.cardStateChanges
             
         
     def set_history(self,update):
@@ -448,7 +469,7 @@ class Database(QObject):
             historyDefault(factId,[]).extend(list(myList))
             deltaFactHistory[factId] = (not(boolean),list(myList))        
         self.deltaFactHistory = deltaFactHistory
-
+        del self.changedFactHistory
     
          
     def set_types(self):
@@ -493,6 +514,7 @@ class Database(QObject):
                 metadata.update(parse_content(stripHTML(fields[ordinal]),type))
                 ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
             self.types[id] = metadata
+        del self.changedFacts
 
 
     def set_atoms(self):
@@ -510,21 +532,18 @@ class Database(QObject):
                 for atom in myList:
                     default(atom,{}).update({factId:weight})
         
-        #self.debug += "Types (" + str(len(table)) + ")<br/>" 
-
-
-        
-        
     def set_atoms_states(self,update):
-        # must have updatestats atoms -> cards change/models/fact changes
-        if not(update):
-            dic = self.atoms
-        atomsKnownThreshold = self.cache['atomsKnownThreshold'] 
-        for (key, atoms) in dic.iteritems():
+        if update:
+            load = self.compute_load(self.statsWorkload,self.atoms)
+        else:
+            load = self.atoms
+            
+        atomsKnownThreshold = self.atomsKnownThreshold    
+        for (key, atoms) in load.iteritems():
             states = self.atomsStates[key]
             factStates = self.states
             for (atom, weights) in atoms.iteritems():
-                myList = filter(lambda x:x != -1,[factStates[factId][0] * weight for (factId,weight) in weights.iteritems()])
+                myList = filter(lambda x:x >=0,[factStates[factId][0] * weight for (factId,weight) in weights.iteritems()])
                 if myList and sum(myList)>= len(weights) * atomsKnownThreshold :
                     status = 1 # known
                 elif myList:
@@ -535,7 +554,12 @@ class Database(QObject):
         
  
     def set_atoms_history(self,update):
-        for (key, atoms) in self.atoms.iteritems():
+        if update:
+            load = self.compute_load(self.graphsWorkload,self.atoms)
+        else:
+            load = self.atoms     
+
+        for (key, atoms) in load.iteritems():
             history = self.atomsHistory[key]
             factHistoryGet = self.history.get
             for (atom, weights) in atoms.iteritems():  
@@ -546,13 +570,9 @@ class Database(QObject):
                     atomChanges = {}
                     get = atomChanges.get
                     for (factId,weight) in weights.iteritems():
-                        switch = True
                         for day in factHistoryGet(factId,[]):
-                            if switch:
-                                atomChanges[day] = get(day,0) + weight
-                            else:
-                                atomChanges[day] = get(day,0) - weight               
-                            switch = not(switch)
+                            atomChanges[day] = get(day,0) + weight             
+                            weight = - weight
                     days = atomChanges.keys() 
                     days.sort()
                     myList = []
@@ -564,8 +584,8 @@ class Database(QObject):
                         if boolean ^ bool(cumul >= threshold): #xor
                             myList.append(day)
                             boolean = not(boolean)
-                            history[atom] = myList[:]
-        #mw.help.showText("<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['kanji'].iteritems()))+"<br>".join(map(lambda x:x[0] + str(x[1]),self.atomsHistory['words'].iteritems())))    
+                            history[atom] = myList[:]  ###################################################### this is wrong fix it
+  # del used tables
 
     def init_stats(self):
         """compute the number of elements of each class in the data lists"""      
@@ -587,33 +607,43 @@ class Database(QObject):
                     for value in mapping.Dict.values():
                         stats[(name,'Total',value)] = get((name,'Total',value),0) + 1
 
-                            
-    def set_stats(self, sign):
-        """updates stats positively if sign == 1, negatively if sign == -1; Don't put another value in there"""            
+    def compute_sets(self,myList,setsDict={}):
+        """returns a dict with type keys of atoms sets computed out of myList factId list and initialised with setsDict"""
+        myDict = dict(setsDict)
+        myDictDefault = myDict.setdefault
+        get = self.types.get
+        for factId in set(myList):
+            for (key,atoms) in get(factId,{}).iteritems():
+                myDictDefault(key,set()).update(atoms)
+        return myDict
 
-        if sign != 0:
-            if sign == -1:
-                mySet = set(self.droppedFactIds + self.changedFactIds + self.factStateChanges)
-            elif sign == 1:
-                mySet = set(self.changedFactIds + self.factStateChanges)
-            load = {'words':{},'kanji':{},'bushu':{}}
-            atomsStates = self.atomsStates
-            get = self.types.get
-            for factId in mySet:
-                for (key,atoms) in get(factId,{}).iteritems():
-                    states = atomsStates[key]
-                    myLoad = load[key]
-                    for atom in atoms:
-                        myLoad[atom] = states[atom]
-        else:
-            sign = 1
-            load = self.atomsStates
-            
-        #self.debug += "stats(" + str(len(List))  + ")<br/>" 
+    def compute_load(self,setsDict,atomsDict):
+        load = {}
+        loadDefault = load.setdefault
+        for (key,mySet) in setsDict.iteritems():
+            myAtoms = atomsDict[key]
+            myLoad = loadDefault(key,{})
+            for atom in mySet:
+                try:
+                    myLoad[atom] = myAtoms[atom]
+                except KeyError:
+                    pass
+        return load
+    
+    def set_stats(self,sign):
+        """updates stats positively if sign == 1, negatively if sign == -1; Don't put another value in there"""  
         
-        JxStatTasks = {'words':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
+        if sign != 0:
+            load = self.compute_load(self.statsWorkload,self.atomsStates)
+            self.debug+=str(load)+"<br>"
+        else:
+            load = self.atomsStates
+            sign = 1
+
+        JxStatTasks = {'words':{'W-JLPT':MapJLPTTango,'W-Freq':MapZoneTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-Freq':MapZoneKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}}
+        loadGet = load.get
         for myType in ['words','kanji']:
-            myLoad = load[myType]
+            myLoad = loadGet(myType,{})
             stats = self.stats
             get = stats.get
             for (name,mapping) in JxStatTasks[myType].iteritems():
@@ -644,29 +674,18 @@ class Database(QObject):
         """adds to graphs if sign = 1 and subs to graph if qign = -1"""
         
         if sign != 0:
-            if sign == -1:
-                mySet = set(self.droppedFactIds + self.changedFactIds)
-            elif sign == 1:
-                mySet = set(self.changedFactIds)
-            load = {'words':{},'kanji':{},'bushu':{}}
-            atomsHistory = self.atomsHistory
-            get = self.types.get
-            for factId in mySet:
-                for (key,atoms) in get(factId,{}).iteritems():
-                    history = atomsHistory[key]
-                    myLoad = load[key]
-                    for atom in atoms:
-                        myLoad[atom] = history[atom]
+            load = self.compute_load(self.graphsWorkload,self.atomsHistory)
         else:
-            sign = 1
             load = self.atomsHistory
+            sign = 1
                          
         #self.debug += "graphs(" + str(len(dic)) +")&nbsp;&nbsp;&nbsp;" 
-
+        
+        loadGet = load.get
         for myType in ['words','kanji']:
             tasks = {'words':{'W-JLPT':MapJLPTTango,'W-AFreq':MapZoneTango}, 'kanji':{'K-JLPT':MapJLPTKanji,'K-AFreq':MapZoneKanji,'Jouyou':MapJouyouKanji,'Kanken':MapKankenKanji}} 
             graphsDefault = self.graphs.setdefault
-            myLoad = load[myType]
+            myLoad = loadGet(myType,{})
             for (name,mapping) in tasks[myType].iteritems(): 
                 myValue = mapping.Value
                 if  name == 'W-AFreq' or name == 'K-AFreq':
@@ -972,37 +991,33 @@ def display_partition(stat,label):
         partition[key] = []
     if stat == 'W-JLPT' or stat =='W-Freq':
         dic = MapFreqTango
-        type = 'Word'
+        myType = 'words'
     else:
         dic = MapFreqKanji
-        type = 'Kanji'
-    types = eDeck.types
-    def assign((id,(state, cardsStates))):
-        if state==label:
+        myType = 'kanji'
+    myAtoms = eDeck.atoms.get(myType,{})
+    myValue = mapping.Value
+    for (atom,state) in eDeck.atomsStates.get(myType,{}).iteritems():
+        if state == label:
             try:
-                content = types[id][type]
-                try:
-                    key = mapping.Value(content)
-                except KeyError:
-                    key = 'Other'
-                partition[key].append((content,id))
+                key = myValue(atom)
             except KeyError:
-                pass
-    map(assign, eDeck.states.iteritems())
+                key = 'Other'
+            partition[key].append((myType,atom))
 
 
     for (key,string) in mapping.Order+ [('Other','Other')]:
-        partition[key].sort(lambda x,y:JxValue(dic,y[0])-JxValue(dic,x[0]))
+        partition[key].sort(lambda x,y:JxValue(dic,y[1])-JxValue(dic,x[1]))
 
     color = dict([(key,True) for (key,string) in mapping.Order + [('Other','Other')]])
     buffer = dict([(key,"") for (key,string) in mapping.Order + [('Other','Other')]])
     for (key,string) in mapping.Order + [('Other','Other')]:
-        for (stuff,id) in partition[key]:
+        for (myType,atom) in partition[key]:
             color[key] = not(color[key])			
             if color[key]:
-                buffer[key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":stuff,"Id":id}
+                buffer[key] += u"""<a style="text-decoration:none;color:black;" href="py:JxAddo(u'%(Type)s',u'%(Atom)s')">%(Atom)s</a>""" % {"Type":myType,"Atom":atom}
             else:
-                buffer[key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Stuff)s','%(Id)s')">%(Stuff)s</a>""" % {"Stuff":stuff,"Id":id}
+                buffer[key] += u"""<a style="text-decoration:none;color:blue;" href="py:JxAddo(u'%(Type)s',u'%(Atom)s')">%(Atom)s</a>""" % {"Type":myType,"Atom":atom}
     html = ''
     for (key,string) in mapping.Order:
         if buffer[key]:
@@ -1015,29 +1030,21 @@ def display_complement(stat):
     """Returns an Html report of the missing seen stuff in the stat list"""
     mappings = {'W-JLPT':MapJLPTTango, 'W-Freq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-Freq':MapZoneKanji,  'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji}
     mapping = mappings[stat]
-    partition = {}
-    def assign((key,value)):
-        try:
-            partition[value].add(key)
-        except KeyError:
-            partition[value] = set(key)
-    map(assign, mapping.Dict.iteritems())
     if stat == 'W-JLPT' or stat =='W-Freq':
         dic = MapFreqTango
-        type = 'Word'
+        myType = 'words'
     else:
         dic = MapFreqKanji
-        type = 'Kanji'
-    def assign((id,metadata)):
-            try:
-                content = metadata[type]
-                key = mapping.Value(content)
-                partition[key].discard(content)
-            except KeyError:
-                pass
-    map(assign, eDeck.types.iteritems())
+        myType = 'kanji'
+    partition = {}
+    partitionDefault = partition.setdefault
+    myAtoms = eDeck.atoms.setdefault(myType,{})
+    for (atom,value) in mapping.Dict.iteritems():
+        if atom not in myAtoms:
+            partitionDefault(value,set()).add(atom)
+    get = partition.get
     for (key,string)in mapping.Order:
-        partition[key] = sorted(partition[key],lambda x,y:JxVal(dic,y)-JxVal(dic,x))
+        partition[key] = sorted(get(key,set()),lambda x,y:JxVal(dic,y)-JxVal(dic,x))
     color = dict([(key,True) for (key,string) in mapping.Order])
     buffer = dict([(key,"") for (key,string) in mapping.Order])
     for (key,string) in mapping.Order:

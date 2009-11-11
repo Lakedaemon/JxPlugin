@@ -20,25 +20,25 @@ User = []
 def JxDoNothing(Stuff):
 	pass
 
-def JxAddo(Stuff,Id):
-	if (Stuff,Id) not in User:
-	    User.append((Stuff,Id))
-	JxShow()
+def JxAddo(myType,atom):
+    if (myType,atom) not in User:
+	User.append((myType,atom))
+    JxShow()
 
 def JxClear():
-	User[0:] = []
-	JxShow()
+    User[0:] = []
+    JxShow()
 
-def JxRemove(Stuff,Id):
-	User.remove((Stuff,Id))
-	JxShow()
+def JxRemove(myType,atom):
+    User.remove((myType,atom))
+    JxShow()
 	
 def JxShow():
 	JxHtml = u"""<style> li {font-size:x-large;}</style>
 	<center><a href=py:Clear>Clear</a>&nbsp;&nbsp;<a href=py:Export2csv>Export (.csv)</a>&nbsp;&nbsp;<a href=py:Export2Anki>Export (.anki)</a></center>
 	<ol>"""	
-	for (Entry,Id) in User:
-		JxHtml += u"""<li style="display:inline;"><a style="color:black;text-decoration:none;"  href=Jx:JxRemove(u'%(Entry)s','%(Id)s')>%(Entry)s</a></li>""" % {"Entry":Entry,"Id":Id}
+	for (myType,atom) in User:
+		JxHtml += u"""<li style="display:inline;"><a style="color:black;text-decoration:none;"  href=Jx:JxRemove(u'%(Type)s','%(Atom)s')>%(Atom)s</a></li>""" % {"Type":myType,"Atom":atom}
 	JxHtml += u"""</ol>"""
 	py = {u"Export2csv":JxExport2csv,u"Export2Anki":JxExport2Anki,u"Clear":JxClear}
 	mw.help.showText(JxHtml,py)
@@ -51,11 +51,15 @@ def JxExport2csv():
 		JxPath += ".csv"
 	if path.exists(JxPath):
 		# check for existence after extension
-		if not ui.utils.askUser("This file exists. Are you sure you want to overwrite it?"):
+		if not askUser("This file exists. Are you sure you want to overwrite it?"):
 		       return
 	Ids=[]
-	for (Stuff,Id) in User:
-	     Ids.append(Id)
+	from database import eDeck
+	for (myType,atom) in User:
+	    try:
+	        Ids.extend(eDeck.atoms[myType][atom].keys())
+	    except:
+	        pass
 	from anki.exporting import TextFactExporter
 	JxExport = TextFactExporter(mw.deck)
 	JxExport.limitCardIds = Ids
@@ -70,11 +74,15 @@ def JxExport2Anki():
 		JxPath += ".anki"
 	if path.exists(JxPath):
 		# check for existence after extension
-		if not ui.utils.askUser("This file exists. Are you sure you want to overwrite it?"):
+		if not askUser("This file exists. Are you sure you want to overwrite it?"):
 		       return
 	Ids=[]
-	for (Stuff,Id) in User:
-	     Ids.append(Id)
+	from database import eDeck
+	for (myType,atom) in User:
+	    try:
+	        Ids.extend(eDeck.atoms[myType][atom].keys())
+	    except:
+	        pass
 	from anki.exporting import AnkiExporter
 	JxExport = AnkiExporter(mw.deck)
 	JxExport.limitCardIds = Ids
