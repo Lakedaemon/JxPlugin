@@ -155,9 +155,17 @@ def append_JxPlugin(Answer,Card):
     # Guess the type(s) and the relevant content(s) of the Fact
     from database import eDeck  
     types = eDeck.types[Card.factId]
-    JxGuessedList = [(type,"", types[type]) for (type,list) in JxType if type in types]
+    JxGuessedList = []
+    ####################### the new type system breaks the old answer system : this is a quick and dirty fix ################################
+    try:
+        JxGuessedList.append(('Kanji','',"".join(types['kanji'])))
+    except KeyError:
+        pass
+    try:
+        JxGuessedList.append(('Word','',"".join(types['words'])))
+    except KeyError:
+        pass
 
-    
     # Get and translate the new CardModel Template
     JxPrefix = u''
     for (Type,Field,Content) in JxGuessedList:

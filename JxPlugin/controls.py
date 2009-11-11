@@ -72,6 +72,8 @@ class PythonJavascript(QObject):
         elif var in ['JLPT','Frequency', 'Kanken','Jouyou']:
             from ui_menu import JxStats
             return JxStats(str(var))
+        elif var =="kanjiMode":            
+            return "%s" % eDeck.kanjiMode
             
     @pyqtSignature("QString,QString")		
     def set(self,var,value)	:
@@ -82,7 +84,8 @@ class PythonJavascript(QObject):
             eDeck.set_factsKnownThreshold(float(value))
         elif var =="atomsKnownThreshold":            
             eDeck.set_atomsKnownThreshold(float(value))            
-            
+        elif var =="kanjiMode":            
+            eDeck.set_kanjiMode(int(value))             
             
 class Jx__Cache(QObject):
     """Data class for JxKnownThreshold, JxKnownCoefficient, JxCacheRefresh, JxCacheRebuild"""       

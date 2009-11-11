@@ -29,7 +29,7 @@ def JxIsKanji(Char):
 
                 
                 
-    
+ 
 from japanese.reading import *
 import sys, os, platform, re, subprocess
 
@@ -61,16 +61,8 @@ class MecabControl(object):
             except OSError:
                 raise Exception(_("Please install mecab"))
                 
-                
-                
-                
-if sys.platform == "win32":
-    si = subprocess.STARTUPINFO()
-    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-else:
-    si = None                
-mecabCmd = ["mecab",'--node-format=%m\t%f[0]\t%f[1]\t%f[8]\r',  '--eos-format=\n','--unk-format=%m\tUnknown\t\t\r'] #1/#0
-me = MecabControl()
+ 
+    
 
 def escapeTextOL(text):
     # strip characters that trip up kakasi/mecab
@@ -85,22 +77,7 @@ def escapeTextOL(text):
 
 debug=""
 
-def call_mecab(string):
 
-    stringe = escapeTextOL(string)
-    stringe = stringe.encode("euc-jp", "replace") + '\n'
-
-
-    me.ensureOpen()
-    me.mecab.stdin.write(stringe)
-    me.mecab.stdin.flush()
-    string = unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
-    # then split the output in a list
-    output = string.split('\r')
-    list = []
-    for string in output:
-        list.append(tuple(string.split('\t')))
-    return list
     
 def GuessType(String):
         if len(String)==1 and JxIsKanji(String):
@@ -130,11 +107,16 @@ def GuessType(String):
 #setIgnore = set(u'形容詞',u'接続詞',u'動詞',u'助詞',u'Unknown',u'記号',u'副詞',u'連体詞',u'助動詞',u'接頭詞',u'名詞')
 setGobble = set([u'形容詞',u'接続詞',u'動詞',u'副詞',u'接頭詞', u'名詞'])# we gobble adjectivs, conjunction, verbs, adverbs, prefixes, names
 
-def parse_content(string,type):
-    if len(string)==1 and JxIsKanji(string) and type in set(["Kanji","Word"]):
-        #if  String has one Kanji, it is a Kanji (or a Word)
-        return {'kanji':string}
-    elif type == 'Kanji':
+def parse_content(string,type,kanjiMode):
+    if type == 'Kanji':
+        kanjiList = []
+        for char in string:
+            if JxIsKanji(char):
+                kanjiList.append(char)
+        if kanjiList and kanjiMode:
+            return {'kanji':kanjiList[:]}
+        elif kanjiList and len(kanjiList)==1:
+            return {'kanji':kanjiList.pop()} 
         return {}
     # first mecab the string
     list = call_mecab(string)
@@ -188,3 +170,52 @@ def parse_content(string,type):
         return {'words':List[:]}
     return {}
 
+canLoad = True
+if sys.platform.startswith("darwin"):
+    while 1:
+        try:
+            proc = platform.processor()
+        except IOError:
+            proc = None
+        if proc:
+            canLoad = proc != "powerpc"
+            break                
+if canLoad:
+    if sys.platform == "win32":
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    else:
+        si = None                
+    mecabCmd = ["mecab",'--node-format=%m\t%f[0]\t%f[1]\t%f[8]\r',  '--eos-format=\n','--unk-format=%m\tUnknown\t\t\r'] #1/#0
+    me = MecabControl()
+    def call_mecab(string):
+
+        stringe = escapeTextOL(string)
+        stringe = stringe.encode("euc-jp", "replace") + '\n'
+
+
+        me.ensureOpen()
+        me.mecab.stdin.write(stringe)
+        me.mecab.stdin.flush()
+        string = unicode(me.mecab.stdout.readline().rstrip('\r\n'), "euc-jp")
+        # then split the output in a list
+        output = string.split('\r')
+        list = []
+        for string in output:
+            list.append(tuple(string.split('\t')))
+        return list
+else:
+    def parse_content(content,type,kanjiMode):
+        if type == 'Kanji':
+            kanjiList = []
+            for char in string:
+                if JxIsKanji(char):
+                    kanjiList.append(char)
+            if kanjiList and kanjiMode:
+                return {'kanji':kanjiList[:]}
+            elif kanjiList and len(kanjiList)==1:
+                return {'kanji':kanjiList.pop()} 
+            return {}
+        if type in GuessType(content):
+            return {type:content}
+        return {}  

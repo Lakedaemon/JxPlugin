@@ -60,7 +60,7 @@ class Database(QObject):
         'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
         'stats':{}, 'oldStats':{},'graphs':{}, 
         'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
-        'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1,'atomsKnownThreshold':0.67}
+        'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1,'atomsKnownThreshold':0.33, 'kanjiMode':0}
         self.build()
         
     def update(self):
@@ -111,17 +111,15 @@ class Database(QObject):
         self.set_graphs(0)
         self.save_stats(False)
         self.save() 
-        mw.help.showText(str(self.atoms))
 
 
     def set_cardsKnownThreshold(self,value):
-        val = int(value)
-        if val != self.cardsKnownThreshold:
+        if value != self.cardsKnownThreshold:
             self.cache.update({'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
                 'atomsStates':{'bushu':{},'kanji':{},'words':{}},
                 'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
                 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
-                'cardsKnownThreshold':val})
+                'cardsKnownThreshold':value})
             self.cardStateChanges = []
             self.reference_data()
             self.get_changed_states_factIds(False)
@@ -130,19 +128,19 @@ class Database(QObject):
             self.set_history(False) 
             self.set_atoms_states(False)
             self.set_atoms_history(False)
+            self.init_stats()
             self.set_stats(0)
             self.set_graphs(0) 
             self.save_stats(False)
             self.save()        
       
     def set_factsKnownThreshold(self,value): 
-        val = float(value)
-        if val != self.factsKnownThreshold:
+        if value != self.factsKnownThreshold:
             self.cache.update({'states':{}, 'history':{}, 'stats':{}, 'oldStats':{},'graphs':{},
                 'atomsStates':{'bushu':{},'kanji':{},'words':{}},
                 'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
                 'cardsModified':0, 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
-                'factsKnownThreshold':val})
+                'factsKnownThreshold':value})
             self.cardStateChanges = []
             self.reference_data()
             self.get_changed_states_factIds(False)
@@ -151,26 +149,38 @@ class Database(QObject):
             self.set_history(False) 
             self.set_atoms_states(False)
             self.set_atoms_history(False)
+            self.init_stats()
             self.set_stats(0)
             self.set_graphs(0)     
             self.save_stats(False)
             self.save()   
 
     def set_atomsKnownThreshold(self,value): 
-        val = float(value)
-        if val != self.atomsKnownThreshold:
+        if value != self.atomsKnownThreshold:
             self.cache.update({'stats':{}, 'oldStats':{},'graphs':{},
                 'atomsStates':{'bushu':{},'kanji':{},'words':{}},
                 'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
                 'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
-                'atomsKnownThreshold':val})
+                'atomsKnownThreshold':value})
             self.reference_data()
             self.set_atoms_states(False)
             self.set_atoms_history(False)
+            self.init_stats()
             self.set_stats(0)
             self.set_graphs(0)     
             self.save_stats(False)
             self.save()  
+
+    def set_kanjiMode(self,value): 
+        if value != self.kanjiMode:
+            self.cache.update({'models':{}, 'fields':{}, 'types':{}, 'states':{}, 'history':{},
+                'atoms':{'bushu':{},'kanji':{},'words':{}},
+                'atomsStates':{'bushu':{},'kanji':{},'words':{}},
+                'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
+                'stats':{}, 'oldStats':{},'graphs':{}, 
+                'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
+                'cacheBuilt':0, 'kanjiMode':value})
+            self.build()
 
     def reference_data(self):
         cache = self.cache
@@ -198,6 +208,7 @@ class Database(QObject):
         self.cardsKnownThreshold = cache['cardsKnownThreshold']
         self.factsKnownThreshold = cache['factsKnownThreshold']
         self.atomsKnownThreshold = cache['atomsKnownThreshold']
+        self.kanjiMode = cache['kanjiMode']
         
     def load(self):
         """returns the cache if it exists on disk and {} if it doesn't"""
@@ -497,7 +508,7 @@ class Database(QObject):
     
          
     def set_types(self):
-
+        kanjiMode=self.kanjiMode
         models = self.models
         for (id,tags,modelId) in self.changedFacts:
             types = set()
@@ -530,12 +541,13 @@ class Database(QObject):
                                     break          
             fields = self.fields[id]
             metadata = {}
+
             for (type,(name,ordinal,boolean)) in hints.iteritems():
                 ######################################################################## I will have to change it there thanks to mecab
                 #content = stripHTML(fields[ordinal])
                 #if boolean or type in GuessType(content):
                 #    metadata[type] = content 
-                metadata.update(parse_content(stripHTML(fields[ordinal]),type))
+                metadata.update(parse_content(stripHTML(fields[ordinal]),type,kanjiMode))
                 ######################################################################## (type, boolean, content) ->  metadata[type] = guessed content if non empty
             self.types[id] = metadata
         del self.changedFacts
@@ -876,6 +888,7 @@ def build_JxDeck():
 import time
 def JxGraphs_into_json():
     global JxGraphs
+#    global eDeck
     graphs = eDeck.graphs
     today = sliding_day(time.time())
     dict_json = {}

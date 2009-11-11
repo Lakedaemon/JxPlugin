@@ -226,11 +226,22 @@ textarea.Code {
 <script type="text/javascript">
 $(document).ready(function(){
 		$('select#Entry').selectmenu({width:200});
-                  var temp = JxSettings.Get('Mode')
+                  var temp = JxSettings.Get('Mode');
                   for(i=0; i<document.forms.FormMode.Mode.length; i++)
                         if(document.forms.FormMode.Mode.options[i].text == temp)
                            document.forms.FormMode.Mode.options.selectedIndex = i;
                   $('select#Mode').selectmenu({width:150});
+                  var i = py.get('kanjiMode');
+                  document.forms.FormKanjiMode.KanjiMode.options.selectedIndex = i;
+                  $('select#KanjiMode').selectmenu({width:320,
+                  change: function(event, ui) {
+			        py.set('kanjiMode',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			}                
+});
                   $('select#Tags').html(JxTags.GetOptions());
                   $("select#Tags").dropdownchecklist({ firstItemChecksAll: true,width:150});
 
@@ -268,13 +279,28 @@ $(document).ready(function(){
 <div id="Settings" style="padding:3px;">
 	<h3><a href="#">About</a></h3>
 	<div>
-        The Japanese eXtended Plugin (V 1.16) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
+        The Japanese eXtended Plugin (V 2.0) aims to provide a complete set of usefull tools for the study of japanese.<br/><div style="text-align:center"><a href="http://github.com/Lakedaemon/JxPlugin/tree/master">Visit JxPlugin's home</a></div>
                 <p>Written by Olivier Binda with patches from Robert Hebler.</p>
                 <div><a style="display:block;" align="center" href='http://www.pledgie.com/campaigns/5354'><img alt='Click here to lend your support to: JxPlugin and make a donation at www.pledgie.com !' src='http://www.pledgie.com/campaigns/5354.png?skin_name=chrome' border='0' /></a></div>
                 <p>
                 Thanks to all the people who have provided suggestions, bug reports and donations.</p>
 	</div>
-	<h3><a href="#">Cards &amp; Facts knowledge</a></h3>
+	<h3><a href="#">Kanji Stats</a></h3>
+	<div>
+                <center>
+                <form name="FormKanjiMode">
+                <select id="KanjiMode" name="KanjiMode" onChange="
+                                var Index = document.forms.FormKanjiMode.KanjiMode.options.selectedIndex;
+                                py.set('KanjiMode',Index.toString());
+                        ">
+                        <option name="Sloppy">In any fact, collect all kanji</option>    
+                        <option name="Tidy">In 'Kanji' tagged facts, collect 1 kanji</option> 
+
+                </select>
+                </form>
+                </center>
+	</div>
+	<h3><a href="#">Card, Fact &amp; Atomic Knowledge</a></h3>
 	<div>	      
 	        <div id="knownthreshold"></div>	      
 	        <p>
