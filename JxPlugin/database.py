@@ -60,7 +60,7 @@ class Database(QObject):
         'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
         'stats':{}, 'oldStats':{},'graphs':{}, 
         'modelsModified':0, 'factsDeleted':0, 'factsModified':0, 'cardsModified':0, 'historyModified':0, 'statsModified':0, 
-        'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1,'atomsKnownThreshold':1}
+        'cacheBuilt':0, 'cardsKnownThreshold':21,'factsKnownThreshold':1,'atomsKnownThreshold':0.67}
         self.build()
         
     def update(self):
@@ -155,6 +155,22 @@ class Database(QObject):
             self.set_graphs(0)     
             self.save_stats(False)
             self.save()   
+
+    def set_atomsKnownThreshold(self,value): 
+        val = float(value)
+        if val != self.atomsKnownThreshold:
+            self.cache.update({'stats':{}, 'oldStats':{},'graphs':{},
+                'atomsStates':{'bushu':{},'kanji':{},'words':{}},
+                'atomsHistory':{'bushu':{},'kanji':{},'words':{}},
+                'historyModified':0, 'statsModified':0, 'cacheBuilt':0, 
+                'atomsKnownThreshold':val})
+            self.reference_data()
+            self.set_atoms_states(False)
+            self.set_atoms_history(False)
+            self.set_stats(0)
+            self.set_graphs(0)     
+            self.save_stats(False)
+            self.save()  
 
     def reference_data(self):
         cache = self.cache

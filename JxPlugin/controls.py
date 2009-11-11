@@ -67,6 +67,8 @@ class PythonJavascript(QObject):
             return "%s" % eDeck.cardsKnownThreshold
         elif var =="factsKnownThreshold":            
             return "%s" % eDeck.factsKnownThreshold
+        elif var =="atomsKnownThreshold":            
+            return "%s" % eDeck.atomsKnownThreshold
         elif var in ['JLPT','Frequency', 'Kanken','Jouyou']:
             from ui_menu import JxStats
             return JxStats(str(var))
@@ -78,7 +80,8 @@ class PythonJavascript(QObject):
             eDeck.set_cardsKnownThreshold(int(value))
         elif var =="factsKnownThreshold":            
             eDeck.set_factsKnownThreshold(float(value))
-            
+        elif var =="atomsKnownThreshold":            
+            eDeck.set_atomsKnownThreshold(float(value))            
             
             
 class Jx__Cache(QObject):

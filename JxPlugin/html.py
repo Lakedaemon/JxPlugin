@@ -139,7 +139,7 @@ $(document).ready(function(){
 			        else {$("#knownthresholdvalue").val(ui.value+ " day");}}
 			});
 			
-						        if ($("#knownthreshold").slider("value")>1){$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " days")}
+			if ($("#knownthreshold").slider("value")>1){$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " days")}
 			        else
 			        {$("#knownthresholdvalue").val($("#knownthreshold").slider("value")+ " day");}
 	
@@ -161,6 +161,24 @@ $(document).ready(function(){
 				}
 			});
 		$("#knowncoefficientvalue").val(Math.round($("#knowncoefficient").slider("value") *100) + " %");
+		$("#atomsknowncoefficientvalue").val(Math.round($("#atomsknowncoefficient").slider("value") *100) + " %");
+				$("#atomsknowncoefficient").slider({
+			value:py.get('atomsKnownThreshold'), 
+			min: 0.01,
+			max: 1,
+			step: 0.01,
+			stop: function(event, ui) {
+			        py.set('atomsKnownThreshold',ui.value.toString());
+			        $("#JLPT").html(py.get('JLPT'));
+			        $("#Frequency").html(py.get('Frequency'));
+			        $("#Kanken").html(py.get('Kanken'));
+			        $("#Jouyou").html(py.get('Jouyou'));			        
+			},
+			slide: function(event, ui) {
+				$("#atomsknowncoefficientvalue").val(Math.round(ui.value*100) + " %");
+				}
+			});
+		$("#atomsknowncoefficientvalue").val(Math.round($("#atomsknowncoefficient").slider("value") *100) + " %");
 		$("#cache").slider({
 			range: true,
 			min: 0,
@@ -267,7 +285,12 @@ $(document).ready(function(){
 	      <p>
 	        	<label for="knowncoefficientvalue">Fact known threshold : </label>
 	                <input type="text" id="knowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:45px" />
-	      </p>          
+	      </p>
+	      <div id="atomsknowncoefficient"></div>
+	      <p>
+	        	<label for="atomsknowncoefficientvalue">Atom known threshold : </label>
+	                <input type="text" id="atomsknowncoefficientvalue" style="border:0; color:#f6931f; font-weight:bold; width:45px" />
+	      </p>       
 	</div>
 	<h3><a href="#">Report &amp; Cache</a></h3>
 	<div>
