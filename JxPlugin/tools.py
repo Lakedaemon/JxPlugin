@@ -4,17 +4,28 @@
 # ---------------------------------------------------------------------------
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
-from ankiqt import mw
-from anki.utils import canonifyTags, addTags
+import os
 import time 
 import string
 
+from ankiqt import mw
+from ankiqt.ui.utils import showWarning
+from anki.utils import canonifyTags, addTags
+
+
+
+
+def ensureDirExists(myDir):
+    """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
+    path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", myDir)
+    if not(os.path.isdir(path)):
+        try:
+            os.mkdir(path)
+        except OSError:
+            showWarning("Couldn't create the '" + myDir + "' directory.")
+
 	
-#def JxList2SQL(List):
-#	if List==[]:
-#		return u''
-#	else:
-#		return string.join([unicode("'" + Stuff + "',") for Stuff in List])[0:-1]
+
 
 
 def JxTagDuplicates(Query):

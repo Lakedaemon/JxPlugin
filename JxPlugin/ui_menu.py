@@ -24,18 +24,7 @@ from tools import *
 from controls import JxWindow
 from controls import JxPreview  
 
-# make sure there is Cache and User directories
-def ensure_dir_exists(dir):
-    """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
-    path = os.path.join(mw.config.configPath, "plugins","JxPlugin",dir)
-    if not(os.path.isdir(path)):
-        try:
-            os.mkdir(path)
-        except OSError:
-            from ankiqt.ui.utils import showWarning
-            showWarning("Couldn't create the '" + dir + "' directory.")
 
-map(ensure_dir_exists,['User','Cache'])
 
 
 def JxHelp():
@@ -115,8 +104,8 @@ def JxBrowse():
 
 
 def onJxGraphs():
-    from database import JxGraphs_into_json
-    JxGraphsJSon = JxGraphs_into_json()
+    from database import eDeck
+    JxGraphsJSon = eDeck.getJsonedGraphs()
     from html import Jx_Html_Graphs
     tasks = {'W-JLPT':MapJLPTTango, 'K-JLPT':MapJLPTKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
     dic = dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()])

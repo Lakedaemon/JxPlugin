@@ -113,7 +113,7 @@ def parse_content(string,type,kanjiMode):
         for char in string:
             if JxIsKanji(char):
                 kanjiList.append(char)
-        if kanjiList and kanjiMode:
+        if kanjiList and not(kanjiMode):
             return {'kanji':kanjiList[:]}
         elif kanjiList and len(kanjiList)==1:
             return {'kanji':kanjiList.pop()} 
@@ -211,7 +211,7 @@ else:
             for char in string:
                 if JxIsKanji(char):
                     kanjiList.append(char)
-            if kanjiList and kanjiMode:
+            if kanjiList and not(kanjiMode):
                 return {'kanji':kanjiList[:]}
             elif kanjiList and len(kanjiList)==1:
                 return {'kanji':kanjiList.pop()} 

@@ -10,11 +10,13 @@
 import cPickle
 from copy import deepcopy
 from collections import deque
+import time
 
 from ankiqt import mw
 from PyQt4.QtCore import QObject
 from anki.utils import stripHTML
 
+from tools import ensureDirExists
 from loaddata import *
 from controls import JxBase
 
@@ -223,8 +225,8 @@ class Database(QObject):
     def save(self):
         from ui_menu import JxStats
         """saves the cache on disk"""  
-
-        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")   
+        ensureDirExists("Cache")
+        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")
         file = open(path, 'wb')
         cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
         file.close()
@@ -716,8 +718,7 @@ class Database(QObject):
                         for day in days:
                             stateArray[day] = get(day,0) + increment 
                             increment = - increment                            
-                            
-  # del used tables
+
 
     def init_stats(self):
         """compute the number of elements of each class in the data lists"""      
@@ -868,9 +869,37 @@ class Database(QObject):
         except KeyError:
             return 0
 
-############################### 
+    #############################      
+    #                           #
+    #        Access graphs      #
+    #                           #
+    #############################
  
- 
+    def getJsonedGraphs(self):
+        graphs = self.graphs
+        today = sliding_day(time.time())
+        dict_json = {}
+        tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
+        for (graph,mapping) in tasks.iteritems():
+            for (key,string) in mapping.Order +[('Other','Other')]:
+                if graph == 'W-AFreq':
+                        a = 100.0/Jx_Word_SumOccurences
+                elif graph == 'K-AFreq':
+                        a = 100.0/Jx_Kanji_SumOccurences
+                else:
+                        a = 1
+                myDict = graphs.get((graph,key),{})
+                if today not in myDict:
+                    myDict[today] = 0
+                sortedList = myDict.items()
+                sortedList.sort(lambda x,y:x[0]-y[0])
+                s = 0
+                List = []
+                for (day,value) in sortedList:
+                    s = s + value
+                    List.append("[%s,%s]"% (day - today,s * a))
+                dict_json[(graph,key)] =  "[" + ",".join(List) + "]"              
+        return dict_json 
  
  
  
@@ -885,37 +914,8 @@ def build_JxDeck():
 
    
                 
-import time
-def JxGraphs_into_json():
-    global JxGraphs
-#    global eDeck
-    graphs = eDeck.graphs
-    today = sliding_day(time.time())
-    dict_json = {}
-    tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
-    for (graph,mapping) in tasks.iteritems():
-        for (key,string) in mapping.Order +[('Other','Other')]:
-            if graph == 'W-AFreq':
-                    a = 100.0/Jx_Word_SumOccurences
-            elif graph == 'K-AFreq':
-                    a = 100.0/Jx_Kanji_SumOccurences
-            else:
-                    a = 1
-            try:
-                dict = graphs[(graph,key)]
-            except KeyError:
-                dict = {}
-            if today not in dict:
-                dict[today] = 0
-            sortedList = list(dict.iteritems())
-            sortedList.sort(lambda x,y:x[0]-y[0])
-            s = 0
-            List = []
-            for (day,value) in sortedList:
-                s = s + value
-                List.append("[%s,%s]"% (day - today,s * a))
-            dict_json[(graph,key)] =  "[" + ",".join(List) + "]"              
-    return dict_json
+
+
 
 def get_report(new,ancient) :
     if  new == ancient:

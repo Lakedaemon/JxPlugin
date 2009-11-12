@@ -17,6 +17,7 @@ from ankiqt import mw
 
 from metacode import Jx__Prop
 from globalobjects import JxLink
+from tools import ensureDirExists
 from ui_menu import *
 
 JxBase = QObject()
@@ -262,6 +263,7 @@ class Jx__Entry_Source_Target(QObject):
                 self.ResetJxLink()
 		
 	def SaveTable(self):
+	        ensureDirExists("User")
 		File = open(self.File, "wb")  
                 cPickle.dump(self.Table, File, cPickle.HIGHEST_PROTOCOL)
 		File.close()
