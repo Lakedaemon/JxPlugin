@@ -283,7 +283,7 @@ def append_JxPlugin(Answer,Card):
     Mode=JxSettings.Get(u'Mode')
     if Mode == "Append": JxAnswer = Answer + JxAnswer
     elif Mode == "Prepend": JxAnswer += Answer
-
+    elif Mode == "Bypass": JxAnswer = Answer
 
     JxProfile("Concatenation")    
     
