@@ -541,10 +541,6 @@ Jx_Html_Graphs = u"""
 <script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
 
 
-
-
-
-
 <script>
         %(JS:K-JLPT)s
         %(JS:W-JLPT)s
@@ -552,20 +548,6 @@ Jx_Html_Graphs = u"""
         %(JS:W-AFreq)s
         %(JS:Jouyou)s
         %(JS:Kanken)s
-	jQuery().ready(function(){
-               
-               
-              
-$.plot($("#KanjiFreq"),   %(JSon:K-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});               
-$.plot($("#WordFreq"),     %(JSon:W-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
-    return val.toFixed(axis.tickDecimals) +' %%'}}});  
-
- 
-            
-               
-               
-});
 </script> 
 </head>
 <body style="min-width:1200px">
@@ -627,14 +609,51 @@ jQuery().ready(function(){
         var %(prefix)s_data = %(json)s;
         var %(prefix)s_options = {
                         %(include)s
-                        grid:{show:true,aboveData:true},
+                        grid:{show:true,hoverable:true,aboveData:true},
                         lines:{show:true,fill:1,fillcolor:false},
                         series:{stack:true},
                         legend:{container:$('#%(prefix)s_Legend'),noColumns:%(columns)s},
                         selection: { mode: "x" }
                     };
         var %(prefix)s_plot = $.plot($("#%(prefix)s"),%(prefix)s_data,%(prefix)s_options);
-             
+        // tootip
+        
+        function showTooltip(x, y, contents) {
+                $('<div id="%(prefix)s_tooltip">' + contents + '</div>').css( {
+                        position: 'absolute',
+                        display: 'none',
+                        top: y + 15,
+                        left: x + 15,
+                        border: '1px solid #fdd',
+                        padding: '2px',
+                        'background-color': '#fee',
+                        opacity: 0.80
+                }).appendTo("body").fadeIn(200);
+        }      
+        
+        var %(prefix)s_previousPoint = null;
+        $("#%(prefix)s").bind("plothover", function (event, pos, item) {
+
+                if (item) {
+                        if (%(prefix)s_previousPoint != item.datapoint) {
+                                %(prefix)s_previousPoint = item.datapoint;
+                    
+                                $("#%(prefix)s_tooltip").remove();
+                                var x = item.datapoint[0].toFixed(2),
+                                var y = item.datapoint[1].toFixed(2);
+                    
+                                showTooltip(item.pageX, item.pageY,y);
+                        }
+                }
+                else {
+                        $("#%(prefix)s_tooltip").remove();
+                        %(prefix)s_previousPoint = null;   
+               }
+        });                
+           
+           
+           
+           
         // setup overview
         var %(prefix)s_overview = $.plot($("#%(prefix)s_overview"), %(prefix)s_data, {
                 legend:{show:false,container: $('#%(prefix)s_Legend')},
