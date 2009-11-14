@@ -537,7 +537,7 @@ Jx_Html_Graphs = u"""
 
 
 <script type="text/javascript" src="jquery.flot.js"></script>
-
+<script type="text/javascript" src="jquery.flot.selection.js"></script> 
 <script type="text/javascript" src="jquery.flot.stack.mod.min.js"></script>
 
 
@@ -545,18 +545,22 @@ Jx_Html_Graphs = u"""
 
 
 
-<script> 
+<script>
+        %(JS:K-JLPT)s
+        %(JS:W-JLPT)s
+        %(JS:K-AFreq)s
+        %(JS:W-AFreq)s
+        %(JS:Jouyou)s
+        %(JS:Kanken)s
 	jQuery().ready(function(){
-               $('.ui-button').button({checkButtonset:true});
                
-$.plot($("#KanjiJLPT"),   %(JSon:K-JLPT)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJLPT')}});
-$.plot($("#WordJLPT"),    %(JSon:W-JLPT)s  ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false}});
+               
+              
 $.plot($("#KanjiFreq"),   %(JSon:K-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendFreq')},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});               
 $.plot($("#WordFreq"),     %(JSon:W-AFreq)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{show:false},yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {
     return val.toFixed(axis.tickDecimals) +' %%'}}});  
-$.plot($("#KanjiJouyou"), %(JSon:Jouyou)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendJouyou'),noColumns:8}});
-$.plot($("#KanjiKanken"), %(JSon:Kanken)s ,{grid:{show:true,aboveData:true},lines:{show:true,fill:1,fillcolor:false},series:{stack:true},legend:{container:$('#LegendKanken'),noColumns:13}});
+
  
             
                
@@ -565,39 +569,104 @@ $.plot($("#KanjiKanken"), %(JSon:Kanken)s ,{grid:{show:true,aboveData:true},line
 </script> 
 </head>
 <body style="min-width:1200px">
+<table width="100%%">
+    <tr>
+        <td align="center">
+                <strong>JLPT KANJI COUNT</strong>
+                <div id="KJLPT_Legend"></div>
+                <div id="KJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div>
+        </td>
+        <td align="center">
+                <div id="KJLPT_overview" style="width:166px;height:100px;margin-top:25px"></div> 
+                <div id="WJLPT_overview" style="width:166px;height:100px;margin-top:35px"></div> 
+        </td>
+        <td align="center">
+                <strong>JLPT WORD COUNT</strong>
+                <div id="WJLPT_Legend" style="margin-left:10px"></div>
+                <div id="WJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+                <strong>ACCUMULATED KANJI FREQUENCY</strong>
+                <div id="KAFreq_Legend" style="margin-left:10px"></div>
+                <div id="KAFreq" style="width:500px;height:250px;">JOUYOU KANJI COUNT</div>
+        </td>
+        <td align="center">
+                <div id="KAFreq_overview" style="width:166px;height:100px;margin-top:25px"></div> 
+                <div id="WAFreq_overview" style="width:166px;height:100px;margin-top:35px"></div>         
+        </td>
+        <td align="center">
+                <strong>ACCUMULATED WORD FREQUENCY</strong>
+                <div id="WAFreq_Legend" style="margin-left:10px"></div>
+                <div id="WAFreq" style="width:500px;height:250px;">KANKEN KANJI COUNT</div>        
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+                <strong>JOUYOU KANJI COUNT</strong>
+                <div id="Jouyou_Legend" style="margin-left:10px"></div>
+                <div id="Jouyou" style="width:500px;height:250px;">JOUYOU KANJI COUNT</div>        
+        </td>
+        <td align="center">
+        <div id="Jouyou_overview" style="width:166px;height:100px;margin-top:25px"></div> 
+                <div id="Kanken_overview" style="width:166px;height:100px;margin-top:35px"></div> 
+        </td>
+        <td align="center">
+                <strong>KANKEN KANJI COUNT</strong>
+                <div id="Kanken_Legend" style="margin-left:10px"></div>
+                <div id="Kanken" style="width:500px;height:250px;">KANKEN KANJI COUNT</div>
+        </td>
+    </tr>       
+</table>
+</body></html>"""
 
-<div style="text-align:center;float:left;margin-left:10px;"><strong>JLPT KANJI COUNT</strong><div id="KanjiJLPT" style="width:500px;height:250px;">JLPT KANJI COUNT</div></div>
-<div style="text-align:center;float:right;margin-right:10px;"><strong>JLPT WORD COUNT</strong><div id="WordJLPT" style="width:500px;height:250px;">JLPT WORD COUNT</div></div>
 
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;padding-top:70px;text-align:center;"><strong>JLPT</strong>
-<div id="LegendJLPT" align="center" style="width:100px;height:140px;padding-top:10px;">JLPT Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="text-align:center;float:left;clear:left;margin-left:10px;"><strong>KANJI Accumulated Frequency</strong><div id="KanjiFreq" style="width:500px;height:250px;"></div></div>
-<div style="text-align:center;float:right;clear:right;margin-right:10px;"><strong>WORDS Accumulated Frequency</strong><div id="WordFreq" style="width:500px;height:250px;"></div></div>
-
-<div style="width:100px;height:200px;margin:0 auto;padding:20px;text-align:center;margin-top:40px;"><strong>FREQUENCY</strong>
-<div id="LegendFreq" align="center" style="width:100px;height:140px;padding-top:10px;">Frequency Legend</div></div>
-
-<div style="clear:both;height:30px"/></div>
-
-<div style="width:500px;text-align:center;float:left;clear:left;margin-left:30px;"><strong>JOUYOU</strong>
-<div id="LegendJouyou" align="center" style="width:360px;margin:0 auto;text-align:center;">Jouyou Legend</div>
-<div id="KanjiJouyou" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-<div style="width:500px;text-align:center;float:right;clear:right;margin-right:30px;"><strong>KANKEN</strong>
-<div id="LegendKanken" align="center" style="width:460px;margin: 0 auto;text-align:center;">Kanken Legend</div>
-<div id="KanjiKanken" style="width:500px;height:250px;margin:0 auto;"></div></div>
-
-
-          </body></html>                 
-                    
-                    """
-
-
-
+graphJavascriptCode = """
+jQuery().ready(function(){
+        var %(prefix)s_data = %(json)s;
+        var %(prefix)s_options = {
+                        %(include)s
+                        grid:{show:true,aboveData:true},
+                        lines:{show:true,fill:1,fillcolor:false},
+                        series:{stack:true},
+                        legend:{container:$('#%(prefix)s_Legend'),noColumns:%(columns)s},
+                        selection: { mode: "x" }
+                    };
+        var %(prefix)s_plot = $.plot($("#%(prefix)s"),%(prefix)s_data,%(prefix)s_options);
+             
+        // setup overview
+        var %(prefix)s_overview = $.plot($("#%(prefix)s_overview"), %(prefix)s_data, {
+                legend:{show:false,container: $('#%(prefix)s_Legend')},
+                lines:{show:true,fill:1,fillcolor:false},
+                series:{stack:true},
+                xaxis: { ticks: 0},
+                yaxis: { ticks: 0},
+                selection: { mode: "x" }
+        });
+ 
+        // now connect the two
+    
+        $("#%(prefix)s").bind("plotselected", function (event, ranges) {
+                // clamp the zooming to prevent eternal zoom
+                if (ranges.xaxis.to - ranges.xaxis.from < 0.00001)
+                        ranges.xaxis.to = ranges.xaxis.from + 0.00001;
+                if (ranges.yaxis.to - ranges.yaxis.from < 0.00001)
+                        ranges.yaxis.to = ranges.yaxis.from + 0.00001;
+        
+                // do the zooming
+                $.plot($("#%(prefix)s"), %(prefix)s_data,$.extend(true, {}, %(prefix)s_options, {
+                        xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                }));
+        
+                // don't fire event on the overview to prevent eternal loop
+                %(prefix)s_overview.setSelection(ranges, true);
+        });
+        $("#%(prefix)s_overview").bind("plotselected", function (event, ranges) {
+                %(prefix)s_plot.setSelection(ranges);
+        });
+});
+"""
 
 ################################################# Automatic mapping help ##########################################################
 

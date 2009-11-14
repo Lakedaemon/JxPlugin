@@ -111,6 +111,17 @@ def onJxGraphs():
     dic = dict([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order+[('Other','Other')]))]) +"]") for (graph,mapping) in tasks.iteritems()])
     tasks = {'W-AFreq':MapZoneTango, 'K-AFreq':MapZoneKanji}
     dic.update([('JSon:' + graph,"[" + ",".join(['{ label: "'+ string +'",data :'+ JxGraphsJSon[(graph,key)] +'}' for (key,string) in (reversed(mapping.Order))]) +"]") for (graph,mapping) in tasks.iteritems()])
+    from html import graphJavascriptCode
+    dic.update({
+            'JS:K-JLPT':graphJavascriptCode % {'prefix':'KJLPT','json':dic['JSon:K-JLPT'],'columns':5,'include':''},
+            'JS:W-JLPT':graphJavascriptCode % {'prefix':'WJLPT','json':dic['JSon:W-JLPT'],'columns':5,'include':''},
+            'JS:Jouyou':graphJavascriptCode % {'prefix':'Jouyou','json':dic['JSon:Jouyou'],'columns':11,'include':''},
+            'JS:Kanken':graphJavascriptCode % {'prefix':'Kanken','json':dic['JSon:Kanken'],'columns':13,'include':''},
+            'JS:K-AFreq':graphJavascriptCode % {'prefix':'KAFreq','json':dic['JSon:K-AFreq'],'columns':5,'include':
+                "yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {return val.toFixed(axis.tickDecimals) +' %'}},"},
+            'JS:W-AFreq':graphJavascriptCode % {'prefix':'WAFreq','json':dic['JSon:W-AFreq'],'columns':5,'include':
+                "yaxis:{tickDecimals:0,tickFormatter:function (val, axis) {return val.toFixed(axis.tickDecimals) +' %'}},"}
+            })
     JxHtml = Jx_Html_Graphs % dic
     JxPreview.setHtml(JxHtml ,JxResourcesUrl)
     JxPreview.setWindowTitle(u"Japanese related Graphs")
