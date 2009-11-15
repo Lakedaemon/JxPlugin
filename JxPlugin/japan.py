@@ -108,16 +108,18 @@ def GuessType(String):
 setGobble = set([u'形容詞',u'接続詞',u'動詞',u'副詞',u'接頭詞', u'名詞'])# we gobble adjectivs, conjunction, verbs, adverbs, prefixes, names
 
 def parse_content(string,type,kanjiMode):
+    kanjiList = []
+    for char in string:
+        if JxIsKanji(char):
+            kanjiList.append(char)
+    myReturn = {}
+    if kanjiList and not(kanjiMode):
+        myReturn = {'kanji':kanjiList[:]}
+    elif kanjiList:
+        myReturn = {'kanji':kanjiList[0]} 
     if type == 'Kanji':
-        kanjiList = []
-        for char in string:
-            if JxIsKanji(char):
-                kanjiList.append(char)
-        if kanjiList and not(kanjiMode):
-            return {'kanji':kanjiList[:]}
-        elif kanjiList and len(kanjiList)==1:
-            return {'kanji':kanjiList.pop()} 
-        return {}
+        return myReturn
+    #  alternative is word/sentence type
     # first mecab the string
     list = call_mecab(string)
     # then we have got to extract relevant info from the mecab output
@@ -167,9 +169,15 @@ def parse_content(string,type,kanjiMode):
         # out of the loop, gotta flush...
         List.append(tail)
     if number >= 1:
-        return {'words':List[:]}
-    return {}
-
+        if kanjiMode:
+                return {'words':List[:]}
+        else:
+                myReturn.update({'words':List[:]})
+                return myReturn
+    if kanjiMode:            
+            return {}
+    else: 
+            return myReturn
 canLoad = True
 if sys.platform.startswith("darwin"):
     while 1:

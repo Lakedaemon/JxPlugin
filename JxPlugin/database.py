@@ -330,7 +330,8 @@ class Database(QObject):
             if not(types): # Japanese Model ?
                 test = set(tags.split(" ") + [modelName] + fields.values())   
                 if test.intersection(JxTypeJapanese):
-                    types.update(['Kanji','Word','Sentence','Grammar'])  
+                    types.update(['Word'])                         
+                    #types.update(['Kanji','Word','Sentence','Grammar'])  no need for this anymore
             # now, we got to set the action and build a Hint
             if types and not(hints):
                 # first, we try to affect relevant fields for each type (first try fields with the name similar to the type)
