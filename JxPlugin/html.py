@@ -630,10 +630,26 @@ jQuery().ready(function(){
                         opacity: 0.80
                 }).appendTo("body").fadeIn(200);
         }      
-        
+function format(num) {
+num = eval(num);
+num *= 1000;
+num = Math.round(num)/1000;
+
+	if (num - Math.floor(num) == 0) {
+		num = parseInt(num);
+	} else {
+		/*string = num.toString();
+		parts = string.split(".");
+		cents = parts[1];
+			if (cents.length == 1) {
+				num = num + "0";
+				}*/
+	}
+return num;
+}
         var %(prefix)s_previousPoint = null;
         $("#%(prefix)s").bind("plothover", function (event, pos, item) {
-
+                                                                     
                 if (item) {
                         if (%(prefix)s_previousPoint != item.datapoint) {
                                 %(prefix)s_previousPoint = item.datapoint;
@@ -641,8 +657,38 @@ jQuery().ready(function(){
                                 $("#%(prefix)s_tooltip").remove();
                                 var x = item.datapoint[0].toFixed(2),
                                 var y = item.datapoint[1].toFixed(2);
-                    
-                                showTooltip(item.pageX, item.pageY,y);
+                                var i, j, dataset = %(prefix)s_plot.getData();
+                                // find the nearest points, x-wise
+                                var s = 0;
+                                var delta = 0;
+                                var myString = 'day '+item.datapoint[0] + '<br>Total: ';
+                                var myReport = '';
+                                for (j = 0;j<dataset.length; ++j){
+                                        var series = dataset[j];
+                                        for (i = 0; i < series.data.length; ++i)
+                                                if (series.data[i][0] >  item.datapoint[0])
+                                                        break;
+                                        i = Math.max(0,i-1); 
+                                        var temp = 0;
+                                        if (series.data[i][0]==item.datapoint[0] && i>0)
+                                                var temp = dataset[j].data[i][1]-dataset[j].data[i-1][1]
+                                        delta+= temp;                                             
+                                        if (temp>0)
+                                                myReport += series.label + ': ' + format(dataset[j].data[i][1]) +'<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+'+format(temp)+'</font></sup><br>'
+                                        if (temp<0)
+                                                myReport += series.label + ': ' + format(dataset[j].data[i][1]) +'<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-'+format(-temp)+'</font></sup><br>'
+                                                
+                                        if (temp==0)
+                                                myReport += series.label + ': ' + format(dataset[j].data[i][1]) +'<br>'                                                                                      
+                                        s += dataset[j].data[i][1];
+                                }
+                                        if (delta>0)
+                                                myString += format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+'+format(delta)+'</font></sup><br>'+ myReport
+                                        if (delta<0)
+                                                myString+= format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-'+format(-delta)+'</font></sup><br>'+myReport                                               
+                                        if (delta==0)
+                                                myString += format(s) +'<br>'+ myReport                                  
+                                showTooltip(item.pageX, item.pageY,myString);
                         }
                 }
                 else {
