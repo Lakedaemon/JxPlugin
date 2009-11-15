@@ -881,6 +881,12 @@ class Database(QObject):
         dict_json = {}
         tasks = {'W-JLPT':MapJLPTTango, 'W-AFreq':MapZoneTango, 'K-JLPT':MapJLPTKanji, 'K-AFreq':MapZoneKanji, 'Jouyou':MapJouyouKanji, 'Kanken':MapKankenKanji} 
         for (graph,mapping) in tasks.iteritems():
+            days = set([today])
+            get = graphs.get
+            for (key,string) in mapping.Order +[('Other','Other')]:
+                days.update(set(get((graph,key),{}).keys()))
+            days = list(days)
+            days.sort()
             for (key,string) in mapping.Order +[('Other','Other')]:
                 if graph == 'W-AFreq':
                         a = 100.0/Jx_Word_SumOccurences
@@ -889,14 +895,11 @@ class Database(QObject):
                 else:
                         a = 1
                 myDict = graphs.get((graph,key),{})
-                if today not in myDict:
-                    myDict[today] = 0
-                sortedList = myDict.items()
-                sortedList.sort(lambda x,y:x[0]-y[0])
                 s = 0
                 List = []
-                for (day,value) in sortedList:
-                    s = s + value
+                get = myDict.get
+                for day in days:
+                    s = s + get(day,0)
                     List.append("[%s,%s]"% (day - today,s * a))
                 dict_json[(graph,key)] =  "[" + ",".join(List) + "]"              
         return dict_json 
