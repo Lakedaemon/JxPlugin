@@ -613,7 +613,7 @@ jQuery().ready(function(){
                         lines:{show:true,fill:1,fillcolor:false},
                         series:{stack:true},
                         legend:{container:$('#%(prefix)s_Legend'),noColumns:%(columns)s},
-                        selection: { mode: "x" }
+                        selection: { mode: "xy" }
                     };
         var %(prefix)s_plot = $.plot($("#%(prefix)s"),%(prefix)s_data,%(prefix)s_options);
         // tootip
@@ -707,7 +707,7 @@ return num;
                 series:{stack:true},
                 xaxis: { ticks: 0},
                 yaxis: { ticks: 0},
-                selection: { mode: "x" }
+                selection: { mode: "xy" }
         });
  
         // now connect the two
@@ -721,7 +721,8 @@ return num;
         
                 // do the zooming
                 $.plot($("#%(prefix)s"), %(prefix)s_data,$.extend(true, {}, %(prefix)s_options, {
-                        xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                        xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to },
+                        yaxis: { min: ranges.yaxis.from, max: ranges.yaxis.to }
                 }));
         
                 // don't fire event on the overview to prevent eternal loop
