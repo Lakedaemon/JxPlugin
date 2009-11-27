@@ -11,7 +11,7 @@ import os
 from ankiqt import mw
 
 # directory where QTWebKit will look for resources
-JxResourcesUrl = QUrl.fromLocalFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Resources") + os.sep)
+JxResourcesUrl = QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__ ),"Resources") + os.sep)
 
 # "hack" to overload mw.help.anchorClicked
 def JxAnchorClicked(url):

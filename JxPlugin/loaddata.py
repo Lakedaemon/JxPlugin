@@ -135,7 +135,7 @@ Kanji2Grade = dict([(Kanji,Grade) for Grade in (1,2,3,4,5,6,'HS','New Jouyou','J
 ######################################################################
 
 Word2Data = {}
-for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "JLPT.Word.List.csv")):
+for List in JxReadFile(os.path.join(os.path.dirname(__file__ ),"Data", "JLPT.Word.List.csv")):
         if List[1].strip():
                 Word2Data[List[1].strip()] = int(List[4])  
         else:
@@ -149,7 +149,7 @@ for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","
 #
 ######################################################################
 
-Kanji2Kanken = dict([(List[0].strip(),List[1].strip()) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Kanken.csv"))])
+Kanji2Kanken = dict([(List[0].strip(),List[1].strip()) for List in JxReadFile(os.path.join(os.path.dirname(__file__ ),"Data", "Kanken.csv"))])
 
 ######################################################################
 #
@@ -157,7 +157,7 @@ Kanji2Kanken = dict([(List[0].strip(),List[1].strip()) for List in JxReadFile(os
 #
 ######################################################################
 
-Jx_Kanji_Occurences = dict((List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "KanjiFrequencyWikipedia.csv")))
+Jx_Kanji_Occurences = dict((List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(os.path.dirname(__file__ ),"Data", "KanjiFrequencyWikipedia.csv")))
 Jx_Kanji_MaxOccurences = max(Jx_Kanji_Occurences.values()) #inneficient but pythonic
 Jx_Kanji_SumOccurences = sum(Jx_Kanji_Occurences.values())
 
@@ -170,7 +170,7 @@ Kanji2Zone = JxDictToZones(Jx_Kanji_Occurences)
 #
 ######################################################################
 	
-Jx_Word_Occurences = dict([(List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "CorpusInternet.csv"))])
+Jx_Word_Occurences = dict([(List[0].strip(),int(List[1])) for List in JxReadFile(os.path.join(os.path.dirname(__file__ ),"Data", "CorpusInternet.csv"))])
 
 Jx_Word_SumOccurences = sum(Jx_Word_Occurences.values())
 Jx_Word_MaxOccurences = max(Jx_Word_Occurences.values())
@@ -191,7 +191,7 @@ MapKankenKanji = FileList("Kanji","Kanken",Kanji2Kanken,[('10','10'),('9','9'),(
 
 #  import cPickle
 #import itertools                      
-#file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "Word2Data.pickle")                      
+#file_pickle = os.path.join(os.path.dirname(__file__ ),"Data", "Word2Data.pickle")                      
 #                        if (os.path.exists(file_pickle) and 
 #	os.stat(file_pickle).st_mtime > os.stat(file).st_mtime):
 #	f = open(file_pickle, 'rb')

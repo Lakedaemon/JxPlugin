@@ -146,7 +146,7 @@ $(document).ready(function(){
 
 		$("#knowncoefficient").slider({
 			value:py.get('factsKnownThreshold'), 
-			min: 0.01,
+			min: 0.00,
 			max: 1,
 			step: 0.01,
 			stop: function(event, ui) {
@@ -164,7 +164,7 @@ $(document).ready(function(){
 		$("#atomsknowncoefficientvalue").val(Math.round($("#atomsknowncoefficient").slider("value") *100) + " %");
 				$("#atomsknowncoefficient").slider({
 			value:py.get('atomsKnownThreshold'), 
-			min: 0.01,
+			min: 0.00,
 			max: 1,
 			step: 0.01,
 			stop: function(event, ui) {

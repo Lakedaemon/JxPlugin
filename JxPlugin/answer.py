@@ -153,8 +153,11 @@ def append_JxPlugin(Answer,Card):
 
     
     # Guess the type(s) and the relevant content(s) of the Fact
-    from database import eDeck  
-    types = eDeck.types[Card.factId]
+    from database import eDeck 
+    try:
+            types = eDeck.types[Card.factId]
+    except KeyError:
+            return Answer
     JxGuessedList = []
     ####################### the new type system breaks the old answer system : this is a quick and dirty fix ################################
     try:

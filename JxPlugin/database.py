@@ -214,7 +214,7 @@ class Database(QObject):
         
     def load(self):
         """returns the cache if it exists on disk and {} if it doesn't"""
-        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")                      
+        path = os.path.join(os.path.dirname(__file__ ), "Cache", mw.deck.name() + ".cache")                      
         if not os.path.exists(path): 
             self.cache = {}
         else:
@@ -226,7 +226,7 @@ class Database(QObject):
         from ui_menu import JxStats
         """saves the cache on disk"""  
         ensureDirExists("Cache")
-        path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", "Cache", mw.deck.name() + ".cache")
+        path = os.path.join(os.path.dirname(__file__ ), "Cache", mw.deck.name() + ".cache")
         file = open(path, 'wb')
         cPickle.dump(self.cache, file, cPickle.HIGHEST_PROTOCOL)
         file.close()

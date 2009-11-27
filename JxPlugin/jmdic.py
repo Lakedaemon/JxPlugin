@@ -96,13 +96,13 @@ def end_element(Name):
 
 
 
-File = join(mw.config.configPath, "plugins","JxPlugin","Data", "JMdict.gz")
+File = join(os.path.dirname(__file__ ),"Data", "JMdict.gz")
 
 
 
 import cPickle, os
 import itertools                      
-file_pickle = os.path.join(mw.config.configPath, "plugins","JxPlugin","Data", "JMdict.pickle")                      
+file_pickle = os.path.join(os.path.dirname(__file__ ),"Data", "JMdict.pickle")                      
 if False:#(os.path.exists(file_pickle) and os.stat(file_pickle).st_mtime > os.stat(File).st_mtime):
 	f = open(file_pickle, 'rb')
 	JxJMdic = cPickle.load(f)

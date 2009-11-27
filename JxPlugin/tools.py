@@ -17,7 +17,7 @@ from anki.utils import canonifyTags, addTags
 
 def ensureDirExists(myDir):
     """creates a dir subdirectory of plugins/JxPlugin/ if it doesn't exist"""
-    path = os.path.join(mw.config.configPath, "plugins", "JxPlugin", myDir)
+    path = os.path.join(os.path.dirname(__file__ ), myDir)
     if not(os.path.isdir(path)):
         try:
             os.mkdir(path)
