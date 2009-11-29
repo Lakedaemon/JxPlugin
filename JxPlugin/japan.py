@@ -45,7 +45,8 @@ class MecabControl(object):
             os.environ['PATH'] += (";%s\\mecab\\bin" % dir)
             os.environ['MECABRC'] = ("%s\\mecab\\etc\\mecabrc" % dir)
         elif sys.platform.startswith("darwin"):
-            dir = os.path.abspath(os.path.dirname(__file__) + "/../japanese/") + "/" 
+            dir = os.path.abspath(os.path.dirname(__file__) + "/../japanese/") + "/"  
+            # I should use a path guessing scheme on the module name there
             os.environ['PATH'] += ":" + dir + "/osx/mecab/bin"
             os.environ['MECABRC'] = dir + "/osx/mecab/etc/mecabrc"
             os.environ['DYLD_LIBRARY_PATH'] = dir + "/osx/mecab/bin"

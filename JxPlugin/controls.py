@@ -6,6 +6,7 @@
 # ---------------------------------------------------------------------------
 import os
 import cPickle
+import re 
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -19,6 +20,7 @@ from metacode import Jx__Prop
 from globalobjects import JxLink
 from tools import ensureDirExists
 from ui_menu import *
+from answer import JxReplace
 
 JxBase = QObject()
 
@@ -440,7 +442,7 @@ def onClick(url):
         String = unicode(url.toString())
 	if String.startswith("py:"):
 	        String = String[3:]
-	        from ui_menu import JxShowIn,JxShowOut
+	        from ui_menu import JxShowIn,JxShowOut, JxBrowse
 	        from export import JxAddo, JxDoNothing
 	        eval(String)
 	else:
