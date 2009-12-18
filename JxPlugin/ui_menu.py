@@ -167,6 +167,11 @@ def init_JxPlugin():
 	# Adding features through hooks !
 	mw.addHook('drawAnswer', append_JxPlugin) # additional info in answer cards
 	mw.addHook('deckClosed', JxWindow.hide) # hides the main Jxplugin window when the current deck is closed	
+	
+	# this is needed for people who open Anki by double clicking on an Anki deck (it bypasses newLoadDeck)
+	if (mw.deck):
+		from database import build_JxDeck
+		build_JxDeck()
 
 # adds JxPlugin to the list of plugin to process in Anki 
 mw.addHook('init', init_JxPlugin)
