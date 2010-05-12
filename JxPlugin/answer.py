@@ -65,7 +65,8 @@ def JxTableDisplay(TupleList,Class,Type=None):
                                     JxHtmlBuffer += u"""<tr class="Tr-Even">"""
                         Boolean = not(Boolean)
                         for Index in range(tupleStart,len(Tuple)):
-                                JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + rubify(Tuple[Index].strip()) + u'</td>'
+                                JxHtmlBuffer += u'<td class="Td-' + JxInt2Name(Index) + u'">' + rubify(Tuple[Index].strip(),"notaquestion") + u'</td>' # rubify needs another argument, I don't use ruby anyway...
+                                
                         JxHtmlBuffer += u"</tr>"
 
         if len(JxHtmlBuffer):
