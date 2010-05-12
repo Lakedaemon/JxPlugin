@@ -22,6 +22,10 @@ from tools import ensureDirExists
 from ui_menu import *
 from answer import JxReplace
 
+### apparently, importing stuff in class method makes anki crash in python 2.6... Got to test the software to see if it crashes in other places
+from default import  Jx__Css__Default
+###
+
 JxBase = QObject()
 
 
@@ -44,7 +48,7 @@ class Jx__Settings(QObject):
                 self.Update()
                   
         def Load(self):
-                from default import  Jx__Css__Default
+                ### from default import  Jx__Css__Default This makes Anki crash, funny isn't it ?
                 self.Dict = {"Mode":"Override","Css":Jx__Css__Default,'reportReset':'1','cacheRebuild':'14'}
                 if os.path.exists(self.File):
                           File = open(self.File, 'rb')
