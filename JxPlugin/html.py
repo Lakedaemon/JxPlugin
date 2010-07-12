@@ -682,12 +682,12 @@ return num;
                                                 myReport += series.label + ': ' + format(dataset[j].data[i][1]) +'<br>'                                                                                      
                                         s += dataset[j].data[i][1];
                                 }
-                                        if (delta>0)
-                                                myString += format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+'+format(delta)+'</font></sup><br>'+ myReport
-                                        if (delta<0)
-                                                myString+= format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-'+format(-delta)+'</font></sup><br>'+myReport                                               
-                                        if (delta==0)
-                                                myString += format(s) +'<br>'+ myReport                                  
+                                if (delta>0)
+                                        myString += format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="green" size=2>+'+format(delta)+'</font></sup><br>'+ myReport
+                                if (delta<0)
+                                        myString+= format(s) + '<sup>&nbsp;<font face="Comic Sans MS" color="red" size=2>-'+format(-delta)+'</font></sup><br>'+myReport                                               
+                                if (delta==0)
+                                        myString += format(s) +'<br>'+ myReport                                  
                                 showTooltip(item.pageX, item.pageY,myString);
                         }
                 }

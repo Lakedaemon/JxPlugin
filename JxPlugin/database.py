@@ -680,7 +680,7 @@ class Database(QObject):
         self.extend_graphs(workload)
         
     def extend_graphs(self,load):
-        """adds to graphs if sign = 1 and subs to graph if qign = -1"""                         
+        """adds to graphs if sign = 1 and subs to graph if sign = -1"""                         
         
         loadGet = load.get
         for myType in ['words','kanji']:
@@ -804,7 +804,7 @@ class Database(QObject):
                             
 
     def set_graphs(self,sign):
-        """adds to graphs if sign = 1 and subs to graph if qign = -1"""
+        """adds to graphs if sign = 1 and subs to graph if sign = -1"""
         
         if sign != 0:
             load = self.compute_load(self.graphsWorkload,self.atomsHistory)

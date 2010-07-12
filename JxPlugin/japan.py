@@ -5,6 +5,7 @@
 # This file is a plugin for the "anki" flashcard application http://ichi2.net/anki/
 # ---------------------------------------------------------------------------
 """Ideally, all japanese specific constants, variables, functions should go in there (in case we want to support other languages in the future)"""
+from ankiqt import mw
 
 # beware... if this file is named "japanese", it creates import problems with the japanese support plugin
 
@@ -123,6 +124,7 @@ def parse_content(string,type,kanjiMode):
     #  alternative is word/sentence type
     # first mecab the string
     list = call_mecab(string)
+
     # then we have got to extract relevant info from the mecab output
     number = 0
     lastType = None
